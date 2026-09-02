@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         FUT SBC Solver v2
 // @namespace    https://github.com/mljpa/fut-sbc-solver-v2
-// @version      0.1.0.1788386701
+// @version      0.1.0.1788387386
 // @description  Userscript to solve EA SPORTS FC 26 SBCs with your own club
 // @match        https://www.ea.com/*/ea-sports-fc/ultimate-team/web-app*
 // @match        https://www.ea.com/ea-sports-fc/ultimate-team/web-app*
@@ -1753,16 +1753,24 @@
       if (!set) return null;
       let challenge = challengesOf2(set)[0];
       if (!challenge && typeof sbc.requestChallengesForSet === "function") {
-        try {
-          await toPromise(
-            sbc.requestChallengesForSet.call(sbc, set)
-          );
-        } catch (err) {
-          console.warn("[fut-sbc] requestChallengesForSet fall\xF3", err);
+        for (let attempt = 0; attempt < 2 && !challenge; attempt++) {
+          try {
+            await toPromise(
+              sbc.requestChallengesForSet.call(sbc, set)
+            );
+          } catch (err) {
+            console.warn("[fut-sbc] requestChallengesForSet fall\xF3", err);
+          }
+          challenge = challengesOf2(set)[0];
+          if (!challenge) await delay(400);
         }
-        challenge = challengesOf2(set)[0];
       }
-      if (!challenge) return null;
+      if (!challenge) {
+        console.warn(
+          `[fut-sbc] openSetChallenge: EA no expone challenges para el set ${setId} (\xBFbloqueado o expirado?).`
+        );
+        return null;
+      }
       if (!challenge.squad || !safeInProgress3(challenge)) {
         await openInPlace(sbc, challenge);
       }
@@ -2808,6 +2816,7 @@ Cada vuelta arma la plantilla, la env\xEDa y vuelve a entrar. Consume las cartas
   }
 
   // src/ui/daily-bar.ts
+  var CHEAP_OVR_LIMIT = 84;
   var ROUNDS_KEY = "fut-sbc-solver:daily-rounds";
   function loadRounds() {
     try {
@@ -2825,6 +2834,9 @@ Cada vuelta arma la plantilla, la env\xEDa y vuelve a entrar. Consume las cartas
   }
   var HUB_POSITION = `
 :host { position: absolute; left: 16px; top: 8px; }
+.picker { display: flex; flex-direction: column; gap: 2px; }
+.picker .field.check { gap: 8px; cursor: pointer; padding: 3px 0; }
+.picker .field.check:hover { color: var(--accent); }
 `;
   function mountDailyBar(host, actions) {
     const mountHost = document.createElement("div");
@@ -2908,6 +2920,67 @@ Cada vuelta arma la plantilla, la env\xEDa y vuelve a entrar. Consume las cartas
       rounds.value = String(n);
       saveRounds(n);
     });
+    function showPicker(items, roundsPerSet) {
+      log.textContent = "";
+      blocker.classList.add("on");
+      spinner.classList.add("hidden");
+      title.textContent = "\xBFCu\xE1les resolvemos?";
+      hint.textContent = "Los que piden cartas altas vienen desmarcados \u2014 gastan tu fodder bueno.";
+      const list = document.createElement("div");
+      list.className = "picker";
+      const boxes = /* @__PURE__ */ new Map();
+      for (const d of items) {
+        const row = document.createElement("label");
+        row.className = "field check";
+        const cb = document.createElement("input");
+        cb.type = "checkbox";
+        cb.checked = d.demandsOvr == null || d.demandsOvr <= CHEAP_OVR_LIMIT;
+        const text = document.createElement("span");
+        const cost = d.demandsOvr != null ? `  \xB7  pide ${d.demandsOvr}+` : "";
+        text.textContent = `${d.name} \u2014 hasta ${Math.min(roundsPerSet, d.remaining)}${cost}`;
+        row.append(cb, text);
+        list.append(row);
+        boxes.set(d.id, cb);
+      }
+      log.append(list);
+      closeBtn.style.display = "";
+      closeBtn.textContent = "Cancelar";
+      const goBtn = document.createElement("button");
+      goBtn.type = "button";
+      goBtn.className = "btn primary";
+      goBtn.textContent = "Resolver y enviar";
+      actionsRow.prepend(goBtn);
+      const cleanup = () => {
+        goBtn.remove();
+        closeBtn.textContent = "Cerrar";
+      };
+      onClose = cleanup;
+      goBtn.addEventListener("click", () => {
+        const chosen = [...boxes.entries()].filter(([, cb]) => cb.checked).map(([id]) => id);
+        if (chosen.length === 0) return;
+        const picked = items.filter((d) => chosen.includes(d.id));
+        const ok = window.confirm(
+          `Resolver y ENVIAR ${picked.length} ${picked.length === 1 ? "SBC" : "SBCs"}, hasta ${roundsPerSet} ${roundsPerSet === 1 ? "vez" : "veces"} cada uno:
+
+` + picked.map((d) => `\xB7 ${d.name}`).join("\n") + `
+
+Consume las cartas que use. Esto NO se puede deshacer.
+
+\xBFSeguir?`
+        );
+        if (!ok) return;
+        cleanup();
+        onClose = null;
+        busy = true;
+        runBtn.disabled = true;
+        rounds.disabled = true;
+        void actions.solveDailies(chosen, roundsPerSet).finally(() => {
+          busy = false;
+          runBtn.disabled = false;
+          rounds.disabled = false;
+        });
+      });
+    }
     runBtn.addEventListener("click", () => {
       if (busy) return;
       void (async () => {
@@ -2922,27 +2995,7 @@ Cada vuelta arma la plantilla, la env\xEDa y vuelve a entrar. Consume las cartas
           showProgress(["No hay SBCs diarios con vueltas disponibles."], true);
           return;
         }
-        const lines = preview.map((d) => `\xB7 ${d.name} \u2014 hasta ${Math.min(n, d.remaining)}`).join("\n");
-        const ok = window.confirm(
-          `Resolver y ENVIAR estos SBCs diarios, hasta ${n} ${n === 1 ? "vez" : "veces"} cada uno:
-
-${lines}
-
-Consume las cartas que use. Esto NO se puede deshacer.
-
-\xBFSeguir?`
-        );
-        if (!ok) return;
-        busy = true;
-        runBtn.disabled = true;
-        rounds.disabled = true;
-        try {
-          await actions.solveDailies(n);
-        } finally {
-          busy = false;
-          runBtn.disabled = false;
-          rounds.disabled = false;
-        }
+        showPicker(preview, n);
       })();
     });
     host.append(mountHost);
@@ -3224,10 +3277,18 @@ Consume las cartas que use. Esto NO se puede deshacer.
     const ordered = orderPool(pool, opts.strategy, constraints);
     const eligible = ordered.filter((p) => isEligible(p, constraints));
     if (eligible.length < constraints.slots) {
+      const bounds = [];
+      if (constraints.minOvrPerPlayer != null)
+        bounds.push(`OVR \u2265 ${constraints.minOvrPerPlayer}`);
+      if (constraints.maxOvrPerPlayer != null)
+        bounds.push(`OVR \u2264 ${constraints.maxOvrPerPlayer}`);
+      if (constraints.exactOvr != null)
+        bounds.push(`OVR = ${constraints.exactOvr}`);
+      const why = bounds.length ? `solo ${eligible.length} de tus ${pool.length} cartas cumplen ${bounds.join(" y ")}, y hacen falta ${constraints.slots}` : `solo ${eligible.length} cartas elegibles para ${constraints.slots} slots`;
       return {
         ok: false,
-        reason: `only ${eligible.length} eligible players for ${constraints.slots} slots`,
-        unmet: [`slots filled 0/${constraints.slots}`]
+        reason: why,
+        unmet: [why]
       };
     }
     let best = null;
@@ -3897,18 +3958,19 @@ ${text}`);
       handle()?.showProgress(done, true, leaveChallengeView);
     }
   }
-  async function runDailyBatch(roundsPerSet, report) {
+  async function runDailyBatch(setIds, roundsPerSet, report) {
     const lines = [];
     const push = (s) => {
       lines.push(s);
       report(lines, false);
     };
-    const sets = await listDailySets();
+    const wanted = new Set(setIds);
+    const sets = (await listDailySets()).filter((s) => wanted.has(s.id));
     if (sets.length === 0) {
       report(["No hay SBCs diarios con vueltas disponibles."], true);
       return;
     }
-    push(`${sets.length} SBC diarios con vueltas disponibles.`);
+    push(`${sets.length} SBC diarios seleccionados.`);
     let submitted = 0;
     outer: for (const set of sets) {
       const budget = Math.min(roundsPerSet, set.remaining);
@@ -4024,11 +4086,23 @@ Total enviados: ${submitted}`);
         dailyBar = mountDailyBar(hub, {
           async previewDailies() {
             const sets = await listDailySets();
-            return sets.map((s) => ({ name: s.name, remaining: s.remaining }));
+            const out = [];
+            for (const s of sets) {
+              let demandsOvr;
+              try {
+                const ch = await openSetChallenge(s.id);
+                const c = ch?.constraints;
+                demandsOvr = c?.minOvrPerPlayer ?? c?.exactOvr ?? c?.teamRatingMin;
+              } catch {
+              }
+              out.push({ id: s.id, name: s.name, remaining: s.remaining, demandsOvr });
+            }
+            return out;
           },
-          async solveDailies(roundsPerSet) {
+          async solveDailies(setIds, roundsPerSet) {
             try {
               await runDailyBatch(
+                setIds,
                 roundsPerSet,
                 (lines, done) => dailyBar?.showProgress(lines, done)
               );
