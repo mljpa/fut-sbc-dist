@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         FUT SBC Solver v2
 // @namespace    https://github.com/mljpa/fut-sbc-solver-v2
-// @version      0.1.0.1788381635
+// @version      0.1.0.1788382356
 // @description  Userscript to solve EA SPORTS FC 26 SBCs with your own club
 // @match        https://www.ea.com/*/ea-sports-fc/ultimate-team/web-app*
 // @match        https://www.ea.com/ea-sports-fc/ultimate-team/web-app*
@@ -300,8 +300,21 @@
       return "";
     }
   }
+  function liveSquadOf(ch) {
+    const own = ch.squad;
+    if (own) return own;
+    try {
+      const hits = findViewControllers(
+        (n) => constructorName(n) === "UTSBCSquadOverviewViewController" && !!n["_squad"] && Number(n["_challenge"]?.id) === Number(ch.id)
+      );
+      const vc = hits.find((h) => isInDom(h)) ?? hits[hits.length - 1];
+      return vc?.["_squad"] ?? void 0;
+    } catch {
+      return void 0;
+    }
+  }
   function squadSlots(ch) {
-    const sq = ch.squad;
+    const sq = liveSquadOf(ch);
     if (!sq) return 0;
     try {
       const n = sq.getNumOfRequiredPlayers?.();
@@ -338,7 +351,7 @@
     };
   }
   function readSlotPositions(ch) {
-    const sq = ch.squad;
+    const sq = liveSquadOf(ch);
     try {
       const slots = sq?.getNonBrickSlots?.() ?? [];
       return slots.map((s) => {
@@ -3416,7 +3429,11 @@ ${text}`);
       applySolution,
       findLiveOverviewVC,
       searchConceptCards,
-      buyFodder
+      buyFodder,
+      submitChallenge,
+      dismissPostSubmit,
+      reenterChallenge,
+      repeatability
     };
     let handle = null;
     let mountedFor = -1;
