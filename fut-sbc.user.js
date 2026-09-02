@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         FUT SBC Solver v2
 // @namespace    https://github.com/mljpa/fut-sbc-solver-v2
-// @version      0.1.0.1788384842
+// @version      0.1.0.1788385505
 // @description  Userscript to solve EA SPORTS FC 26 SBCs with your own club
 // @match        https://www.ea.com/*/ea-sports-fc/ultimate-team/web-app*
 // @match        https://www.ea.com/ea-sports-fc/ultimate-team/web-app*
@@ -787,10 +787,35 @@
         document.querySelectorAll("button.ut-navigation-button-control")
       );
       const back = buttons.find((b) => {
-        const r = b.getBoundingClientRect();
-        return r.width > 0 && r.height > 0 && r.top < 120 && r.left < 240;
+        const r2 = b.getBoundingClientRect();
+        return r2.width > 0 && r2.height > 0 && r2.top < 120 && r2.left < 240;
       });
-      back?.click();
+      if (!back) return;
+      const r = back.getBoundingClientRect();
+      const clientX = Math.round(r.left + r.width / 2);
+      const clientY = Math.round(r.top + r.height / 2);
+      const base = { bubbles: true, cancelable: true, composed: true, clientX, clientY };
+      const pointer = (type) => {
+        try {
+          back.dispatchEvent(
+            new PointerEvent(type, { ...base, pointerId: 1, isPrimary: true, pointerType: "touch" })
+          );
+        } catch {
+        }
+      };
+      pointer("pointerdown");
+      try {
+        const touch = new Touch({ identifier: 1, target: back, clientX, clientY });
+        back.dispatchEvent(
+          new TouchEvent("touchstart", { ...base, touches: [touch], targetTouches: [touch], changedTouches: [touch] })
+        );
+        back.dispatchEvent(
+          new TouchEvent("touchend", { ...base, touches: [], targetTouches: [], changedTouches: [touch] })
+        );
+      } catch {
+        back.click();
+      }
+      pointer("pointerup");
     } catch {
     }
   }
@@ -2378,7 +2403,12 @@ input[type="number"] { width: 56px; }
     for (const ev of ["click", "mousedown", "pointerdown", "keydown", "wheel"]) {
       blocker.addEventListener(ev, (e) => e.stopPropagation());
     }
-    blockerClose.addEventListener("click", () => blocker.classList.remove("on"));
+    blockerClose.addEventListener("click", () => {
+      blocker.classList.remove("on");
+      const fn = onBlockerClose;
+      onBlockerClose = null;
+      fn?.();
+    });
     let settings = loadSettings();
     let busy = false;
     let popover = null;
@@ -2434,13 +2464,16 @@ input[type="number"] { width: 56px; }
       spinner.classList.toggle("hidden", !next);
       for (const c of controls) c.disabled = next;
     }
-    function showProgress(lines, done) {
+    let onBlockerClose = null;
+    function showProgress(lines, done, onClose) {
       blockerLog.textContent = lines.join("\n");
       blocker.classList.add("on");
       blockerSpinner.classList.toggle("hidden", done);
       blockerTitle.textContent = done ? "Ciclo terminado" : "Resolviendo y enviando\u2026";
-      blockerHint.textContent = done ? "" : "No toques nada hasta que termine el ciclo.";
+      blockerHint.textContent = done ? "Al cerrar volv\xE9s a la lista de SBCs." : "No toques nada hasta que termine el ciclo.";
+      blockerClose.textContent = done ? "Cerrar y volver a SBC" : "Cerrar";
       blockerClose.style.display = done ? "" : "none";
+      onBlockerClose = onClose ?? null;
     }
     function clearOverlay() {
       if (popover) {
@@ -3509,9 +3542,8 @@ ${text}`);
       } catch {
       }
       repaintPitch(challenge.id);
-      handle()?.showProgress(done, true);
       console.info(LOG, "repeat loop finished", done);
-      leaveChallengeView();
+      handle()?.showProgress(done, true, leaveChallengeView);
     }
   }
   async function boot() {
