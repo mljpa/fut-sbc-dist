@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         FUT SBC Solver v2
 // @namespace    https://github.com/mljpa/fut-sbc-solver-v2
-// @version      0.1.0.1788388066
+// @version      0.1.0.1788388612
 // @description  Userscript to solve EA SPORTS FC 26 SBCs with your own club
 // @match        https://www.ea.com/*/ea-sports-fc/ultimate-team/web-app*
 // @match        https://www.ea.com/ea-sports-fc/ultimate-team/web-app*
@@ -1710,7 +1710,8 @@
           name: String(set.name ?? ""),
           remaining,
           repeats,
-          timesCompleted
+          timesCompleted,
+          challengeCount: Math.max(1, safeNum3(set.challengesCount) ?? 1)
         };
         const challengeId = firstChallengeId(set);
         if (challengeId != null) entry.challengeId = challengeId;
@@ -1745,13 +1746,37 @@
     const first = challengesOf2(set)[0];
     return first ? safeNum3(first.id) ?? void 0 : void 0;
   }
+  function safeCompleted(ch) {
+    try {
+      return ch.isCompleted?.() === true;
+    } catch {
+      return false;
+    }
+  }
+  function setRunComplete(setId) {
+    const sbc = sbcService2();
+    const set = sbc?.repository?.getSetById?.(setId);
+    if (!set) return false;
+    try {
+      if (typeof set.challengesComplete === "function") {
+        return set.challengesComplete() === true;
+      }
+    } catch {
+    }
+    const total = safeNum3(set.challengesCount);
+    const done = safeNum3(set.challengesCompletedCount);
+    if (total != null && done != null) return done >= total;
+    const challenges = challengesOf2(set);
+    return challenges.length > 0 && challenges.every(safeCompleted);
+  }
   async function openSetChallenge(setId) {
     const sbc = sbcService2();
     if (!sbc || !Number.isFinite(setId)) return null;
     try {
       const set = await findSet2(sbc, setId);
       if (!set) return null;
-      let challenge = challengesOf2(set)[0];
+      const pending = () => challengesOf2(set).find((c) => !safeCompleted(c));
+      let challenge = pending();
       if (!challenge && typeof sbc.requestChallengesForSet === "function") {
         for (let attempt = 0; attempt < 2 && !challenge; attempt++) {
           try {
@@ -1761,11 +1786,12 @@
           } catch (err) {
             console.warn("[fut-sbc] requestChallengesForSet fall\xF3", err);
           }
-          challenge = challengesOf2(set)[0];
+          challenge = pending();
           if (!challenge) await delay(400);
         }
       }
       if (!challenge) {
+        if (setRunComplete(setId)) return null;
         console.warn(
           `[fut-sbc] openSetChallenge: EA no expone challenges para el set ${setId} (\xBFbloqueado o expirado?).`
         );
@@ -4000,63 +4026,80 @@ ${text}`);
       return;
     }
     push(`${sets.length} SBC diarios seleccionados.`);
+    const strategy = "optimizar-rating-bajo";
+    const extras = {
+      excludeActiveSquad: true,
+      excludeAllSquads: false,
+      dryRun: false,
+      allowTradeable: true,
+      allowSpecials: true,
+      useUnassigned: true,
+      useStorage: true
+    };
+    const doOneChallenge = async (challenge, tag) => {
+      resetPoolCache();
+      const pool = await buildPool(challenge, strategy, extras);
+      const result = solve(pool, challenge.constraints, {
+        strategy,
+        timeBudgetMs: SOLVE_BUDGET_MS
+      });
+      if (!result.solution || !result.ok) {
+        push(`  \u2717 ${tag}: sin soluci\xF3n${result.unmet.length ? ` \u2014 ${result.unmet.join(", ")}` : ""}`);
+        return "fail";
+      }
+      const { items } = await getPool(extras);
+      const applied = await applySolution(challenge, result.solution, items);
+      if (!applied.ok) {
+        push(`  \u2717 ${tag}: no se pudo aplicar \u2014 ${applied.reason ?? "?"}`);
+        return "fail";
+      }
+      const sent = await submitChallenge(challenge);
+      if (sent.softBanned) {
+        push(`  \u26D4 ${tag}: soft-ban de EA (426/429) \u2014 parado.`);
+        return "softban";
+      }
+      if (!sent.ok) {
+        const why = sent.violations?.length ? sent.violations.join(", ") : sent.reason ?? "?";
+        push(`  \u2717 ${tag}: EA rechaz\xF3 \u2014 ${why}`);
+        return "fail";
+      }
+      push(`  \u2713 ${tag}: enviado (media ${applied.teamRating ?? "?"})`);
+      await dismissPostSubmit();
+      return "ok";
+    };
     let submitted = 0;
     outer: for (const set of sets) {
       const budget = Math.min(roundsPerSet, set.remaining);
+      const multi = set.challengeCount > 1;
       push(`
-\u25B8 ${set.name} (hasta ${budget})`);
+\u25B8 ${set.name} (hasta ${budget}${multi ? `, ${set.challengeCount} SBC c/u` : ""})`);
       for (let round = 1; round <= budget; round++) {
-        resetPoolCache();
-        const challenge = await openSetChallenge(set.id);
-        if (!challenge) {
-          push(`  \u2717 ronda ${round}: no se pudo abrir el challenge`);
-          break;
+        let roundOk = true;
+        for (let step = 0; step < set.challengeCount + 2; step++) {
+          if (setRunComplete(set.id)) break;
+          const challenge = await openSetChallenge(set.id);
+          if (!challenge) {
+            if (!setRunComplete(set.id)) {
+              push(`  \u2717 ronda ${round}: no se pudo abrir el SBC`);
+              roundOk = false;
+            }
+            break;
+          }
+          const tag = multi ? `ronda ${round} \xB7 ${challenge.name || `SBC ${step + 1}`}` : `ronda ${round}`;
+          const r = await doOneChallenge(challenge, tag);
+          if (r === "softban") break outer;
+          if (r === "fail") {
+            roundOk = false;
+            break;
+          }
+          submitted++;
         }
-        const strategy = "optimizar-rating-bajo";
-        const extras = {
-          excludeActiveSquad: true,
-          excludeAllSquads: false,
-          dryRun: false,
-          allowTradeable: true,
-          allowSpecials: true,
-          useUnassigned: true,
-          useStorage: true
-        };
-        const pool = await buildPool(challenge, strategy, extras);
-        const result = solve(pool, challenge.constraints, {
-          strategy,
-          timeBudgetMs: SOLVE_BUDGET_MS
-        });
-        if (!result.solution || !result.ok) {
-          push(
-            `  \u2717 ronda ${round}: sin soluci\xF3n${result.unmet.length ? ` \u2014 ${result.unmet.join(", ")}` : ""}`
-          );
-          break;
-        }
-        const { items } = await getPool(extras);
-        const applied = await applySolution(challenge, result.solution, items);
-        if (!applied.ok) {
-          push(`  \u2717 ronda ${round}: no se pudo aplicar \u2014 ${applied.reason ?? "?"}`);
-          break;
-        }
-        const sent = await submitChallenge(challenge);
-        if (sent.softBanned) {
-          push(`  \u26D4 ronda ${round}: soft-ban de EA (426/429) \u2014 parado.`);
-          break outer;
-        }
-        if (!sent.ok) {
-          const why = sent.violations?.length ? sent.violations.join(", ") : sent.reason ?? "?";
-          push(`  \u2717 ronda ${round}: EA rechaz\xF3 \u2014 ${why}`);
-          break;
-        }
-        submitted++;
-        push(`  \u2713 ronda ${round}: enviado (media ${applied.teamRating ?? "?"})`);
-        await dismissPostSubmit();
+        if (!roundOk) break;
       }
     }
     resetPoolCache();
     lines.push(`
-Total enviados: ${submitted}`);
+Total SBC enviados: ${submitted}`);
     report(lines, true);
     console.info(LOG, "daily batch finished", lines);
   }
@@ -4083,7 +4126,8 @@ Total enviados: ${submitted}`);
       repeatability,
       resetPoolCache,
       listDailySets,
-      openSetChallenge
+      openSetChallenge,
+      setRunComplete
     };
     let handle = null;
     let dailyBar = null;
@@ -4120,11 +4164,15 @@ Total enviados: ${submitted}`);
               let demandsOvr;
               let readable = false;
               try {
-                const ch = await openSetChallenge(s.id);
-                if (ch) {
+                for (let step = 0; step < s.challengeCount + 1; step++) {
+                  if (setRunComplete(s.id)) break;
+                  const ch = await openSetChallenge(s.id);
+                  if (!ch) break;
                   readable = true;
                   const c = ch.constraints;
-                  demandsOvr = c.minOvrPerPlayer ?? c.exactOvr ?? c.teamRatingMin;
+                  const d = c.minOvrPerPlayer ?? c.exactOvr ?? c.teamRatingMin;
+                  if (d != null) demandsOvr = Math.max(demandsOvr ?? 0, d);
+                  if (s.challengeCount <= 1) break;
                 }
               } catch {
               }
@@ -4132,7 +4180,13 @@ Total enviados: ${submitted}`);
                 const m = /(\d{2})\s*\+/.exec(s.name);
                 if (m) demandsOvr = Number(m[1]);
               }
-              out.push({ id: s.id, name: s.name, remaining: s.remaining, demandsOvr, readable });
+              out.push({
+                id: s.id,
+                name: s.name,
+                remaining: s.remaining,
+                demandsOvr,
+                readable
+              });
             }
             return out;
           },
