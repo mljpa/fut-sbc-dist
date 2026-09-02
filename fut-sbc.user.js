@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         FUT SBC Solver v2
 // @namespace    https://github.com/mljpa/fut-sbc-solver-v2
-// @version      0.1.0.1788383961
+// @version      0.1.0.1788384842
 // @description  Userscript to solve EA SPORTS FC 26 SBCs with your own club
 // @match        https://www.ea.com/*/ea-sports-fc/ultimate-team/web-app*
 // @match        https://www.ea.com/ea-sports-fc/ultimate-team/web-app*
@@ -766,6 +766,34 @@
     }
     return out;
   }
+  function repaintPitch(challengeId) {
+    const vc = findLiveOverviewVC(challengeId);
+    if (!vc) return;
+    const squad = vc._challenge?.squad ?? vc._squad;
+    if (!squad) return;
+    if (squad !== vc._squad) vc._squad = squad;
+    try {
+      vc._challenge.onDataChange?.notify?.({ squad });
+    } catch {
+    }
+    try {
+      vc._pushSquadToView?.(squad);
+    } catch {
+    }
+  }
+  function leaveChallengeView() {
+    try {
+      const buttons = Array.from(
+        document.querySelectorAll("button.ut-navigation-button-control")
+      );
+      const back = buttons.find((b) => {
+        const r = b.getBoundingClientRect();
+        return r.width > 0 && r.height > 0 && r.top < 120 && r.left < 240;
+      });
+      back?.click();
+    } catch {
+    }
+  }
   function safeNum(fn) {
     try {
       const n = fn();
@@ -1449,8 +1477,8 @@
     if (!sbc) return null;
     const set = await findSet(setId);
     if (!set) return null;
-    let raw = null;
-    if (typeof sbc.requestChallengesForSet === "function") {
+    let raw = pickChallenge(challengesOf(set), challengeId);
+    if (!raw && typeof sbc.requestChallengesForSet === "function") {
       try {
         const res = await toPromise(
           sbc.requestChallengesForSet.call(sbc, set)
@@ -1461,7 +1489,6 @@
         console.warn("[fut-sbc] requestChallengesForSet fall\xF3", err);
       }
     }
-    if (!raw) raw = pickChallenge(challengesOf(set), challengeId);
     if (!raw) return null;
     await loadChallengeSquad(sbc, raw, challengeId);
     try {
@@ -2155,6 +2182,46 @@ input[type="number"] { width: 56px; }
 }
 .overlay:empty { display: none; }
 
+/* Full-screen block while a \xD7N cycle runs \u2014 EA's own views stay untouchable so
+   a stray click can't reorder the squad mid-submit. */
+.blocker {
+  position: fixed;
+  inset: 0;
+  z-index: 2147483646;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.72);
+  backdrop-filter: blur(2px);
+}
+.blocker.on { display: flex; }
+.blocker-panel {
+  width: min(420px, 86vw);
+  max-height: 70vh;
+  overflow: auto;
+  padding: 16px;
+  border-radius: 10px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow);
+}
+.blocker-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 700;
+  margin-bottom: 10px;
+}
+.blocker-log {
+  margin: 0;
+  font-size: 12px;
+  line-height: 1.6;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+.blocker-hint { margin: 10px 0 0; font-size: 11px; color: var(--muted); }
+.blocker-actions { display: flex; justify-content: flex-end; margin-top: 12px; }
+
 .card {
   width: 320px;
   max-height: 74vh;
@@ -2284,6 +2351,34 @@ input[type="number"] { width: 56px; }
     const overlay = document.createElement("div");
     overlay.className = "overlay";
     shadow.append(overlay);
+    const blocker = document.createElement("div");
+    blocker.className = "blocker";
+    const blockerPanel = document.createElement("div");
+    blockerPanel.className = "blocker-panel";
+    const blockerHead = document.createElement("div");
+    blockerHead.className = "blocker-head";
+    const blockerSpinner = document.createElement("span");
+    blockerSpinner.className = "spinner";
+    const blockerTitle = document.createElement("span");
+    blockerTitle.textContent = "Resolviendo y enviando\u2026";
+    blockerHead.append(blockerSpinner, blockerTitle);
+    const blockerLog = document.createElement("pre");
+    blockerLog.className = "blocker-log";
+    const blockerHint = document.createElement("p");
+    blockerHint.className = "blocker-hint";
+    blockerHint.textContent = "No toques nada hasta que termine el ciclo.";
+    const blockerActions = document.createElement("div");
+    blockerActions.className = "blocker-actions";
+    const blockerClose = makeButton("Cerrar");
+    blockerClose.style.display = "none";
+    blockerActions.append(blockerClose);
+    blockerPanel.append(blockerHead, blockerLog, blockerHint, blockerActions);
+    blocker.append(blockerPanel);
+    shadow.append(blocker);
+    for (const ev of ["click", "mousedown", "pointerdown", "keydown", "wheel"]) {
+      blocker.addEventListener(ev, (e) => e.stopPropagation());
+    }
+    blockerClose.addEventListener("click", () => blocker.classList.remove("on"));
     let settings = loadSettings();
     let busy = false;
     let popover = null;
@@ -2338,6 +2433,14 @@ input[type="number"] { width: 56px; }
       busy = next;
       spinner.classList.toggle("hidden", !next);
       for (const c of controls) c.disabled = next;
+    }
+    function showProgress(lines, done) {
+      blockerLog.textContent = lines.join("\n");
+      blocker.classList.add("on");
+      blockerSpinner.classList.toggle("hidden", done);
+      blockerTitle.textContent = done ? "Ciclo terminado" : "Resolviendo y enviando\u2026";
+      blockerHint.textContent = done ? "" : "No toques nada hasta que termine el ciclo.";
+      blockerClose.style.display = done ? "" : "none";
     }
     function clearOverlay() {
       if (popover) {
@@ -2462,7 +2565,8 @@ Cada vuelta arma la plantilla, la env\xEDa y vuelve a entrar. Consume las cartas
       },
       setBusy,
       showError,
-      showSolution
+      showSolution,
+      showProgress
     };
   }
 
@@ -3351,6 +3455,7 @@ ${text}`);
     async function repeatLoop(strategy, rounds, extras) {
       let current = challenge;
       const done = [];
+      handle()?.showProgress(["Preparando\u2026"], false);
       const repeat = await repeatability(challenge.setId);
       const budget = repeat && Number.isFinite(repeat.remaining) ? Math.min(rounds, Math.max(0, repeat.remaining)) : rounds;
       if (budget === 0) {
@@ -3394,14 +3499,19 @@ ${text}`);
           break;
         }
         done.push(`\u2713 ronda ${round}: enviado (media ${applied.teamRating ?? "?"})`);
-        handle()?.showError(`${done.join("\n")}
-\u2026`);
+        handle()?.showProgress(done, false);
         await dismissPostSubmit();
         current = round < budget ? await reenterChallenge(challenge.setId, challenge.id) : null;
       }
       resetPoolCache();
-      handle()?.showError(done.join("\n"));
+      try {
+        await reenterChallenge(challenge.setId, challenge.id);
+      } catch {
+      }
+      repaintPitch(challenge.id);
+      handle()?.showProgress(done, true);
       console.info(LOG, "repeat loop finished", done);
+      leaveChallengeView();
     }
   }
   async function boot() {
