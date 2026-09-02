@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         FUT SBC Solver v2
 // @namespace    https://github.com/mljpa/fut-sbc-solver-v2
-// @version      0.1.0.1788380981
+// @version      0.1.0.1788381635
 // @description  Userscript to solve EA SPORTS FC 26 SBCs with your own club
 // @match        https://www.ea.com/*/ea-sports-fc/ultimate-team/web-app*
 // @match        https://www.ea.com/ea-sports-fc/ultimate-team/web-app*
@@ -1163,6 +1163,449 @@
     }
   }
 
+  // src/ea/submit.ts
+  var SOFT_BAN2 = /* @__PURE__ */ new Set([426, 429]);
+  var SUBMIT_DELAY_MS = 1800;
+  var CHEM_RETRY_PRE_MS = 500;
+  var CHEM_RETRY_POST_MS = 1e3;
+  function sbcService() {
+    const services = getGlobal("services");
+    return services?.["SBC"];
+  }
+  function chemistryService() {
+    const services = getGlobal("services");
+    return services?.["Chemistry"];
+  }
+  var HOUR_MS = 36e5;
+  var DAY_MS = 864e5;
+  var MAX_PER_HOUR = 90;
+  var MAX_PER_DAY = 300;
+  var submitTimes = [];
+  function rateLimitReason() {
+    const now = Date.now();
+    while (submitTimes.length > 0 && now - submitTimes[0] > DAY_MS) {
+      submitTimes.shift();
+    }
+    const lastHour = submitTimes.filter((t) => now - t <= HOUR_MS).length;
+    if (lastHour >= MAX_PER_HOUR) {
+      return `L\xEDmite de EA alcanzado: ${lastHour} env\xEDos en la \xFAltima hora (m\xE1x ${MAX_PER_HOUR}).`;
+    }
+    if (submitTimes.length >= MAX_PER_DAY) {
+      return `L\xEDmite de EA alcanzado: ${submitTimes.length} env\xEDos en 24 h (m\xE1x ${MAX_PER_DAY}).`;
+    }
+    return null;
+  }
+  function noteSubmit() {
+    submitTimes.push(Date.now());
+  }
+  async function submitChallenge(challenge) {
+    const blocked = rateLimitReason();
+    if (blocked) return { ok: false, reason: blocked };
+    const sbc = sbcService();
+    if (typeof sbc?.submitChallenge !== "function") {
+      return { ok: false, reason: "services.SBC.submitChallenge no disponible." };
+    }
+    const eaChallenge = liveChallengeObject(challenge);
+    if (!eaChallenge) {
+      return {
+        ok: false,
+        reason: `No se encontr\xF3 el objeto challenge de EA (id ${challenge.id}).`
+      };
+    }
+    const set = await findSet(challenge.setId);
+    if (!set) {
+      return {
+        ok: false,
+        reason: `No se encontr\xF3 el set ${challenge.setId} en services.SBC.repository.`
+      };
+    }
+    const chemEnabled = chemistryEnabled();
+    let res;
+    try {
+      res = await runSubmit(sbc, eaChallenge, set, chemEnabled);
+    } catch (err) {
+      return { ok: false, reason: `submitChallenge() fall\xF3: ${errMsg2(err)}` };
+    }
+    if (SOFT_BAN2.has(Number(res.status))) {
+      return {
+        ok: false,
+        softBanned: true,
+        reason: `EA respondi\xF3 ${res.status} \u2014 soft-ban. No reintentar.`
+      };
+    }
+    if (isChemistryMismatch(res.error)) {
+      const stillBlocked = rateLimitReason();
+      if (stillBlocked) {
+        return { ok: false, reason: `${stillBlocked} (tras CHEMISTRY_VERSION_MISMATCH)` };
+      }
+      await delay(CHEM_RETRY_PRE_MS);
+      await resetChemistry();
+      await delay(CHEM_RETRY_POST_MS);
+      try {
+        res = await runSubmit(sbc, eaChallenge, set, chemEnabled);
+      } catch (err) {
+        return {
+          ok: false,
+          reason: `submitChallenge() fall\xF3 en el reintento de qu\xEDmica: ${errMsg2(err)}`
+        };
+      }
+      if (SOFT_BAN2.has(Number(res.status))) {
+        return {
+          ok: false,
+          softBanned: true,
+          reason: `EA respondi\xF3 ${res.status} \u2014 soft-ban. No reintentar.`
+        };
+      }
+    }
+    const violations = readViolations(res);
+    if (violations.length > 0) {
+      return {
+        ok: false,
+        violations,
+        reason: `EA rechaz\xF3 la squad: ${violations.join(" \xB7 ")}`
+      };
+    }
+    if (res.status != null && res.status !== 200) {
+      return {
+        ok: false,
+        reason: `submitChallenge devolvi\xF3 status=${res.status}${res.error != null ? ` error=${String(res.error)}` : ""}`
+      };
+    }
+    if (!res.success) {
+      return {
+        ok: false,
+        reason: `submitChallenge devolvi\xF3 success=false${res.error != null ? ` error=${String(res.error)}` : ""}`
+      };
+    }
+    return { ok: true };
+  }
+  async function runSubmit(sbc, eaChallenge, set, chemEnabled) {
+    const submit = sbc.submitChallenge;
+    if (typeof submit !== "function") {
+      throw new Error("services.SBC.submitChallenge no disponible.");
+    }
+    const obs = submit.call(sbc, eaChallenge, set, true, chemEnabled);
+    noteSubmit();
+    try {
+      return await toPromise(obs);
+    } finally {
+      await delay(SUBMIT_DELAY_MS);
+    }
+  }
+  function chemistryEnabled() {
+    try {
+      return chemistryService()?.isFeatureEnabled?.() === true;
+    } catch {
+      return false;
+    }
+  }
+  function isChemistryMismatch(error) {
+    if (error == null) return false;
+    const codes = getGlobal("UtasErrorCode");
+    const expected = codes?.["CHEMISTRY_VERSION_MISMATCH"];
+    if (expected == null) return false;
+    return String(error) === String(expected);
+  }
+  async function resetChemistry() {
+    const chem = chemistryService();
+    try {
+      chem?.resetCustomProfiles?.();
+    } catch (err) {
+      console.warn("[fut-sbc] resetCustomProfiles fall\xF3", err);
+    }
+    try {
+      const obs = chem?.requestChemistryProfiles?.();
+      if (obs != null) await toPromise(obs);
+    } catch (err) {
+      console.warn("[fut-sbc] requestChemistryProfiles fall\xF3", err);
+    }
+  }
+  function readViolations(res) {
+    const buckets = [];
+    buckets.push(res.data?.itemViolations);
+    if (typeof res.error === "object" && res.error !== null) {
+      buckets.push(res.error.itemViolations);
+    }
+    const out = [];
+    for (const bucket of buckets) {
+      if (!Array.isArray(bucket)) continue;
+      for (const v of bucket) {
+        const name = v?.name;
+        const text = name != null ? String(name) : String(v);
+        if (text && !out.includes(text)) out.push(text);
+      }
+    }
+    return out;
+  }
+  function liveChallengeObject(challenge) {
+    try {
+      const vc = findLiveOverviewVC(challenge.id);
+      const live = vc?._challenge;
+      if (live && Number(live.id) === challenge.id) return live;
+    } catch {
+    }
+    return challenge.raw ?? null;
+  }
+  var DISMISSABLE_VC = /(modal|dialog|popup|alert|reward|toast|overlay)/i;
+  var DISMISS_METHODS = ["dismiss", "close", "hide"];
+  var MODAL_SELECTORS = ".ut-navigation-button-control, .view-modal-container, .ea-dialog-view";
+  var DISMISS_LABEL = /^(ok|continue|collect|claim)$/i;
+  async function dismissPostSubmit() {
+    try {
+      const overlays = findViewControllers(
+        (n) => DISMISSABLE_VC.test(constructorName(n)) && hasDismisser(n) && isInDom(n)
+      );
+      for (const vc of overlays) {
+        if (callDismisser(vc)) {
+          await delay(250);
+          break;
+        }
+      }
+    } catch (err) {
+      console.warn("[fut-sbc] dismissPostSubmit: barrido de VCs fall\xF3", err);
+    }
+    if (!modalPresent()) return;
+    try {
+      if (clickDismissButton()) await delay(250);
+    } catch (err) {
+      console.warn("[fut-sbc] dismissPostSubmit: click de bot\xF3n fall\xF3", err);
+    }
+    if (!modalPresent()) return;
+    try {
+      pressEscape();
+      await delay(250);
+    } catch (err) {
+      console.warn("[fut-sbc] dismissPostSubmit: Escape fall\xF3", err);
+    }
+  }
+  function hasDismisser(node) {
+    return DISMISS_METHODS.some((m) => typeof node[m] === "function");
+  }
+  function callDismisser(node) {
+    for (const m of DISMISS_METHODS) {
+      const fn = node[m];
+      if (typeof fn !== "function") continue;
+      try {
+        fn.call(node);
+        return true;
+      } catch {
+      }
+    }
+    return false;
+  }
+  function modalPresent() {
+    try {
+      if (typeof document === "undefined") return false;
+      return document.querySelector(".view-modal-container, .ea-dialog-view") != null;
+    } catch {
+      return false;
+    }
+  }
+  function clickDismissButton() {
+    if (typeof document === "undefined") return false;
+    const scopes = Array.from(document.querySelectorAll(MODAL_SELECTORS));
+    for (const scope of scopes) {
+      const candidates = [
+        scope,
+        ...Array.from(scope.querySelectorAll("button, .btn-standard, [role='button']"))
+      ];
+      for (const el of candidates) {
+        const label = (el.textContent ?? "").trim();
+        if (!DISMISS_LABEL.test(label)) continue;
+        el.click?.();
+        return true;
+      }
+    }
+    return false;
+  }
+  function pressEscape() {
+    if (typeof document === "undefined") return;
+    const init = {
+      key: "Escape",
+      code: "Escape",
+      bubbles: true,
+      cancelable: true
+    };
+    Object.assign(init, { keyCode: 27, which: 27 });
+    document.dispatchEvent(new KeyboardEvent("keydown", init));
+    document.dispatchEvent(new KeyboardEvent("keyup", init));
+  }
+  async function reenterChallenge(setId, challengeId) {
+    const sbc = sbcService();
+    if (!sbc) return null;
+    const set = await findSet(setId);
+    if (!set) return null;
+    let raw = null;
+    if (typeof sbc.requestChallengesForSet === "function") {
+      try {
+        const res = await toPromise(
+          sbc.requestChallengesForSet.call(sbc, set)
+        );
+        const list = res.data?.challenges;
+        if (Array.isArray(list)) raw = pickChallenge(list, challengeId);
+      } catch (err) {
+        console.warn("[fut-sbc] requestChallengesForSet fall\xF3", err);
+      }
+    }
+    if (!raw) raw = pickChallenge(challengesOf(set), challengeId);
+    if (!raw) return null;
+    await loadChallengeSquad(sbc, raw, challengeId);
+    try {
+      const open = await getOpenChallenge();
+      if (open && open.id === challengeId) return open;
+    } catch (err) {
+      console.warn("[fut-sbc] getOpenChallenge tras reenter fall\xF3", err);
+    }
+    if (!raw.squad) return null;
+    const constraints = parseRequirements(raw);
+    const positions = readSlotPositions2(raw);
+    if (positions.length === constraints.slots) constraints.slotPositions = positions;
+    return {
+      id: Number(raw.id ?? challengeId),
+      setId: Number(raw.setId ?? setId),
+      name: String(raw.name ?? ""),
+      slots: constraints.slots,
+      constraints,
+      raw
+    };
+  }
+  async function loadChallengeSquad(sbc, raw, challengeId) {
+    const inProgress = safeInProgress2(raw);
+    if (typeof sbc.loadChallenge === "function") {
+      try {
+        const res = await toPromise(
+          sbc.loadChallenge.call(sbc, raw)
+        );
+        attachSquad(raw, res.data?.squad);
+      } catch (err) {
+        console.warn("[fut-sbc] loadChallenge fall\xF3", err);
+      }
+    }
+    if (raw.squad) return;
+    const dao = sbc.sbcDAO;
+    if (typeof dao?.loadChallenge === "function") {
+      try {
+        const res = await toPromise(
+          dao.loadChallenge.call(dao, challengeId, inProgress)
+        );
+        attachSquad(raw, res.data?.squad);
+      } catch (err) {
+        console.warn("[fut-sbc] sbcDAO.loadChallenge fall\xF3", err);
+      }
+    }
+  }
+  function attachSquad(raw, squad) {
+    if (raw.squad || squad == null) return;
+    try {
+      raw.squad = squad;
+    } catch {
+    }
+  }
+  function pickChallenge(list, challengeId) {
+    for (const c of list) {
+      if (!c || typeof c !== "object") continue;
+      if (Number(c.id) === challengeId) return c;
+    }
+    return null;
+  }
+  function readSlotPositions2(raw) {
+    const sq = raw.squad;
+    try {
+      const slots = sq?.getNonBrickSlots?.() ?? [];
+      return slots.map((s) => {
+        const g = s.getGeneralPosition?.();
+        return typeof g === "number" ? g : Number(s.position?.id ?? -1);
+      });
+    } catch {
+      return [];
+    }
+  }
+  async function repeatability(setId) {
+    const set = await findSet(setId);
+    if (!set) return null;
+    const mode2 = String(set.repeatabilityMode ?? "").trim() || "UNKNOWN";
+    const repeats = safeNum2(() => Number(set.repeats)) ?? 0;
+    const timesCompleted = safeNum2(() => Number(set.timesCompleted)) ?? 0;
+    return {
+      mode: mode2,
+      repeats,
+      timesCompleted,
+      remaining: remainingRuns(mode2, repeats, timesCompleted)
+    };
+  }
+  function remainingRuns(mode2, repeats, timesCompleted) {
+    if (mode2 === "NON_REPEATABLE") return timesCompleted > 0 ? 0 : 1;
+    if (repeats > 0) return Math.max(repeats - timesCompleted, 0);
+    if (mode2 === "UNLIMITED" || mode2 === "REFRESH") return Number.POSITIVE_INFINITY;
+    return 0;
+  }
+  async function findSet(setId) {
+    const sbc = sbcService();
+    if (!sbc || !Number.isFinite(setId)) return null;
+    const direct = setFromRepository(sbc, setId);
+    if (direct) return direct;
+    if (typeof sbc.requestSets === "function") {
+      try {
+        const res = await toPromise(sbc.requestSets.call(sbc));
+        const sets = res.data?.sets;
+        if (Array.isArray(sets)) {
+          const hit = sets.find((s) => Number(s.id) === setId);
+          if (hit) return hit;
+        }
+      } catch (err) {
+        console.warn("[fut-sbc] requestSets fall\xF3", err);
+      }
+    }
+    return setFromRepository(sbc, setId);
+  }
+  function setFromRepository(sbc, setId) {
+    const repo = sbc.repository;
+    if (!repo) return null;
+    try {
+      const byId = repo.getSetById?.(setId);
+      if (byId) return byId;
+    } catch {
+    }
+    for (const s of collectionValues2(repo.sets)) {
+      if (Number(s.id) === setId) return s;
+    }
+    return null;
+  }
+  function challengesOf(set) {
+    try {
+      const chs = set.getChallenges?.();
+      return Array.isArray(chs) ? chs : [];
+    } catch {
+      return [];
+    }
+  }
+  function collectionValues2(coll) {
+    if (!coll) return [];
+    const inner = coll._collection ?? coll;
+    if (inner instanceof Map) return [...inner.values()];
+    if (Array.isArray(inner)) return inner;
+    if (typeof inner === "object") return Object.values(inner);
+    return [];
+  }
+  function safeInProgress2(raw) {
+    try {
+      return raw.isInProgress?.() === true;
+    } catch {
+      return false;
+    }
+  }
+  function safeNum2(fn) {
+    try {
+      const n = fn();
+      return typeof n === "number" && Number.isFinite(n) ? n : void 0;
+    } catch {
+      return void 0;
+    }
+  }
+  function errMsg2(err) {
+    return err instanceof Error ? err.message : String(err);
+  }
+
   // src/ui/result-card.ts
   function cardShell(headingText, onClose) {
     const el = document.createElement("div");
@@ -1362,7 +1805,9 @@
     useUnassigned: true,
     useStorage: true,
     allowTradeable: false,
-    allowSpecials: true
+    allowSpecials: true,
+    panelOpen: false,
+    autoSubmit: false
   };
   function clampCount(n) {
     const v = typeof n === "number" && Number.isFinite(n) ? Math.round(n) : DEFAULT_SETTINGS.multiCount;
@@ -1383,7 +1828,9 @@
         useUnassigned: bool(parsed.useUnassigned, DEFAULT_SETTINGS.useUnassigned),
         useStorage: bool(parsed.useStorage, DEFAULT_SETTINGS.useStorage),
         allowTradeable: bool(parsed.allowTradeable, DEFAULT_SETTINGS.allowTradeable),
-        allowSpecials: bool(parsed.allowSpecials, DEFAULT_SETTINGS.allowSpecials)
+        allowSpecials: bool(parsed.allowSpecials, DEFAULT_SETTINGS.allowSpecials),
+        panelOpen: bool(parsed.panelOpen, DEFAULT_SETTINGS.panelOpen),
+        autoSubmit: bool(parsed.autoSubmit, DEFAULT_SETTINGS.autoSubmit)
       };
     } catch {
       return { ...DEFAULT_SETTINGS };
@@ -1478,6 +1925,14 @@
       state = { ...state, allowSpecials: v };
       emit();
     });
+    const autoSubmitRow = checkboxField(
+      "\u26A0 Enviar de verdad en \xD7N",
+      state.autoSubmit,
+      (v) => {
+        state = { ...state, autoSubmit: v };
+        emit();
+      }
+    );
     body.append(
       stratRow,
       exclActive.el,
@@ -1487,6 +1942,7 @@
       tradeableRow.el,
       specialsRow.el,
       countRow,
+      autoSubmitRow.el,
       dryRow.el
     );
     el.append(head, body);
@@ -1522,8 +1978,8 @@
 :host {
   all: initial;
   /* Anchored inside .ut-squad-pitch-view, like AutoSBC's #auto-sbc-button.
-     Top-left, clearing AutoSBC's own round button (~48px wide at 8px) so the
-     two never overlap, and above the pitch instead of over the GK slot. */
+     Collapsed to a small chip by default so it never covers the requirements
+     header or the pitch \u2014 the full bar only appears once you open it. */
   position: absolute;
   left: 64px;
   top: 8px;
@@ -1555,18 +2011,53 @@
 }
 * { box-sizing: border-box; }
 
-.bar {
+/* Collapsed: just a chip. Expanded: the chip plus the controls, stacked so the
+   panel stays narrow and hugs the top-left corner instead of running across
+   the requirements header. */
+.wrap {
   display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 6px;
+}
+
+.chip {
+  font: inherit;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 10px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: var(--bg);
+  color: var(--fg);
+  box-shadow: var(--shadow);
+  cursor: pointer;
+  white-space: nowrap;
+}
+.chip:hover { border-color: var(--accent); }
+.chip-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--accent);
+  flex: none;
+}
+.chip-caret { font-size: 10px; color: var(--muted); }
+
+.bar {
+  display: none;
   align-items: center;
   gap: 6px;
   flex-wrap: wrap;
-  max-width: 520px;
+  width: 300px;
   padding: 6px 8px;
   background: var(--bg);
   border: 1px solid var(--border);
   border-radius: 8px;
   box-shadow: var(--shadow);
 }
+.bar.open { display: flex; }
 .bar-title {
   font-weight: 700;
   font-size: 12px;
@@ -1757,9 +2248,24 @@ input[type="number"] { width: 56px; }
     const style = document.createElement("style");
     style.textContent = CSS;
     shadow.append(style);
+    const wrap = document.createElement("div");
+    wrap.className = "wrap";
+    shadow.append(wrap);
+    const chip = document.createElement("button");
+    chip.type = "button";
+    chip.className = "chip";
+    const chipDot = document.createElement("span");
+    chipDot.className = "chip-dot";
+    const chipLabel = document.createElement("span");
+    chipLabel.textContent = "SBC Solver";
+    const chipCaret = document.createElement("span");
+    chipCaret.className = "chip-caret";
+    chipCaret.textContent = "\u25BE";
+    chip.append(chipDot, chipLabel, chipCaret);
+    chip.setAttribute("aria-expanded", "false");
     const bar = document.createElement("div");
     bar.className = "bar";
-    shadow.append(bar);
+    wrap.append(chip, bar);
     const overlay = document.createElement("div");
     overlay.className = "overlay";
     shadow.append(overlay);
@@ -1792,14 +2298,10 @@ input[type="number"] { width: 56px; }
     gearBtn.textContent = "\u2699";
     const spinner = document.createElement("span");
     spinner.className = "spinner hidden";
-    const title = document.createElement("span");
-    title.className = "bar-title";
-    title.textContent = "SBC Solver";
     const sub = document.createElement("span");
     sub.className = "bar-sub";
     sub.textContent = challengeName ?? "";
     bar.append(
-      title,
       sub,
       solveBtn,
       solveNBtn,
@@ -1872,7 +2374,8 @@ input[type="number"] { width: 56px; }
         useUnassigned: settings.useUnassigned,
         useStorage: settings.useStorage,
         allowTradeable: settings.allowTradeable,
-        allowSpecials: settings.allowSpecials
+        allowSpecials: settings.allowSpecials,
+        autoSubmit: settings.autoSubmit
       };
     }
     function syncBarFromSettings() {
@@ -1880,10 +2383,33 @@ input[type="number"] { width: 56px; }
       excludeInput.checked = settings.excludeActiveSquad;
       strategySelect.value = settings.strategy;
     }
+    function setOpen(next) {
+      bar.classList.toggle("open", next);
+      chip.setAttribute("aria-expanded", String(next));
+      chipCaret.textContent = next ? "\u25B4" : "\u25BE";
+      settings = { ...settings, panelOpen: next };
+      saveSettings(settings);
+    }
+    setOpen(settings.panelOpen);
+    chip.addEventListener("click", () => {
+      const next = !bar.classList.contains("open");
+      if (!next) clearOverlay();
+      setOpen(next);
+    });
     solveBtn.addEventListener("click", () => {
       void run(() => actions.solve(settings.strategy, currentExtras()));
     });
     solveNBtn.addEventListener("click", () => {
+      if (settings.autoSubmit) {
+        const ok = window.confirm(
+          `Vas a ENVIAR el SBC ${settings.multiCount} ${settings.multiCount === 1 ? "vez" : "veces"} de verdad.
+
+Cada vuelta consume las cartas que arme. Esto NO se puede deshacer.
+
+\xBFSeguir?`
+        );
+        if (!ok) return;
+      }
       void run(() => actions.solveMultiple(settings.strategy, settings.multiCount, currentExtras()));
     });
     combosBtn.addEventListener("click", () => {
@@ -2716,19 +3242,23 @@ input[type="number"] { width: 56px; }
       async solveMultiple(strategy, n, extras) {
         await run(async () => {
           lastExtras = extras;
-          const pool = await buildPool(challenge, strategy, extras);
-          const sols = solveMultiple(
-            pool,
-            challenge.constraints,
-            { strategy, timeBudgetMs: SOLVE_BUDGET_MS },
-            n
-          );
-          if (sols.length === 0) {
-            handle()?.showError("No se encontraron soluciones distintas.");
+          if (!extras?.autoSubmit) {
+            const pool = await buildPool(challenge, strategy, extras);
+            const sols = solveMultiple(
+              pool,
+              challenge.constraints,
+              { strategy, timeBudgetMs: SOLVE_BUDGET_MS },
+              n
+            );
+            if (sols.length === 0) {
+              handle()?.showError("No se encontraron soluciones distintas.");
+              return;
+            }
+            window.__futSolutions = sols;
+            handle()?.showSolution(sols[0], withChemNote([]));
             return;
           }
-          window.__futSolutions = sols;
-          handle()?.showSolution(sols[0], withChemNote([]));
+          await repeatLoop(strategy, n, extras);
         });
       },
       async apply(solution) {
@@ -2813,6 +3343,61 @@ ${text}`);
       if (res.teamRating != null) parts.push(`media ${res.teamRating}`);
       if (res.chemistry != null) parts.push(`qu\xEDmica ${res.chemistry}`);
       if (parts.length) handle()?.showError(`Aplicado \u2713  (${parts.join(" \xB7 ")})`);
+    }
+    async function repeatLoop(strategy, rounds, extras) {
+      let current = challenge;
+      const done = [];
+      const repeat = await repeatability(challenge.setId);
+      const budget = repeat && Number.isFinite(repeat.remaining) ? Math.min(rounds, Math.max(0, repeat.remaining)) : rounds;
+      if (budget === 0) {
+        handle()?.showError("Este SBC ya no admite m\xE1s repeticiones.");
+        return;
+      }
+      if (budget < rounds) {
+        console.info(LOG, `set allows ${budget} more, trimming from ${rounds}`);
+      }
+      for (let round = 1; round <= budget; round++) {
+        if (!current) {
+          done.push(`\u2717 ronda ${round}: no se pudo re-entrar al challenge`);
+          break;
+        }
+        resetPoolCache();
+        const pool = await buildPool(current, strategy, extras);
+        const result = solve(pool, current.constraints, {
+          strategy,
+          timeBudgetMs: SOLVE_BUDGET_MS
+        });
+        if (!result.solution || !result.ok) {
+          done.push(
+            `\u2717 ronda ${round}: sin soluci\xF3n${result.unmet.length ? ` \u2014 ${result.unmet.join(", ")}` : ""}`
+          );
+          break;
+        }
+        const { items } = await getPool(extras);
+        const applied = await applySolution(current, result.solution, items);
+        if (!applied.ok) {
+          done.push(`\u2717 ronda ${round}: no se pudo aplicar \u2014 ${applied.reason ?? "?"}`);
+          break;
+        }
+        const sent = await submitChallenge(current);
+        if (sent.softBanned) {
+          done.push(`\u26D4 ronda ${round}: soft-ban de EA (426/429) \u2014 parado.`);
+          break;
+        }
+        if (!sent.ok) {
+          const why = sent.violations?.length ? sent.violations.join(", ") : sent.reason ?? "?";
+          done.push(`\u2717 ronda ${round}: EA rechaz\xF3 \u2014 ${why}`);
+          break;
+        }
+        done.push(`\u2713 ronda ${round}: enviado (media ${applied.teamRating ?? "?"})`);
+        handle()?.showError(`${done.join("\n")}
+\u2026`);
+        await dismissPostSubmit();
+        current = round < budget ? await reenterChallenge(challenge.setId, challenge.id) : null;
+      }
+      resetPoolCache();
+      handle()?.showError(done.join("\n"));
+      console.info(LOG, "repeat loop finished", done);
     }
   }
   async function boot() {

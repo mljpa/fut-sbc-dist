@@ -6,4 +6,4 @@ Install / update target for Tampermonkey. Source lives in a private repo.
 
 **Update:** Tampermonkey dashboard → *Check for userscript updates*.
 
-Current version: `0.1.0.1788380981`
+Current version: `0.1.0.1788381635`
