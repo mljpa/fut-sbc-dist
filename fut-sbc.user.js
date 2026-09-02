@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         FUT SBC Solver v2
 // @namespace    https://github.com/mljpa/fut-sbc-solver-v2
-// @version      0.1.0.1788379503
+// @version      0.1.0.1788380981
 // @description  Userscript to solve EA SPORTS FC 26 SBCs with your own club
 // @match        https://www.ea.com/*/ea-sports-fc/ultimate-team/web-app*
 // @match        https://www.ea.com/ea-sports-fc/ultimate-team/web-app*
@@ -777,37 +777,175 @@
     if (typeof DTO !== "function") return null;
     return new DTO();
   }
+  var TIERS = [
+    { level: "bronze", lo: 47, hi: 64 },
+    { level: "silver", lo: 65, hi: 74 },
+    { level: "gold", lo: 75, hi: 99 }
+  ];
+  var CALIBRATION_KEY = "fut-sbc-solver:concept-offsets";
+  var CALIBRATION_TTL_MS = 7 * 24 * 60 * 60 * 1e3;
+  var PAGE_SIZE2 = 60;
+  var CALIBRATION_PROBES = [
+    0,
+    250,
+    500,
+    1e3,
+    1500,
+    2e3,
+    3e3,
+    4e3,
+    5e3,
+    6e3,
+    7e3,
+    8e3
+  ];
+  function readCalibration() {
+    try {
+      const raw = localStorage.getItem(CALIBRATION_KEY);
+      if (!raw) return {};
+      const parsed = JSON.parse(raw);
+      if (!parsed.at || Date.now() - parsed.at > CALIBRATION_TTL_MS) return {};
+      return parsed.curves ?? {};
+    } catch {
+      return {};
+    }
+  }
+  function writeCalibration(curves) {
+    try {
+      localStorage.setItem(
+        CALIBRATION_KEY,
+        JSON.stringify({ at: Date.now(), curves })
+      );
+    } catch {
+    }
+  }
+  async function calibrate(Item, level, probeDelayMs) {
+    const curve = [];
+    for (const offset of CALIBRATION_PROBES) {
+      const r = await ratingAt(Item, level, offset);
+      await delay(probeDelayMs);
+      if (r == null) break;
+      curve.push([offset, r]);
+    }
+    return curve;
+  }
+  function guessOffset(curve, rating) {
+    if (curve.length === 0) return 0;
+    for (let i = 0; i < curve.length - 1; i++) {
+      const [o1, r1] = curve[i];
+      const [o2, r2] = curve[i + 1];
+      if (rating <= r1 && rating >= r2) {
+        if (r1 === r2) return o1;
+        const t = (r1 - rating) / (r1 - r2);
+        return Math.round(o1 + t * (o2 - o1));
+      }
+    }
+    const [lastO, lastR] = curve[curve.length - 1];
+    return rating >= curve[0][1] ? 0 : lastO;
+  }
+  async function ratingAt(Item, level, offset) {
+    const c = newCriteria();
+    if (!c) return null;
+    c["type"] = "player";
+    c["level"] = level;
+    c["count"] = 1;
+    c["offset"] = offset;
+    try {
+      const res = await toPromise(
+        Item.searchConceptItems(c)
+      );
+      const data = res.data;
+      const items = Array.isArray(data) ? data : data?.items ?? [];
+      const r = items[0]?.rating;
+      return typeof r === "number" ? r : null;
+    } catch {
+      return null;
+    }
+  }
+  var MAX_NUDGES = 3;
+  async function offsetOfRating(Item, level, curve, target, probeDelayMs) {
+    let offset = Math.max(0, guessOffset(curve, target));
+    const span = curve.length > 1 ? curve[curve.length - 1][0] - curve[0][0] : 1e3;
+    const ratingSpan = curve.length > 1 ? Math.max(1, curve[0][1] - curve[curve.length - 1][1]) : 20;
+    let step = Math.max(60, Math.round(span / ratingSpan));
+    for (let i = 0; i < MAX_NUDGES; i++) {
+      const r = await ratingAt(Item, level, offset);
+      await delay(probeDelayMs);
+      if (r == null) {
+        offset = Math.max(0, offset - step);
+        continue;
+      }
+      if (r === target) {
+        return Math.max(0, offset - PAGE_SIZE2);
+      }
+      offset = r > target ? offset + step : Math.max(0, offset - step);
+      step = Math.max(60, Math.round(step / 2));
+    }
+    return offset;
+  }
   async function searchConceptCards(opts) {
     const Item = itemService();
-    const c = newCriteria();
-    if (!Item?.searchConceptItems || !c) return [];
-    c["type"] = "player";
-    c["ovrMin"] = opts.ratingMin;
-    c["ovrMax"] = opts.ratingMax;
-    if (opts.league) c["league"] = opts.league;
-    if (opts.nation) c["nation"] = opts.nation;
-    c["count"] = 60;
+    if (!Item?.searchConceptItems || !newCriteria()) return [];
     const out = [];
+    const seen = /* @__PURE__ */ new Set();
     const cap = opts.limit ?? 240;
-    for (let offset = 0; offset < cap; offset += 60) {
-      c["offset"] = offset;
-      let batch = [];
-      try {
-        const res = await toPromise(
-          Item.searchConceptItems(c)
+    const PROBE_DELAY_MS = 120;
+    const curves = readCalibration();
+    let curvesDirty = false;
+    const perRating = Math.max(8, Math.ceil(cap / (opts.ratingMax - opts.ratingMin + 1)));
+    for (const tier2 of TIERS) {
+      if (out.length >= cap) break;
+      if (tier2.hi < opts.ratingMin || tier2.lo > opts.ratingMax) continue;
+      let curve = curves[tier2.level];
+      if (!curve || curve.length === 0) {
+        curve = await calibrate(Item, tier2.level, PROBE_DELAY_MS);
+        if (curve.length === 0) continue;
+        curves[tier2.level] = curve;
+        curvesDirty = true;
+      }
+      const top = Math.min(tier2.hi, opts.ratingMax);
+      const bottom = Math.max(tier2.lo, opts.ratingMin);
+      for (let rating = top; rating >= bottom && out.length < cap; rating--) {
+        const start = await offsetOfRating(
+          Item,
+          tier2.level,
+          curve,
+          rating,
+          PROBE_DELAY_MS
         );
-        const data = res.data;
-        batch = Array.isArray(data) ? data : data?.items ?? [];
-      } catch {
-        break;
+        const c = newCriteria();
+        if (!c) break;
+        c["type"] = "player";
+        c["level"] = tier2.level;
+        if (opts.league) c["league"] = opts.league;
+        if (opts.nation) c["nation"] = opts.nation;
+        c["count"] = PAGE_SIZE2;
+        c["offset"] = start;
+        let batch = [];
+        try {
+          const res = await toPromise(
+            Item.searchConceptItems(c)
+          );
+          const data = res.data;
+          batch = Array.isArray(data) ? data : data?.items ?? [];
+        } catch {
+          break;
+        }
+        if (batch.length === 0) break;
+        let taken = 0;
+        for (const raw of batch) {
+          if (taken >= perRating || out.length >= cap) break;
+          const mapped = conceptToSolverPlayer(raw);
+          if (!mapped || mapped.rating !== rating) continue;
+          if (seen.has(mapped.definitionId)) continue;
+          seen.add(mapped.definitionId);
+          out.push(mapped);
+          taken++;
+        }
+        await delay(SEARCH_DELAY_MS);
       }
-      for (const raw of batch) {
-        const mapped = conceptToSolverPlayer(raw);
-        if (mapped) out.push(mapped);
-      }
-      if (batch.length < 60) break;
-      await delay(SEARCH_DELAY_MS);
     }
+    if (curvesDirty) writeCalibration(curves);
     return out;
   }
   function conceptToSolverPlayer(raw) {
@@ -1383,10 +1521,12 @@
   var CSS = `
 :host {
   all: initial;
-  /* Anchored inside .ut-squad-pitch-view, like AutoSBC's #auto-sbc-button. */
+  /* Anchored inside .ut-squad-pitch-view, like AutoSBC's #auto-sbc-button.
+     Top-left, clearing AutoSBC's own round button (~48px wide at 8px) so the
+     two never overlap, and above the pitch instead of over the GK slot. */
   position: absolute;
-  left: 8px;
-  bottom: 8px;
+  left: 64px;
+  top: 8px;
   z-index: 60;
   --bg: #ffffff;
   --fg: #1b1b1b;
