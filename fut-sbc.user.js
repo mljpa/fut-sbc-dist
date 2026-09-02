@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         FUT SBC Solver v2
 // @namespace    https://github.com/mljpa/fut-sbc-solver-v2
-// @version      0.1.0.1788387386
+// @version      0.1.0.1788388066
 // @description  Userscript to solve EA SPORTS FC 26 SBCs with your own club
 // @match        https://www.ea.com/*/ea-sports-fc/ultimate-team/web-app*
 // @match        https://www.ea.com/ea-sports-fc/ultimate-team/web-app*
@@ -2833,10 +2833,23 @@ Cada vuelta arma la plantilla, la env\xEDa y vuelve a entrar. Consume las cartas
     }
   }
   var HUB_POSITION = `
-:host { position: absolute; left: 16px; top: 8px; }
+/* \u26A0\uFE0F The centring transform MUST live on .wrap, never on :host. A transformed
+   ancestor becomes the containing block for position:fixed, which would drag
+   the full-screen .blocker into this 280px box (measured: 280\xD7682 at y -153). */
+:host {
+  position: absolute;
+  left: 50%;
+  top: 60px;
+}
+.wrap { transform: translateX(-50%); }
 .picker { display: flex; flex-direction: column; gap: 2px; }
-.picker .field.check { gap: 8px; cursor: pointer; padding: 3px 0; }
+.picker .field.check { gap: 8px; cursor: pointer; padding: 5px 2px; font-size: 13px; }
 .picker .field.check:hover { color: var(--accent); }
+.picker .cost { color: var(--danger); font-size: 11px; }
+/* Roomier panel \u2014 the picker lists ten sets with long names. */
+.blocker-panel { width: min(620px, 92vw); max-height: 80vh; padding: 20px; }
+.blocker-head { font-size: 15px; }
+.blocker-actions { gap: 8px; }
 `;
   function mountDailyBar(host, actions) {
     const mountHost = document.createElement("div");
@@ -2922,6 +2935,7 @@ Cada vuelta arma la plantilla, la env\xEDa y vuelve a entrar. Consume las cartas
     });
     function showPicker(items, roundsPerSet) {
       log.textContent = "";
+      actionsRow.replaceChildren(closeBtn);
       blocker.classList.add("on");
       spinner.classList.add("hidden");
       title.textContent = "\xBFCu\xE1les resolvemos?";
@@ -2934,11 +2948,21 @@ Cada vuelta arma la plantilla, la env\xEDa y vuelve a entrar. Consume las cartas
         row.className = "field check";
         const cb = document.createElement("input");
         cb.type = "checkbox";
-        cb.checked = d.demandsOvr == null || d.demandsOvr <= CHEAP_OVR_LIMIT;
+        cb.checked = d.readable && (d.demandsOvr == null || d.demandsOvr <= CHEAP_OVR_LIMIT);
         const text = document.createElement("span");
-        const cost = d.demandsOvr != null ? `  \xB7  pide ${d.demandsOvr}+` : "";
-        text.textContent = `${d.name} \u2014 hasta ${Math.min(roundsPerSet, d.remaining)}${cost}`;
+        text.textContent = `${d.name} \u2014 hasta ${Math.min(roundsPerSet, d.remaining)}`;
         row.append(cb, text);
+        if (d.demandsOvr != null) {
+          const cost = document.createElement("span");
+          cost.className = "cost";
+          cost.textContent = `pide ${d.demandsOvr}+`;
+          row.append(cost);
+        } else if (!d.readable) {
+          const cost = document.createElement("span");
+          cost.className = "cost";
+          cost.textContent = "no se pudo leer";
+          row.append(cost);
+        }
         list.append(row);
         boxes.set(d.id, cb);
       }
@@ -2951,7 +2975,7 @@ Cada vuelta arma la plantilla, la env\xEDa y vuelve a entrar. Consume las cartas
       goBtn.textContent = "Resolver y enviar";
       actionsRow.prepend(goBtn);
       const cleanup = () => {
-        goBtn.remove();
+        actionsRow.replaceChildren(closeBtn);
         closeBtn.textContent = "Cerrar";
       };
       onClose = cleanup;
@@ -2998,10 +3022,15 @@ Consume las cartas que use. Esto NO se puede deshacer.
         showPicker(preview, n);
       })();
     });
+    const previousPosition = host.style.position;
+    if (getComputedStyle(host).position === "static") {
+      host.style.position = "relative";
+    }
     host.append(mountHost);
     return {
       destroy() {
         mountHost.remove();
+        host.style.position = previousPosition;
       },
       showProgress
     };
@@ -4089,13 +4118,21 @@ Total enviados: ${submitted}`);
             const out = [];
             for (const s of sets) {
               let demandsOvr;
+              let readable = false;
               try {
                 const ch = await openSetChallenge(s.id);
-                const c = ch?.constraints;
-                demandsOvr = c?.minOvrPerPlayer ?? c?.exactOvr ?? c?.teamRatingMin;
+                if (ch) {
+                  readable = true;
+                  const c = ch.constraints;
+                  demandsOvr = c.minOvrPerPlayer ?? c.exactOvr ?? c.teamRatingMin;
+                }
               } catch {
               }
-              out.push({ id: s.id, name: s.name, remaining: s.remaining, demandsOvr });
+              if (demandsOvr == null) {
+                const m = /(\d{2})\s*\+/.exec(s.name);
+                if (m) demandsOvr = Number(m[1]);
+              }
+              out.push({ id: s.id, name: s.name, remaining: s.remaining, demandsOvr, readable });
             }
             return out;
           },
