@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         FUT SBC Solver v2
 // @namespace    https://github.com/mljpa/fut-sbc-solver-v2
-// @version      0.1.0.1788382356
+// @version      0.1.0.1788383111
 // @description  Userscript to solve EA SPORTS FC 26 SBCs with your own club
 // @match        https://www.ea.com/*/ea-sports-fc/ultimate-team/web-app*
 // @match        https://www.ea.com/ea-sports-fc/ultimate-team/web-app*
@@ -1938,14 +1938,6 @@
       state = { ...state, allowSpecials: v };
       emit();
     });
-    const autoSubmitRow = checkboxField(
-      "\u26A0 Enviar de verdad en \xD7N",
-      state.autoSubmit,
-      (v) => {
-        state = { ...state, autoSubmit: v };
-        emit();
-      }
-    );
     body.append(
       stratRow,
       exclActive.el,
@@ -1955,7 +1947,6 @@
       tradeableRow.el,
       specialsRow.el,
       countRow,
-      autoSubmitRow.el,
       dryRow.el
     );
     el.append(head, body);
@@ -2033,6 +2024,13 @@
   align-items: flex-start;
   gap: 6px;
 }
+/* Chip + the one-click Resolver, always visible without opening the panel. */
+.quick {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.quick .btn { box-shadow: var(--shadow); }
 
 .chip {
   font: inherit;
@@ -2276,9 +2274,12 @@ input[type="number"] { width: 56px; }
     chipCaret.textContent = "\u25BE";
     chip.append(chipDot, chipLabel, chipCaret);
     chip.setAttribute("aria-expanded", "false");
+    const quick = document.createElement("div");
+    quick.className = "quick";
+    quick.append(chip);
     const bar = document.createElement("div");
     bar.className = "bar";
-    wrap.append(chip, bar);
+    wrap.append(quick, bar);
     const overlay = document.createElement("div");
     overlay.className = "overlay";
     shadow.append(overlay);
@@ -2314,9 +2315,9 @@ input[type="number"] { width: 56px; }
     const sub = document.createElement("span");
     sub.className = "bar-sub";
     sub.textContent = challengeName ?? "";
+    quick.append(solveBtn);
     bar.append(
       sub,
-      solveBtn,
       solveNBtn,
       excludeToggle,
       strategySelect,
@@ -2413,17 +2414,16 @@ input[type="number"] { width: 56px; }
       void run(() => actions.solve(settings.strategy, currentExtras()));
     });
     solveNBtn.addEventListener("click", () => {
-      if (settings.autoSubmit) {
-        const ok = window.confirm(
-          `Vas a ENVIAR el SBC ${settings.multiCount} ${settings.multiCount === 1 ? "vez" : "veces"} de verdad.
+      const n = settings.multiCount;
+      const ok = window.confirm(
+        `Resolver y ENVIAR este SBC ${n} ${n === 1 ? "vez" : "veces"}.
 
-Cada vuelta consume las cartas que arme. Esto NO se puede deshacer.
+Cada vuelta arma la plantilla, la env\xEDa y vuelve a entrar. Consume las cartas que use. Esto NO se puede deshacer.
 
 \xBFSeguir?`
-        );
-        if (!ok) return;
-      }
-      void run(() => actions.solveMultiple(settings.strategy, settings.multiCount, currentExtras()));
+      );
+      if (!ok) return;
+      void run(() => actions.solveMultiple(settings.strategy, n, currentExtras()));
     });
     combosBtn.addEventListener("click", () => {
       void run(() => actions.showCombos());
@@ -3198,12 +3198,13 @@ Cada vuelta consume las cartas que arme. Esto NO se puede deshacer.
     return best;
   }
   async function buildPool(challenge, strategy, extras) {
-    const { players } = await getPool(extras);
+    const { players, items } = await getPool(extras);
     let fielded = /* @__PURE__ */ new Set();
     if (extras?.excludeAllSquads) fielded = (await getAllSquadCards()).instanceIds;
     else if (extras?.excludeActiveSquad ?? true)
       fielded = (await getActiveSquadCards()).instanceIds;
     const owned = players.filter((p) => {
+      if (!items.has(p.id)) return false;
       if (fielded.has(p.id)) return false;
       if (!extras?.allowTradeable && !p.untradeable && !p.inStorage) return false;
       if (!extras?.allowSpecials && p.isSpecial) return false;
@@ -3252,26 +3253,15 @@ Cada vuelta consume las cartas que arme. Esto NO se puede deshacer.
           if (extras && extras.dryRun === false) await doApply(result.solution);
         });
       },
+      /**
+       * "Resolver ×N" = do the whole SBC N times: solve → apply → submit →
+       * re-enter. The toolbar confirms once before calling this; there is no
+       * dry-run variant, because a dry run is just what "Resolver" already does.
+       */
       async solveMultiple(strategy, n, extras) {
         await run(async () => {
           lastExtras = extras;
-          if (!extras?.autoSubmit) {
-            const pool = await buildPool(challenge, strategy, extras);
-            const sols = solveMultiple(
-              pool,
-              challenge.constraints,
-              { strategy, timeBudgetMs: SOLVE_BUDGET_MS },
-              n
-            );
-            if (sols.length === 0) {
-              handle()?.showError("No se encontraron soluciones distintas.");
-              return;
-            }
-            window.__futSolutions = sols;
-            handle()?.showSolution(sols[0], withChemNote([]));
-            return;
-          }
-          await repeatLoop(strategy, n, extras);
+          await repeatLoop(strategy, n, extras ?? {});
         });
       },
       async apply(solution) {
