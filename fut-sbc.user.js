@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         FUT SBC Solver v2
 // @namespace    https://github.com/mljpa/fut-sbc-solver-v2
-// @version      0.1.0.1788385505
+// @version      0.1.0.1788386701
 // @description  Userscript to solve EA SPORTS FC 26 SBCs with your own club
 // @match        https://www.ea.com/*/ea-sports-fc/ultimate-team/web-app*
 // @match        https://www.ea.com/ea-sports-fc/ultimate-team/web-app*
@@ -635,15 +635,18 @@
   }
   async function applySolution(challenge, solution, clubItems) {
     const vc = findLiveOverviewVC(challenge.id);
-    if (!vc) {
+    const eaChallenge = vc?._challenge ?? challenge.raw;
+    if (!eaChallenge) {
+      return { ok: false, reason: "El challenge no expone el objeto de EA." };
+    }
+    const squad = eaChallenge.squad ?? vc?._squad;
+    if (!squad) {
       return {
         ok: false,
-        reason: "No se encontr\xF3 el UTSBCSquadOverviewViewController vivo del pitch."
+        reason: "El challenge no tiene squad \u2014 \xBFfalta loadChallenge()?"
       };
     }
-    const eaChallenge = vc._challenge;
-    const squad = eaChallenge.squad ?? vc._squad;
-    if (squad !== vc._squad) vc._squad = squad;
+    if (vc && squad !== vc._squad) vc._squad = squad;
     let slotIndices;
     try {
       const raw = squad.getNonBrickSlots?.() ?? [];
@@ -720,15 +723,17 @@
         reason: `saveChallenge devolvi\xF3 status=${res.status ?? "?"} success=${res.success}` + (res.error != null ? ` error=${String(res.error)}` : "")
       };
     }
-    try {
-      eaChallenge.onDataChange?.notify?.({ squad });
-    } catch (err) {
-      console.warn("[fut-sbc] onDataChange.notify fall\xF3", err);
-    }
-    try {
-      vc._pushSquadToView?.(squad);
-    } catch (err) {
-      console.warn("[fut-sbc] _pushSquadToView fall\xF3", err);
+    if (vc) {
+      try {
+        eaChallenge.onDataChange?.notify?.({ squad });
+      } catch (err) {
+        console.warn("[fut-sbc] onDataChange.notify fall\xF3", err);
+      }
+      try {
+        vc._pushSquadToView?.(squad);
+      } catch (err) {
+        console.warn("[fut-sbc] _pushSquadToView fall\xF3", err);
+      }
     }
     return {
       ok: true,
@@ -1672,6 +1677,205 @@
     return err instanceof Error ? err.message : String(err);
   }
 
+  // src/ea/daily.ts
+  var DAILY_REFRESH_INTERVAL = 86400;
+  function sbcService2() {
+    const services = getGlobal("services");
+    return services?.["SBC"];
+  }
+  async function listDailySets() {
+    const sbc = sbcService2();
+    if (!sbc) return [];
+    if (typeof sbc.requestSets === "function") {
+      try {
+        await toPromise(sbc.requestSets.call(sbc));
+      } catch (err) {
+        console.warn("[fut-sbc] requestSets fall\xF3, uso el repositorio tal cual", err);
+      }
+    }
+    const out = [];
+    try {
+      for (const raw of collectionValues3(sbc.repository?.sets)) {
+        const set = raw;
+        if (safeNum3(set.refreshInterval) !== DAILY_REFRESH_INTERVAL) continue;
+        if (isExpired(set)) continue;
+        const id = safeNum3(set.id);
+        if (id == null) continue;
+        const repeats = safeNum3(set.repeats) ?? 0;
+        const timesCompleted = safeNum3(set.timesCompleted) ?? 0;
+        const remaining = Math.max(repeats - timesCompleted, 0);
+        if (remaining <= 0) continue;
+        const entry = {
+          id,
+          name: String(set.name ?? ""),
+          remaining,
+          repeats,
+          timesCompleted
+        };
+        const challengeId = firstChallengeId(set);
+        if (challengeId != null) entry.challengeId = challengeId;
+        out.push(entry);
+      }
+    } catch (err) {
+      console.warn("[fut-sbc] listDailySets: barrido de sets fall\xF3", err);
+      return [];
+    }
+    out.sort(compareByCost);
+    return out;
+  }
+  function compareByCost(a, b) {
+    const ta = nameTierHint(a.name);
+    const tb = nameTierHint(b.name);
+    if (ta !== tb) return ta - tb;
+    return a.id - b.id;
+  }
+  function nameTierHint(name) {
+    if (/bronze/i.test(name)) return 0;
+    if (/silver/i.test(name)) return 1;
+    if (/gold/i.test(name)) return 2;
+    return 3;
+  }
+  function isExpired(set) {
+    if (set.notExpirable) return false;
+    const endTime = safeNum3(set.endTime);
+    if (endTime == null || endTime <= 0) return false;
+    return endTime * 1e3 < Date.now();
+  }
+  function firstChallengeId(set) {
+    const first = challengesOf2(set)[0];
+    return first ? safeNum3(first.id) ?? void 0 : void 0;
+  }
+  async function openSetChallenge(setId) {
+    const sbc = sbcService2();
+    if (!sbc || !Number.isFinite(setId)) return null;
+    try {
+      const set = await findSet2(sbc, setId);
+      if (!set) return null;
+      let challenge = challengesOf2(set)[0];
+      if (!challenge && typeof sbc.requestChallengesForSet === "function") {
+        try {
+          await toPromise(
+            sbc.requestChallengesForSet.call(sbc, set)
+          );
+        } catch (err) {
+          console.warn("[fut-sbc] requestChallengesForSet fall\xF3", err);
+        }
+        challenge = challengesOf2(set)[0];
+      }
+      if (!challenge) return null;
+      if (!challenge.squad || !safeInProgress3(challenge)) {
+        await openInPlace(sbc, challenge);
+      }
+      if (!challenge.squad) {
+        console.warn(
+          `[fut-sbc] openSetChallenge: EA no adjunt\xF3 squad al challenge del set ${setId}.`
+        );
+        return null;
+      }
+      const constraints = parseRequirements(challenge);
+      const slotPositions = readSlotPositions3(challenge);
+      if (slotPositions.length === constraints.slots) {
+        constraints.slotPositions = slotPositions;
+      }
+      if (constraints.slots <= 0) {
+        console.warn(
+          `[fut-sbc] openSetChallenge: 0 slots legibles en el set ${setId}, no hay nada que resolver.`
+        );
+        return null;
+      }
+      return {
+        id: safeNum3(challenge.id) ?? -1,
+        setId: safeNum3(challenge.setId) ?? setId,
+        name: String(challenge.name ?? ""),
+        slots: constraints.slots,
+        constraints,
+        raw: challenge
+      };
+    } catch (err) {
+      console.warn(`[fut-sbc] openSetChallenge(${setId}) fall\xF3`, err);
+      return null;
+    }
+  }
+  async function openInPlace(sbc, challenge) {
+    if (typeof sbc.loadChallenge !== "function") return;
+    try {
+      await toPromise(sbc.loadChallenge.call(sbc, challenge));
+    } catch (err) {
+      console.warn("[fut-sbc] loadChallenge fall\xF3", err);
+    }
+  }
+  function readSlotPositions3(challenge) {
+    const sq = challenge.squad;
+    try {
+      const slots = sq?.getNonBrickSlots?.() ?? [];
+      return slots.map((s) => {
+        const g = s.getGeneralPosition?.();
+        return typeof g === "number" ? g : Number(s.position?.id ?? -1);
+      });
+    } catch {
+      return [];
+    }
+  }
+  async function findSet2(sbc, setId) {
+    const direct = setFromRepository2(sbc, setId);
+    if (direct) return direct;
+    if (typeof sbc.requestSets === "function") {
+      try {
+        await toPromise(sbc.requestSets.call(sbc));
+      } catch (err) {
+        console.warn("[fut-sbc] requestSets fall\xF3", err);
+      }
+    }
+    return setFromRepository2(sbc, setId);
+  }
+  function setFromRepository2(sbc, setId) {
+    const repo = sbc.repository;
+    if (!repo) return null;
+    try {
+      const byId = repo.getSetById?.(setId);
+      if (byId) return byId;
+    } catch {
+    }
+    try {
+      for (const s of collectionValues3(repo.sets)) {
+        if (safeNum3(s.id) === setId) return s;
+      }
+    } catch {
+    }
+    return null;
+  }
+  function challengesOf2(set) {
+    try {
+      const chs = set.getChallenges?.();
+      return Array.isArray(chs) ? chs : [];
+    } catch {
+      return [];
+    }
+  }
+  function collectionValues3(coll) {
+    if (!coll) return [];
+    const inner = coll._collection ?? coll;
+    if (inner instanceof Map) return [...inner.values()];
+    if (Array.isArray(inner)) return inner;
+    if (typeof inner === "object") return Object.values(inner);
+    return [];
+  }
+  function safeInProgress3(challenge) {
+    try {
+      return challenge.isInProgress?.() === true;
+    } catch {
+      return false;
+    }
+  }
+  function safeNum3(value) {
+    try {
+      const n = Number(value);
+      return Number.isFinite(n) ? n : null;
+    } catch {
+      return null;
+    }
+  }
+
   // src/ui/result-card.ts
   function cardShell(headingText, onClose) {
     const el = document.createElement("div");
@@ -2599,6 +2803,153 @@ Cada vuelta arma la plantilla, la env\xEDa y vuelve a entrar. Consume las cartas
       setBusy,
       showError,
       showSolution,
+      showProgress
+    };
+  }
+
+  // src/ui/daily-bar.ts
+  var ROUNDS_KEY = "fut-sbc-solver:daily-rounds";
+  function loadRounds() {
+    try {
+      const n = Number(localStorage.getItem(ROUNDS_KEY));
+      return Number.isFinite(n) && n >= 1 ? Math.min(15, Math.round(n)) : 1;
+    } catch {
+      return 1;
+    }
+  }
+  function saveRounds(n) {
+    try {
+      localStorage.setItem(ROUNDS_KEY, String(n));
+    } catch {
+    }
+  }
+  var HUB_POSITION = `
+:host { position: absolute; left: 16px; top: 8px; }
+`;
+  function mountDailyBar(host, actions) {
+    const mountHost = document.createElement("div");
+    mountHost.className = "fut-sbc-daily-host";
+    const shadow = mountHost.attachShadow({ mode: "open" });
+    const style = document.createElement("style");
+    style.textContent = CSS + HUB_POSITION;
+    shadow.append(style);
+    const wrap = document.createElement("div");
+    wrap.className = "wrap";
+    shadow.append(wrap);
+    const quick = document.createElement("div");
+    quick.className = "quick";
+    const chip = document.createElement("span");
+    chip.className = "chip";
+    const dot = document.createElement("span");
+    dot.className = "chip-dot";
+    const label = document.createElement("span");
+    label.textContent = "SBC diarios";
+    chip.append(dot, label);
+    const rounds = document.createElement("input");
+    rounds.type = "number";
+    rounds.min = "1";
+    rounds.max = "15";
+    rounds.value = String(loadRounds());
+    rounds.title = "Vueltas por SBC";
+    const runBtn = document.createElement("button");
+    runBtn.type = "button";
+    runBtn.className = "btn primary";
+    runBtn.textContent = "Resolver diarios";
+    quick.append(chip, rounds, runBtn);
+    wrap.append(quick);
+    const blocker = document.createElement("div");
+    blocker.className = "blocker";
+    const panel = document.createElement("div");
+    panel.className = "blocker-panel";
+    const head = document.createElement("div");
+    head.className = "blocker-head";
+    const spinner = document.createElement("span");
+    spinner.className = "spinner";
+    const title = document.createElement("span");
+    title.textContent = "Resolviendo SBCs diarios\u2026";
+    head.append(spinner, title);
+    const log = document.createElement("pre");
+    log.className = "blocker-log";
+    const hint = document.createElement("p");
+    hint.className = "blocker-hint";
+    const actionsRow = document.createElement("div");
+    actionsRow.className = "blocker-actions";
+    const closeBtn = document.createElement("button");
+    closeBtn.type = "button";
+    closeBtn.className = "btn";
+    closeBtn.textContent = "Cerrar";
+    closeBtn.style.display = "none";
+    actionsRow.append(closeBtn);
+    panel.append(head, log, hint, actionsRow);
+    blocker.append(panel);
+    shadow.append(blocker);
+    for (const ev of ["click", "mousedown", "pointerdown", "keydown", "wheel"]) {
+      blocker.addEventListener(ev, (e) => e.stopPropagation());
+    }
+    let onClose = null;
+    closeBtn.addEventListener("click", () => {
+      blocker.classList.remove("on");
+      const fn = onClose;
+      onClose = null;
+      fn?.();
+    });
+    function showProgress(lines, done, cb) {
+      log.textContent = lines.join("\n");
+      blocker.classList.add("on");
+      spinner.classList.toggle("hidden", done);
+      title.textContent = done ? "Diarios terminados" : "Resolviendo SBCs diarios\u2026";
+      hint.textContent = done ? "" : "No toques nada hasta que termine.";
+      closeBtn.style.display = done ? "" : "none";
+      onClose = cb ?? null;
+    }
+    let busy = false;
+    rounds.addEventListener("change", () => {
+      const n = Math.min(15, Math.max(1, Math.round(rounds.valueAsNumber || 1)));
+      rounds.value = String(n);
+      saveRounds(n);
+    });
+    runBtn.addEventListener("click", () => {
+      if (busy) return;
+      void (async () => {
+        const n = Math.min(15, Math.max(1, Math.round(rounds.valueAsNumber || 1)));
+        let preview = [];
+        try {
+          preview = await actions.previewDailies();
+        } catch {
+          preview = [];
+        }
+        if (preview.length === 0) {
+          showProgress(["No hay SBCs diarios con vueltas disponibles."], true);
+          return;
+        }
+        const lines = preview.map((d) => `\xB7 ${d.name} \u2014 hasta ${Math.min(n, d.remaining)}`).join("\n");
+        const ok = window.confirm(
+          `Resolver y ENVIAR estos SBCs diarios, hasta ${n} ${n === 1 ? "vez" : "veces"} cada uno:
+
+${lines}
+
+Consume las cartas que use. Esto NO se puede deshacer.
+
+\xBFSeguir?`
+        );
+        if (!ok) return;
+        busy = true;
+        runBtn.disabled = true;
+        rounds.disabled = true;
+        try {
+          await actions.solveDailies(n);
+        } finally {
+          busy = false;
+          runBtn.disabled = false;
+          rounds.disabled = false;
+        }
+      })();
+    });
+    host.append(mountHost);
+    return {
+      destroy() {
+        mountHost.remove();
+      },
       showProgress
     };
   }
@@ -3546,6 +3897,78 @@ ${text}`);
       handle()?.showProgress(done, true, leaveChallengeView);
     }
   }
+  async function runDailyBatch(roundsPerSet, report) {
+    const lines = [];
+    const push = (s) => {
+      lines.push(s);
+      report(lines, false);
+    };
+    const sets = await listDailySets();
+    if (sets.length === 0) {
+      report(["No hay SBCs diarios con vueltas disponibles."], true);
+      return;
+    }
+    push(`${sets.length} SBC diarios con vueltas disponibles.`);
+    let submitted = 0;
+    outer: for (const set of sets) {
+      const budget = Math.min(roundsPerSet, set.remaining);
+      push(`
+\u25B8 ${set.name} (hasta ${budget})`);
+      for (let round = 1; round <= budget; round++) {
+        resetPoolCache();
+        const challenge = await openSetChallenge(set.id);
+        if (!challenge) {
+          push(`  \u2717 ronda ${round}: no se pudo abrir el challenge`);
+          break;
+        }
+        const strategy = "optimizar-rating-bajo";
+        const extras = {
+          excludeActiveSquad: true,
+          excludeAllSquads: false,
+          dryRun: false,
+          allowTradeable: true,
+          allowSpecials: true,
+          useUnassigned: true,
+          useStorage: true
+        };
+        const pool = await buildPool(challenge, strategy, extras);
+        const result = solve(pool, challenge.constraints, {
+          strategy,
+          timeBudgetMs: SOLVE_BUDGET_MS
+        });
+        if (!result.solution || !result.ok) {
+          push(
+            `  \u2717 ronda ${round}: sin soluci\xF3n${result.unmet.length ? ` \u2014 ${result.unmet.join(", ")}` : ""}`
+          );
+          break;
+        }
+        const { items } = await getPool(extras);
+        const applied = await applySolution(challenge, result.solution, items);
+        if (!applied.ok) {
+          push(`  \u2717 ronda ${round}: no se pudo aplicar \u2014 ${applied.reason ?? "?"}`);
+          break;
+        }
+        const sent = await submitChallenge(challenge);
+        if (sent.softBanned) {
+          push(`  \u26D4 ronda ${round}: soft-ban de EA (426/429) \u2014 parado.`);
+          break outer;
+        }
+        if (!sent.ok) {
+          const why = sent.violations?.length ? sent.violations.join(", ") : sent.reason ?? "?";
+          push(`  \u2717 ronda ${round}: EA rechaz\xF3 \u2014 ${why}`);
+          break;
+        }
+        submitted++;
+        push(`  \u2713 ronda ${round}: enviado (media ${applied.teamRating ?? "?"})`);
+        await dismissPostSubmit();
+      }
+    }
+    resetPoolCache();
+    lines.push(`
+Total enviados: ${submitted}`);
+    report(lines, true);
+    console.info(LOG, "daily batch finished", lines);
+  }
   async function boot() {
     await waitForServices();
     console.info(LOG, "services ready");
@@ -3567,9 +3990,12 @@ ${text}`);
       dismissPostSubmit,
       reenterChallenge,
       repeatability,
-      resetPoolCache
+      resetPoolCache,
+      listDailySets,
+      openSetChallenge
     };
     let handle = null;
+    let dailyBar = null;
     let mountedFor = -1;
     const check = async () => {
       const challenge = await getOpenChallenge().catch(() => null);
@@ -3592,6 +4018,34 @@ ${text}`);
         handle = null;
         mountedFor = -1;
         resetPoolCache();
+      }
+      const hub = document.querySelector(".ut-sbc-hub-view");
+      if (hub && !dailyBar) {
+        dailyBar = mountDailyBar(hub, {
+          async previewDailies() {
+            const sets = await listDailySets();
+            return sets.map((s) => ({ name: s.name, remaining: s.remaining }));
+          },
+          async solveDailies(roundsPerSet) {
+            try {
+              await runDailyBatch(
+                roundsPerSet,
+                (lines, done) => dailyBar?.showProgress(lines, done)
+              );
+            } catch (err) {
+              window.__futErr = err;
+              console.error(LOG, err);
+              dailyBar?.showProgress(
+                [`\u2717 ${err instanceof Error ? err.message : String(err)}`],
+                true
+              );
+            }
+          }
+        });
+        console.info(LOG, "daily bar mounted on the SBC hub");
+      } else if (!hub && dailyBar) {
+        dailyBar.destroy();
+        dailyBar = null;
       }
     };
     setInterval(() => {
