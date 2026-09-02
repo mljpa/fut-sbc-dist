@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         FUT SBC Solver v2
 // @namespace    https://github.com/mljpa/fut-sbc-solver-v2
-// @version      0.1.0.1788383111
+// @version      0.1.0.1788383716
 // @description  Userscript to solve EA SPORTS FC 26 SBCs with your own club
 // @match        https://www.ea.com/*/ea-sports-fc/ultimate-team/web-app*
 // @match        https://www.ea.com/ea-sports-fc/ultimate-team/web-app*
@@ -641,8 +641,9 @@
         reason: "No se encontr\xF3 el UTSBCSquadOverviewViewController vivo del pitch."
       };
     }
-    const squad = vc._squad;
     const eaChallenge = vc._challenge;
+    const squad = eaChallenge.squad ?? vc._squad;
+    if (squad !== vc._squad) vc._squad = squad;
     let slotIndices;
     try {
       const raw = squad.getNonBrickSlots?.() ?? [];
