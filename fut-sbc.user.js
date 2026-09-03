@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         FUT SBC Solver v2
 // @namespace    https://github.com/mljpa/fut-sbc-solver-v2
-// @version      0.1.0.1788448435
+// @version      0.1.0.1788464593
 // @description  Userscript to solve EA SPORTS FC 26 SBCs with your own club
 // @match        https://www.ea.com/*/ea-sports-fc/ultimate-team/web-app*
 // @match        https://www.ea.com/ea-sports-fc/ultimate-team/web-app*
@@ -499,8 +499,13 @@
       inStorage: false,
       // TODO: verify via services.Item storage search (docs pendiente)
       isSpecial: isSpecial(raw),
+      groups: readGroups(raw),
       positions: readPositions(raw)
     };
+  }
+  function readGroups(raw) {
+    const src = Array.isArray(raw.groups) ? raw.groups : [];
+    return [...new Set(src.map((n) => Number(n)).filter((n) => Number.isFinite(n)))];
   }
   function readPositions(raw) {
     const src = Array.isArray(raw.basePossiblePositions) && raw.basePossiblePositions || Array.isArray(raw.possiblePositions) && raw.possiblePositions || (typeof raw.preferredPosition === "number" ? [raw.preferredPosition] : []);
@@ -1074,6 +1079,10 @@
       inAnySquad: false,
       inStorage: false,
       isSpecial: false,
+      // Concept search returns base cards, so no special-group membership. Left
+      // empty on purpose: a concept must not be offered as the answer to a
+      // "needs a TOTW" requirement it cannot satisfy.
+      groups: [],
       positions: [...new Set(positions)]
     };
   }
@@ -4471,7 +4480,7 @@ Consume las cartas que use. Esto NO se puede deshacer.
       case "club":
         return req.value == null || p.teamId === Number(req.value);
       case "group":
-        return true;
+        return req.value != null && p.groups.includes(Number(req.value));
       default:
         return false;
     }
@@ -4546,6 +4555,9 @@ Consume las cartas que use. Esto NO se puede deshacer.
     }
     for (const req of c.counted) {
       if (!countedSatisfied(players, req)) unmet.push(requirementLabel(req));
+    }
+    for (const text of c.unparsed) {
+      unmet.push(`requisito no interpretado: ${text}`);
     }
     return { ok: unmet.length === 0, unmet };
   }
