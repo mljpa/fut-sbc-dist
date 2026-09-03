@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         FUT SBC Solver v2
 // @namespace    https://github.com/mljpa/fut-sbc-solver-v2
-// @version      0.1.0.1788400102
+// @version      0.1.0.1788404030
 // @description  Userscript to solve EA SPORTS FC 26 SBCs with your own club
 // @match        https://www.ea.com/*/ea-sports-fc/ultimate-team/web-app*
 // @match        https://www.ea.com/ea-sports-fc/ultimate-team/web-app*
@@ -1769,6 +1769,40 @@
     const challenges = challengesOf2(set);
     return challenges.length > 0 && challenges.every(safeCompleted);
   }
+  function setRepeatsRemaining(setId) {
+    const sbc = sbcService2();
+    const set = sbc?.repository?.getSetById?.(setId);
+    if (!set) return 0;
+    try {
+      const n = set.getRepeatsRemaining?.();
+      if (typeof n === "number" && Number.isFinite(n)) return Math.max(0, n);
+    } catch {
+    }
+    const repeats = safeNum3(set.repeats) ?? 0;
+    const done = safeNum3(set.timesCompleted) ?? 0;
+    return Math.max(0, repeats - done);
+  }
+  function getOpenSetId() {
+    try {
+      const hits = findViewControllers(
+        (n) => constructorName(n) === "UTSBCGroupChallengeSplitViewController"
+      );
+      const vc = hits.find((h) => isInDom(h)) ?? hits[hits.length - 1];
+      if (!vc) return null;
+      const vm = vc["sbcViewModel"];
+      if (!vm) return null;
+      let set = vm.sbcSet;
+      if (!set && typeof vm.getSbcSet === "function") {
+        try {
+          set = vm.getSbcSet();
+        } catch {
+        }
+      }
+      return set ? safeNum3(set.id) ?? null : null;
+    } catch {
+      return null;
+    }
+  }
   async function describeSetChallenges(setId) {
     const sbc = sbcService2();
     if (!sbc || !Number.isFinite(setId)) return [];
@@ -2936,6 +2970,8 @@ Cada vuelta arma la plantilla, la env\xEDa y vuelve a entrar. Consume las cartas
   top: 60px;
 }
 .wrap { transform: translateX(-50%); }
+`;
+  var SHARED_CSS = `
 .picker { display: flex; flex-direction: column; gap: 2px; }
 .picker .field.check { gap: 8px; cursor: pointer; padding: 5px 2px; font-size: 13px; }
 .picker .field.check:hover { color: var(--accent); }
@@ -2962,12 +2998,19 @@ Cada vuelta arma la plantilla, la env\xEDa y vuelve a entrar. Consume las cartas
 .blocker-head { font-size: 15px; }
 .blocker-actions { gap: 8px; }
 `;
-  function mountDailyBar(host, actions) {
+  var CORNER_POSITION = `
+:host { position: absolute; right: 14px; bottom: 10px; }
+`;
+  function mountDailyBar(host, actions, options = {}) {
+    const chipLabel = options.label ?? "SBC diarios";
+    const runLabel = options.runLabel ?? "Resolver diarios";
+    const pickerTitle = options.pickerTitle ?? "\xBFCu\xE1les resolvemos?";
     const mountHost = document.createElement("div");
     mountHost.className = "fut-sbc-daily-host";
     const shadow = mountHost.attachShadow({ mode: "open" });
+    const placement = options.placement === "corner" ? CORNER_POSITION : HUB_POSITION;
     const style = document.createElement("style");
-    style.textContent = CSS + HUB_POSITION;
+    style.textContent = CSS + placement + SHARED_CSS;
     shadow.append(style);
     const wrap = document.createElement("div");
     wrap.className = "wrap";
@@ -2979,7 +3022,7 @@ Cada vuelta arma la plantilla, la env\xEDa y vuelve a entrar. Consume las cartas
     const dot = document.createElement("span");
     dot.className = "chip-dot";
     const label = document.createElement("span");
-    label.textContent = "SBC diarios";
+    label.textContent = chipLabel;
     chip.append(dot, label);
     const rounds = document.createElement("input");
     rounds.type = "number";
@@ -2990,7 +3033,7 @@ Cada vuelta arma la plantilla, la env\xEDa y vuelve a entrar. Consume las cartas
     const runBtn = document.createElement("button");
     runBtn.type = "button";
     runBtn.className = "btn primary";
-    runBtn.textContent = "Resolver diarios";
+    runBtn.textContent = runLabel;
     quick.append(chip, rounds, runBtn);
     wrap.append(quick);
     const blocker = document.createElement("div");
@@ -3002,7 +3045,7 @@ Cada vuelta arma la plantilla, la env\xEDa y vuelve a entrar. Consume las cartas
     const spinner = document.createElement("span");
     spinner.className = "spinner";
     const title = document.createElement("span");
-    title.textContent = "Resolviendo SBCs diarios\u2026";
+    title.textContent = "Resolviendo\u2026";
     head.append(spinner, title);
     const log = document.createElement("pre");
     log.className = "blocker-log";
@@ -3033,7 +3076,7 @@ Cada vuelta arma la plantilla, la env\xEDa y vuelve a entrar. Consume las cartas
       log.textContent = lines.join("\n");
       blocker.classList.add("on");
       spinner.classList.toggle("hidden", done);
-      title.textContent = done ? "Diarios terminados" : "Resolviendo SBCs diarios\u2026";
+      title.textContent = done ? "Terminado" : "Resolviendo\u2026";
       hint.textContent = done ? "" : "No toques nada hasta que termine.";
       closeBtn.style.display = done ? "" : "none";
       onClose = cb ?? null;
@@ -3049,7 +3092,7 @@ Cada vuelta arma la plantilla, la env\xEDa y vuelve a entrar. Consume las cartas
       actionsRow.replaceChildren(closeBtn);
       blocker.classList.add("on");
       spinner.classList.add("hidden");
-      title.textContent = "\xBFCu\xE1les resolvemos?";
+      title.textContent = pickerTitle;
       hint.textContent = "Los que piden cartas altas vienen desmarcados \u2014 gastan tu fodder bueno.";
       const list = document.createElement("div");
       list.className = "picker";
@@ -4127,19 +4170,40 @@ ${text}`);
       handle()?.showProgress(done, true, leaveChallengeView);
     }
   }
+  function setNameOf(setId) {
+    try {
+      const services = globalThis["services"];
+      const set = services?.SBC?.repository?.getSetById?.(setId);
+      return String(set?.name ?? `Set ${setId}`);
+    } catch {
+      return `Set ${setId}`;
+    }
+  }
+  async function runSetBatch(setId, rounds, report) {
+    const budget = Math.max(1, Math.min(rounds, setRepeatsRemaining(setId) || rounds));
+    const challengeCount = Math.max(1, (await describeSetChallenges(setId)).length);
+    await runBatchOverSets(
+      [{ id: setId, name: setNameOf(setId), remaining: budget, challengeCount }],
+      rounds,
+      report
+    );
+  }
   async function runDailyBatch(setIds, roundsPerSet, report) {
-    const lines = [];
-    const push = (s) => {
-      lines.push(s);
-      report(lines, false);
-    };
     const wanted = new Set(setIds);
     const sets = (await listDailySets()).filter((s) => wanted.has(s.id));
     if (sets.length === 0) {
       report(["No hay SBCs diarios con vueltas disponibles."], true);
       return;
     }
-    push(`${sets.length} SBC diarios seleccionados.`);
+    await runBatchOverSets(sets, roundsPerSet, report);
+  }
+  async function runBatchOverSets(sets, roundsPerSet, report) {
+    const lines = [];
+    const push = (s) => {
+      lines.push(s);
+      report(lines, false);
+    };
+    push(`${sets.length} ${sets.length === 1 ? "SBC seleccionado" : "SBC seleccionados"}.`);
     const strategy = "optimizar-rating-bajo";
     const extras = {
       excludeActiveSquad: true,
@@ -4242,11 +4306,29 @@ Total SBC enviados: ${submitted}`);
       listDailySets,
       openSetChallenge,
       setRunComplete,
-      describeSetChallenges
+      setRepeatsRemaining,
+      describeSetChallenges,
+      getOpenSetId
     };
     let handle = null;
     let dailyBar = null;
+    let setBar = null;
+    let setBarFor = -1;
     let mountedFor = -1;
+    const previewOneSet = async (setId, name, remaining) => {
+      const children = await describeSetChallenges(setId);
+      const pending = children.filter((c) => !c.completed);
+      let demandsOvr;
+      for (const c of pending) {
+        if (c.demandsOvr != null) demandsOvr = Math.max(demandsOvr ?? 0, c.demandsOvr);
+      }
+      const readable = pending.some((c) => c.slots != null);
+      if (demandsOvr == null) {
+        const m = /(\d{2})\s*\+/.exec(name);
+        if (m) demandsOvr = Number(m[1]);
+      }
+      return { id: setId, name, remaining, demandsOvr, readable, children };
+    };
     const check = async () => {
       const challenge = await getOpenChallenge().catch(() => null);
       window.__futChallenge = challenge;
@@ -4276,27 +4358,7 @@ Total SBC enviados: ${submitted}`);
             const sets = await listDailySets();
             const out = [];
             for (const s of sets) {
-              const children = await describeSetChallenges(s.id);
-              const pending = children.filter((c) => !c.completed);
-              let demandsOvr;
-              for (const c of pending) {
-                if (c.demandsOvr != null) {
-                  demandsOvr = Math.max(demandsOvr ?? 0, c.demandsOvr);
-                }
-              }
-              const readable = pending.some((c) => c.slots != null);
-              if (demandsOvr == null) {
-                const m = /(\d{2})\s*\+/.exec(s.name);
-                if (m) demandsOvr = Number(m[1]);
-              }
-              out.push({
-                id: s.id,
-                name: s.name,
-                remaining: s.remaining,
-                demandsOvr,
-                readable,
-                children
-              });
+              out.push(await previewOneSet(s.id, s.name, s.remaining));
             }
             return out;
           },
@@ -4321,6 +4383,51 @@ Total SBC enviados: ${submitted}`);
       } else if (!hub && dailyBar) {
         dailyBar.destroy();
         dailyBar = null;
+      }
+      const setView = document.querySelector(".ut-sbc-challenges-view");
+      const openSetId = setView ? getOpenSetId() : null;
+      if (setView && openSetId != null && setBarFor !== openSetId) {
+        setBar?.destroy();
+        const theSetId = openSetId;
+        setBar = mountDailyBar(
+          setView,
+          {
+            async previewDailies() {
+              const name = setNameOf(theSetId);
+              return [
+                await previewOneSet(theSetId, name, setRepeatsRemaining(theSetId) || 1)
+              ];
+            },
+            async solveDailies(_ids, roundsPerSet) {
+              try {
+                await runSetBatch(
+                  theSetId,
+                  roundsPerSet,
+                  (lines, done) => setBar?.showProgress(lines, done)
+                );
+              } catch (err) {
+                window.__futErr = err;
+                console.error(LOG, err);
+                setBar?.showProgress(
+                  [`\u2717 ${err instanceof Error ? err.message : String(err)}`],
+                  true
+                );
+              }
+            }
+          },
+          {
+            label: "Set completo",
+            runLabel: "Resolver set",
+            pickerTitle: "Resolver este set entero",
+            placement: "corner"
+          }
+        );
+        setBarFor = openSetId;
+        console.info(LOG, "set bar mounted for set", openSetId);
+      } else if (!setView && setBar) {
+        setBar.destroy();
+        setBar = null;
+        setBarFor = -1;
       }
     };
     setInterval(() => {
