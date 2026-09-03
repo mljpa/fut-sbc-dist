@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         FUT SBC Solver v2
 // @namespace    https://github.com/mljpa/fut-sbc-solver-v2
-// @version      0.1.0.1788406541
+// @version      0.1.0.1788441564
 // @description  Userscript to solve EA SPORTS FC 26 SBCs with your own club
 // @match        https://www.ea.com/*/ea-sports-fc/ultimate-team/web-app*
 // @match        https://www.ea.com/ea-sports-fc/ultimate-team/web-app*
@@ -43,18 +43,18 @@
         resolve({ data: obs, status: 200, success: true });
         return;
       }
-      const ctx2 = {};
+      const ctx = {};
       const timer = setTimeout(() => {
         try {
-          o.unobserve?.(ctx2);
+          o.unobserve?.(ctx);
         } catch {
         }
         reject(new Error("EAObservable timeout"));
       }, 2e4);
-      o.observe(ctx2, (self, r) => {
+      o.observe(ctx, (self, r) => {
         clearTimeout(timer);
         try {
-          self.unobserve?.(ctx2);
+          self.unobserve?.(ctx);
         } catch {
         }
         const res = r;
@@ -2363,6 +2363,7 @@
 
   // src/tweaks/registry.ts
   var STORAGE_KEY = "fut-sbc-solver:tweaks";
+  var CHOICES_KEY = "fut-sbc-solver:tweak-choices";
   var LOG_LIMIT = 200;
   var registry = /* @__PURE__ */ new Map();
   var applied = /* @__PURE__ */ new Map();
@@ -2381,7 +2382,48 @@
       return null;
     }
   }
-  var ctx = { log };
+  var choices = {};
+  function readChoices() {
+    try {
+      const raw = storage()?.getItem(CHOICES_KEY);
+      if (!raw) return {};
+      const parsed = JSON.parse(raw);
+      if (!parsed || typeof parsed !== "object") return {};
+      const out = {};
+      for (const [k, v] of Object.entries(parsed)) {
+        if (typeof v === "string") out[k] = v;
+      }
+      return out;
+    } catch {
+      return {};
+    }
+  }
+  function writeChoices() {
+    try {
+      storage()?.setItem(CHOICES_KEY, JSON.stringify(choices));
+    } catch {
+    }
+  }
+  var choiceKey = (tweakId, choiceId) => `${tweakId}:${choiceId}`;
+  function getChoice(tweakId, choiceId) {
+    const declared = registry.get(tweakId)?.choices?.find((c) => c.id === choiceId);
+    const fallback = declared?.defaultValue ?? "";
+    const stored = choices[choiceKey(tweakId, choiceId)];
+    if (typeof stored !== "string") return fallback;
+    if (declared && !declared.values.some((v) => v.value === stored)) return fallback;
+    return stored;
+  }
+  function setChoice(tweakId, choiceId, value) {
+    choices = { ...choices, [choiceKey(tweakId, choiceId)]: value };
+    writeChoices();
+    log(`choice ${tweakId}.${choiceId} = ${value}`);
+  }
+  function ctxFor(tweak) {
+    return {
+      log,
+      choice: (choiceId) => getChoice(tweak.id, choiceId)
+    };
+  }
   function readState() {
     try {
       const raw = storage()?.getItem(STORAGE_KEY);
@@ -2415,13 +2457,17 @@
     return [...registry.values()];
   }
   function isEnabled(id) {
+    const tweak = registry.get(id);
+    if (!tweak) return false;
     const stored = state[id];
     if (typeof stored === "boolean") return stored;
-    return registry.get(id)?.defaultOn ?? false;
+    if (tweak.irreversible) return false;
+    return tweak.defaultOn;
   }
   function applyOne(tweak) {
     if (applied.has(tweak.id)) return;
     try {
+      const ctx = ctxFor(tweak);
       tweak.enable(ctx);
       applied.set(tweak.id, () => tweak.disable(ctx));
       log(`ON  ${tweak.id}`);
@@ -2430,11 +2476,11 @@
     }
   }
   function revertOne(tweak) {
-    const undo5 = applied.get(tweak.id);
-    if (!undo5) return;
+    const undo6 = applied.get(tweak.id);
+    if (!undo6) return;
     applied.delete(tweak.id);
     try {
-      undo5();
+      undo6();
       log(`OFF ${tweak.id}`);
     } catch (e) {
       log(`FALL\xD3 al desactivar ${tweak.id}: ${String(e)}`);
@@ -2450,6 +2496,7 @@
   }
   function applyAllTweaks() {
     state = readState();
+    choices = readChoices();
     booted = true;
     for (const tweak of registry.values()) {
       if (isEnabled(tweak.id)) applyOne(tweak);
@@ -2535,12 +2582,12 @@
     hint: "Abre los packs al instante. Ahorra varios segundos por vuelta en los ciclos de SBC diarios.",
     category: "packs",
     defaultOn: true,
-    enable(ctx2) {
+    enable(ctx) {
       if (undo) return;
       const animCtor = getGlobal("UTPackAnimationViewController");
       const presCtor = getGlobal("UTPresentationController");
       if (!animCtor?.prototype) {
-        ctx2.log("packs.skipAnimation: falta UTPackAnimationViewController");
+        ctx.log("packs.skipAnimation: falta UTPackAnimationViewController");
         return;
       }
       const restoreRun = patchMethod(
@@ -2608,16 +2655,16 @@
     hint: "Acepta solo avisos sin consecuencias (pila llena, mandar al club, limpiar plantilla). Nunca auto-acepta descartar, borrar plantillas, enviar SBC ni gastar monedas.",
     category: "popups",
     defaultOn: true,
-    enable(ctx2) {
+    enable(ctx) {
       if (undo2) return;
       const utils = getGlobal("utils");
       const pm = utils?.PopupManager;
       if (!pm?.showConfirmation) {
-        ctx2.log("popups.autoConfirmSafe: falta utils.PopupManager.showConfirmation");
+        ctx.log("popups.autoConfirmSafe: falta utils.PopupManager.showConfirmation");
         return;
       }
       const allowed = safeTitles(pm);
-      ctx2.log(`popups.autoConfirmSafe: ${allowed.size}/${SAFE_CONFIRMATIONS.length} t\xEDtulos resueltos`);
+      ctx.log(`popups.autoConfirmSafe: ${allowed.size}/${SAFE_CONFIRMATIONS.length} t\xEDtulos resueltos`);
       undo2 = patchMethod(
         pm,
         "showConfirmation",
@@ -2626,7 +2673,7 @@
           const onConfirm = args[2];
           const title = typeof dto?.title === "string" ? dto.title : "";
           if (allowed.has(title) && typeof onConfirm === "function") {
-            ctx2.log(`auto-confirmado: ${title}`);
+            ctx.log(`auto-confirmado: ${title}`);
             return onConfirm();
           }
           return original.apply(this, args);
@@ -2649,11 +2696,11 @@
     hint: "Despacha la pantalla de recompensa que aparece al terminar un SBC. Clave para que un ciclo largo corra sin vos.",
     category: "popups",
     defaultOn: true,
-    enable(ctx2) {
+    enable(ctx) {
       if (undo3) return;
       const ctor = getGlobal("UTGameRewardsView");
       if (!ctor?.prototype) {
-        ctx2.log("popups.autoDismissRewards: falta UTGameRewardsView");
+        ctx.log("popups.autoDismissRewards: falta UTGameRewardsView");
         return;
       }
       const queue = [];
@@ -2667,7 +2714,7 @@
             const el = queue.shift();
             if (el?.isConnected) {
               tapElement(el, "mouse");
-              ctx2.log("popups.autoDismissRewards: recompensa despachada");
+              ctx.log("popups.autoDismissRewards: recompensa despachada");
               await new Promise((r) => setTimeout(r, BETWEEN_MS));
             }
           }
@@ -2706,35 +2753,73 @@
     }
   });
 
-  // src/tweaks/unassigned-back.ts
+  // src/tweaks/redeem.ts
+  var FACTOR = "factor";
+  var BY_RATING = "rating";
+  var BY_NON_DUPLICATE = "duplicate";
+  function pickBest(items, factor) {
+    const byRating = [...items].sort((a, b) => (b.rating ?? 0) - (a.rating ?? 0));
+    if (factor !== BY_NON_DUPLICATE) return byRating[0];
+    const fresh = byRating.filter((i) => !(typeof i.duplicateId === "number" && i.duplicateId > 0));
+    return (fresh.length > 0 ? fresh : byRating)[0];
+  }
+  function controllerOf(view) {
+    const candidate = view.getController?.() ?? view._controller;
+    const c = candidate;
+    return typeof c?.markSelectedByItem === "function" ? c : null;
+  }
   var undo4 = null;
   registerTweak({
-    id: "nav.unassignedAutoBack",
-    label: "Salir solo de \xABsin asignar\xBB vac\xEDo",
-    hint: "Cuando la pila de objetos sin asignar queda vac\xEDa, vuelve atr\xE1s sin que tengas que apretar.",
-    category: "navegacion",
-    defaultOn: true,
-    enable(ctx2) {
+    id: "redeem.autoSelectPlayerPick",
+    label: "Elegir solo en los Player Pick",
+    hint: "Marca una carta cuando aparece un Player Pick, para que un ciclo largo no se frene ah\xED. NO confirma: el bot\xF3n Confirmar lo apret\xE1s vos.",
+    category: "recompensas",
+    defaultOn: false,
+    irreversible: true,
+    choices: [
+      {
+        id: FACTOR,
+        label: "Priorizar",
+        values: [
+          { value: BY_RATING, label: "Mejor rating" },
+          { value: BY_NON_DUPLICATE, label: "Que no sea repetida" }
+        ],
+        defaultValue: BY_RATING
+      }
+    ],
+    enable(ctx) {
       if (undo4) return;
-      const ctor = getGlobal("UTUnassignedItemsViewController");
+      const ctor = getGlobal("UTPlayerPicksView");
       if (!ctor?.prototype) {
-        ctx2.log("nav.unassignedAutoBack: falta UTUnassignedItemsViewController");
+        ctx.log("redeem.autoSelectPlayerPick: falta UTPlayerPicksView");
         return;
       }
       undo4 = patchMethod(
         ctor.prototype,
-        "renderView",
-        (original) => function(...args) {
-          const result = original.apply(this, args);
+        "setCarouselItems",
+        (original) => function(items, ...rest) {
+          const result = original.apply(this, [
+            items,
+            ...rest
+          ]);
           try {
-            const stillHasItems = (this.viewmodel?.length ?? 0) > 0;
-            const services = getGlobal("services");
-            const picksPending = services?.User?.getUser?.()?.hasPlayerPicksPending === true;
-            if (!stillHasItems && !picksPending) {
-              ctx2.log("nav.unassignedAutoBack: pila vac\xEDa, volviendo atr\xE1s");
-              tapBack();
+            if (!Array.isArray(items) || items.length === 0) return result;
+            const controller = controllerOf(this);
+            const select = controller?.markSelectedByItem;
+            if (!controller || !select) {
+              ctx.log("redeem.autoSelectPlayerPick: no encontr\xE9 el controller, no toco nada");
+              return result;
             }
-          } catch {
+            if (controller.isAtMaxPicks?.() === true) return result;
+            const best = pickBest(items, ctx.choice(FACTOR));
+            if (!best) return result;
+            if (controller.isItemSelected?.(best) === true) return result;
+            select.call(controller, best);
+            ctx.log(
+              `redeem.autoSelectPlayerPick: marcada ${best.rating ?? "?"} (de ${items.length}, criterio ${ctx.choice(FACTOR)})`
+            );
+          } catch (e) {
+            ctx.log(`redeem.autoSelectPlayerPick: abortado, eleg\xED a mano \u2014 ${String(e)}`);
           }
           return result;
         }
@@ -2746,16 +2831,58 @@
     }
   });
 
+  // src/tweaks/unassigned-back.ts
+  var undo5 = null;
+  registerTweak({
+    id: "nav.unassignedAutoBack",
+    label: "Salir solo de \xABsin asignar\xBB vac\xEDo",
+    hint: "Cuando la pila de objetos sin asignar queda vac\xEDa, vuelve atr\xE1s sin que tengas que apretar.",
+    category: "navegacion",
+    defaultOn: true,
+    enable(ctx) {
+      if (undo5) return;
+      const ctor = getGlobal("UTUnassignedItemsViewController");
+      if (!ctor?.prototype) {
+        ctx.log("nav.unassignedAutoBack: falta UTUnassignedItemsViewController");
+        return;
+      }
+      undo5 = patchMethod(
+        ctor.prototype,
+        "renderView",
+        (original) => function(...args) {
+          const result = original.apply(this, args);
+          try {
+            const stillHasItems = (this.viewmodel?.length ?? 0) > 0;
+            const services = getGlobal("services");
+            const picksPending = services?.User?.getUser?.()?.hasPlayerPicksPending === true;
+            if (!stillHasItems && !picksPending) {
+              ctx.log("nav.unassignedAutoBack: pila vac\xEDa, volviendo atr\xE1s");
+              tapBack();
+            }
+          } catch {
+          }
+          return result;
+        }
+      );
+    },
+    disable() {
+      undo5?.();
+      undo5 = null;
+    }
+  });
+
   // src/tweaks/types.ts
   var CATEGORY_LABELS = {
     packs: "Packs",
     popups: "Pop-ups",
+    recompensas: "Recompensas",
     interfaz: "Interfaz",
     navegacion: "Navegaci\xF3n"
   };
   var CATEGORY_ORDER = [
     "packs",
     "popups",
+    "recompensas",
     "interfaz",
     "navegacion"
   ];
@@ -2823,7 +2950,17 @@
   border: 1px solid var(--danger);
   border-radius: 4px;
   padding: 0 3px;
+  margin-top: 2px;
 }
+.opt-flag-soft { color: var(--muted); border-color: var(--border); }
+
+.opt-group { display: flex; flex-direction: column; }
+/* Sub-settings only exist while their tweak is on. */
+.opt-extras { display: none; padding: 0 8px 8px 30px; }
+.opt-extras.on { display: flex; flex-direction: column; gap: 6px; }
+.opt-choice { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.opt-choice span { font-size: 12px; color: var(--muted); }
+.opt-choice select { font-size: 12px; }
 .opt-empty { padding: 16px 8px; font-size: 12px; color: var(--muted); text-align: center; }
 `;
   function tweaksIn(category) {
@@ -2833,12 +2970,13 @@
     return CATEGORY_ORDER.filter((c) => tweaksIn(c).length > 0);
   }
   function renderRow(tweak) {
+    const group = document.createElement("div");
+    group.className = "opt-group";
     const row = document.createElement("label");
     row.className = "opt-row";
     const input = document.createElement("input");
     input.type = "checkbox";
     input.checked = isEnabled(tweak.id);
-    input.addEventListener("change", () => setEnabled(tweak.id, input.checked));
     const text = document.createElement("span");
     text.className = "opt-text";
     const label = document.createElement("span");
@@ -2848,14 +2986,51 @@
     hint.className = "opt-hint";
     hint.textContent = tweak.hint;
     text.append(label, hint);
-    if (tweak.unverified) {
+    if (tweak.irreversible) {
       const flag = document.createElement("span");
       flag.className = "opt-flag";
+      flag.textContent = "no se puede deshacer";
+      text.append(flag);
+    }
+    if (tweak.unverified) {
+      const flag = document.createElement("span");
+      flag.className = "opt-flag opt-flag-soft";
       flag.textContent = "sin verificar";
       text.append(flag);
     }
     row.append(input, text);
-    return row;
+    group.append(row);
+    if (tweak.choices?.length) {
+      const extras = document.createElement("div");
+      extras.className = "opt-extras";
+      for (const choice of tweak.choices) {
+        const field = document.createElement("label");
+        field.className = "opt-choice";
+        const name = document.createElement("span");
+        name.textContent = choice.label;
+        const select = document.createElement("select");
+        for (const v of choice.values) {
+          const o = document.createElement("option");
+          o.value = v.value;
+          o.textContent = v.label;
+          select.append(o);
+        }
+        select.value = getChoice(tweak.id, choice.id);
+        select.addEventListener("change", () => {
+          setChoice(tweak.id, choice.id, select.value);
+        });
+        field.append(name, select);
+        extras.append(field);
+      }
+      const sync = () => {
+        extras.classList.toggle("on", input.checked);
+      };
+      sync();
+      input.addEventListener("change", sync);
+      group.append(extras);
+    }
+    input.addEventListener("change", () => setEnabled(tweak.id, input.checked));
+    return group;
   }
   function createOptionsPanel(opts) {
     const el = document.createElement("div");
