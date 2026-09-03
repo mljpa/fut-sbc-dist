@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         FUT SBC Solver v2
 // @namespace    https://github.com/mljpa/fut-sbc-solver-v2
-// @version      0.1.0.1788404982
+// @version      0.1.0.1788406541
 // @description  Userscript to solve EA SPORTS FC 26 SBCs with your own club
 // @match        https://www.ea.com/*/ea-sports-fc/ultimate-team/web-app*
 // @match        https://www.ea.com/ea-sports-fc/ultimate-team/web-app*
@@ -43,18 +43,18 @@
         resolve({ data: obs, status: 200, success: true });
         return;
       }
-      const ctx = {};
+      const ctx2 = {};
       const timer = setTimeout(() => {
         try {
-          o.unobserve?.(ctx);
+          o.unobserve?.(ctx2);
         } catch {
         }
         reject(new Error("EAObservable timeout"));
       }, 2e4);
-      o.observe(ctx, (self, r) => {
+      o.observe(ctx2, (self, r) => {
         clearTimeout(timer);
         try {
-          self.unobserve?.(ctx);
+          self.unobserve?.(ctx2);
         } catch {
         }
         const res = r;
@@ -620,6 +620,66 @@
     return out;
   }
 
+  // src/ea/tap.ts
+  function tapElement(el, mode2 = "touch") {
+    try {
+      const r = el.getBoundingClientRect();
+      const clientX = Math.round(r.left + r.width / 2);
+      const clientY = Math.round(r.top + r.height / 2);
+      const base = { bubbles: true, cancelable: true, composed: true, clientX, clientY };
+      if (mode2 === "mouse") {
+        el.dispatchEvent(new MouseEvent("mousedown", base));
+        el.dispatchEvent(new MouseEvent("mouseup", base));
+        return;
+      }
+      const pointer = (type) => {
+        try {
+          el.dispatchEvent(
+            new PointerEvent(type, { ...base, pointerId: 1, isPrimary: true, pointerType: "touch" })
+          );
+        } catch {
+        }
+      };
+      pointer("pointerdown");
+      try {
+        const touch = new Touch({ identifier: 1, target: el, clientX, clientY });
+        el.dispatchEvent(
+          new TouchEvent("touchstart", {
+            ...base,
+            touches: [touch],
+            targetTouches: [touch],
+            changedTouches: [touch]
+          })
+        );
+        el.dispatchEvent(
+          new TouchEvent("touchend", {
+            ...base,
+            touches: [],
+            targetTouches: [],
+            changedTouches: [touch]
+          })
+        );
+      } catch {
+        el.click();
+      }
+      pointer("pointerup");
+    } catch {
+    }
+  }
+  function findBackButton() {
+    const buttons = Array.from(
+      document.querySelectorAll("button.ut-navigation-button-control")
+    );
+    return buttons.find((b) => {
+      const r = b.getBoundingClientRect();
+      return r.width > 0 && r.height > 0 && r.top < 120 && r.left < 240;
+    }) ?? null;
+  }
+  function tapBack() {
+    const back = findBackButton();
+    if (back) tapElement(back, "touch");
+  }
+
   // src/ea/apply.ts
   function findLiveOverviewVC(challengeId) {
     const hits = findViewControllers(
@@ -787,42 +847,7 @@
     }
   }
   function leaveChallengeView() {
-    try {
-      const buttons = Array.from(
-        document.querySelectorAll("button.ut-navigation-button-control")
-      );
-      const back = buttons.find((b) => {
-        const r2 = b.getBoundingClientRect();
-        return r2.width > 0 && r2.height > 0 && r2.top < 120 && r2.left < 240;
-      });
-      if (!back) return;
-      const r = back.getBoundingClientRect();
-      const clientX = Math.round(r.left + r.width / 2);
-      const clientY = Math.round(r.top + r.height / 2);
-      const base = { bubbles: true, cancelable: true, composed: true, clientX, clientY };
-      const pointer = (type) => {
-        try {
-          back.dispatchEvent(
-            new PointerEvent(type, { ...base, pointerId: 1, isPrimary: true, pointerType: "touch" })
-          );
-        } catch {
-        }
-      };
-      pointer("pointerdown");
-      try {
-        const touch = new Touch({ identifier: 1, target: back, clientX, clientY });
-        back.dispatchEvent(
-          new TouchEvent("touchstart", { ...base, touches: [touch], targetTouches: [touch], changedTouches: [touch] })
-        );
-        back.dispatchEvent(
-          new TouchEvent("touchend", { ...base, touches: [], targetTouches: [], changedTouches: [touch] })
-        );
-      } catch {
-        back.click();
-      }
-      pointer("pointerup");
-    } catch {
-    }
+    tapBack();
   }
   function safeNum(fn) {
     try {
@@ -2336,8 +2361,559 @@
     };
   }
 
+  // src/tweaks/registry.ts
+  var STORAGE_KEY = "fut-sbc-solver:tweaks";
+  var LOG_LIMIT = 200;
+  var registry = /* @__PURE__ */ new Map();
+  var applied = /* @__PURE__ */ new Map();
+  var state = {};
+  var booted = false;
+  function log(message) {
+    const host = globalThis;
+    const sink = host.__futTweaks ??= [];
+    sink.push(`[tweaks] ${message}`);
+    if (sink.length > LOG_LIMIT) sink.splice(0, sink.length - LOG_LIMIT);
+  }
+  function storage() {
+    try {
+      return globalThis.localStorage ?? null;
+    } catch {
+      return null;
+    }
+  }
+  var ctx = { log };
+  function readState() {
+    try {
+      const raw = storage()?.getItem(STORAGE_KEY);
+      if (!raw) return {};
+      const parsed = JSON.parse(raw);
+      if (!parsed || typeof parsed !== "object") return {};
+      const out = {};
+      for (const [k, v] of Object.entries(parsed)) {
+        if (typeof v === "boolean") out[k] = v;
+      }
+      return out;
+    } catch {
+      return {};
+    }
+  }
+  function writeState() {
+    try {
+      storage()?.setItem(STORAGE_KEY, JSON.stringify(state));
+    } catch {
+    }
+  }
+  function registerTweak(tweak) {
+    if (registry.has(tweak.id)) {
+      log(`duplicado ignorado: ${tweak.id}`);
+      return;
+    }
+    registry.set(tweak.id, tweak);
+    if (booted && isEnabled(tweak.id)) applyOne(tweak);
+  }
+  function allTweaks() {
+    return [...registry.values()];
+  }
+  function isEnabled(id) {
+    const stored = state[id];
+    if (typeof stored === "boolean") return stored;
+    return registry.get(id)?.defaultOn ?? false;
+  }
+  function applyOne(tweak) {
+    if (applied.has(tweak.id)) return;
+    try {
+      tweak.enable(ctx);
+      applied.set(tweak.id, () => tweak.disable(ctx));
+      log(`ON  ${tweak.id}`);
+    } catch (e) {
+      log(`FALL\xD3 al activar ${tweak.id}: ${String(e)}`);
+    }
+  }
+  function revertOne(tweak) {
+    const undo5 = applied.get(tweak.id);
+    if (!undo5) return;
+    applied.delete(tweak.id);
+    try {
+      undo5();
+      log(`OFF ${tweak.id}`);
+    } catch (e) {
+      log(`FALL\xD3 al desactivar ${tweak.id}: ${String(e)}`);
+    }
+  }
+  function setEnabled(id, on) {
+    const tweak = registry.get(id);
+    if (!tweak) return;
+    state = { ...state, [id]: on };
+    writeState();
+    if (on) applyOne(tweak);
+    else revertOne(tweak);
+  }
+  function applyAllTweaks() {
+    state = readState();
+    booted = true;
+    for (const tweak of registry.values()) {
+      if (isEnabled(tweak.id)) applyOne(tweak);
+    }
+    log(`activos: ${applied.size}/${registry.size}`);
+  }
+
+  // src/tweaks/display-modes.ts
+  function layoutRoot() {
+    return document.querySelector(".futweb") ?? document.body;
+  }
+  function displayMode(id, cssClass, label, hint) {
+    const category = "interfaz";
+    return {
+      id,
+      label,
+      hint,
+      category,
+      defaultOn: false,
+      enable() {
+        layoutRoot().classList.add(cssClass);
+      },
+      disable() {
+        layoutRoot().classList.remove(cssClass);
+      }
+    };
+  }
+  registerTweak(
+    displayMode(
+      "display.fullWidth",
+      "full-width",
+      "Pantalla completa",
+      "Estira la webapp a todo el ancho en vez del recuadro central de EA."
+    )
+  );
+  registerTweak(
+    displayMode(
+      "display.grid",
+      "grid-mode",
+      "Vista en grilla",
+      "Muestra las listas de jugadores en columnas en vez de una fila por carta."
+    )
+  );
+  registerTweak(
+    displayMode(
+      "display.compact",
+      "compact-view",
+      "Vista compacta",
+      "Achica cada fila ocultando el bloque de precios. Se combina con las otras dos."
+    )
+  );
+
+  // src/tweaks/patch.ts
+  function patchMethod(target, key, factory) {
+    if (!target) return () => void 0;
+    const original = target[key];
+    if (typeof original !== "function") return () => void 0;
+    const originalFn = original;
+    target[key] = factory(originalFn);
+    let restored = false;
+    return () => {
+      if (restored) return;
+      restored = true;
+      target[key] = originalFn;
+    };
+  }
+  function combine(...restores) {
+    return () => {
+      for (const r of restores) {
+        try {
+          r();
+        } catch {
+        }
+      }
+    };
+  }
+
+  // src/tweaks/pack-animation.ts
+  var undo = null;
+  registerTweak({
+    id: "packs.skipAnimation",
+    label: "Saltar animaci\xF3n de packs",
+    hint: "Abre los packs al instante. Ahorra varios segundos por vuelta en los ciclos de SBC diarios.",
+    category: "packs",
+    defaultOn: true,
+    enable(ctx2) {
+      if (undo) return;
+      const animCtor = getGlobal("UTPackAnimationViewController");
+      const presCtor = getGlobal("UTPresentationController");
+      if (!animCtor?.prototype) {
+        ctx2.log("packs.skipAnimation: falta UTPackAnimationViewController");
+        return;
+      }
+      const restoreRun = patchMethod(
+        animCtor.prototype,
+        "runAnimation",
+        (original) => function(...args) {
+          const result = original.apply(this, args);
+          if (typeof this.animationTimeout === "number") {
+            clearTimeout(this.animationTimeout);
+          }
+          const done = this.runCallback;
+          if (typeof done === "function") {
+            this.animationTimeout = window.setTimeout(() => done.call(this), 0);
+          }
+          return result;
+        }
+      );
+      const restorePresent = presCtor?.prototype ? patchMethod(
+        presCtor.prototype,
+        "present",
+        (original) => function(animated, ...rest) {
+          const isPack = typeof animCtor === "function" && this.presentedViewController instanceof animCtor;
+          return original.apply(this, [
+            isPack ? false : animated,
+            ...rest
+          ]);
+        }
+      ) : () => void 0;
+      undo = combine(restoreRun, restorePresent);
+    },
+    disable() {
+      undo?.();
+      undo = null;
+    }
+  });
+
+  // src/tweaks/auto-confirm.ts
+  var SAFE_CONFIRMATIONS = [
+    "NEW_ITEMS_FULL",
+    // "your unassigned pile is full" — informational
+    "UNASSIGNED_ENTITLEMENT",
+    // claiming items already owned
+    "PLAYER_NOT_ELIGIBLE",
+    // a card can't go in this slot
+    "SEND_TO_CLUB",
+    // moves an item to the club; nothing is destroyed
+    "CONFIRM_COPY_SQUAD",
+    // copies a squad
+    "CLEAR_SQUAD"
+    // empties the pitch; re-solving puts it back
+  ];
+  function safeTitles(pm) {
+    const out = /* @__PURE__ */ new Set();
+    const table = pm.Confirmations ?? {};
+    for (const key of SAFE_CONFIRMATIONS) {
+      const title = table[key]?.title;
+      if (typeof title === "string" && title) out.add(title);
+    }
+    return out;
+  }
+  var undo2 = null;
+  registerTweak({
+    id: "popups.autoConfirmSafe",
+    label: "Auto-confirmar pop-ups inofensivos",
+    hint: "Acepta solo avisos sin consecuencias (pila llena, mandar al club, limpiar plantilla). Nunca auto-acepta descartar, borrar plantillas, enviar SBC ni gastar monedas.",
+    category: "popups",
+    defaultOn: true,
+    enable(ctx2) {
+      if (undo2) return;
+      const utils = getGlobal("utils");
+      const pm = utils?.PopupManager;
+      if (!pm?.showConfirmation) {
+        ctx2.log("popups.autoConfirmSafe: falta utils.PopupManager.showConfirmation");
+        return;
+      }
+      const allowed = safeTitles(pm);
+      ctx2.log(`popups.autoConfirmSafe: ${allowed.size}/${SAFE_CONFIRMATIONS.length} t\xEDtulos resueltos`);
+      undo2 = patchMethod(
+        pm,
+        "showConfirmation",
+        (original) => function(...args) {
+          const dto = args[0];
+          const onConfirm = args[2];
+          const title = typeof dto?.title === "string" ? dto.title : "";
+          if (allowed.has(title) && typeof onConfirm === "function") {
+            ctx2.log(`auto-confirmado: ${title}`);
+            return onConfirm();
+          }
+          return original.apply(this, args);
+        }
+      );
+    },
+    disable() {
+      undo2?.();
+      undo2 = null;
+    }
+  });
+
+  // src/tweaks/reward-popup.ts
+  var SETTLE_MS = 150;
+  var BETWEEN_MS = 300;
+  var undo3 = null;
+  registerTweak({
+    id: "popups.autoDismissRewards",
+    label: "Cerrar solo el aviso de recompensa",
+    hint: "Despacha la pantalla de recompensa que aparece al terminar un SBC. Clave para que un ciclo largo corra sin vos.",
+    category: "popups",
+    defaultOn: true,
+    enable(ctx2) {
+      if (undo3) return;
+      const ctor = getGlobal("UTGameRewardsView");
+      if (!ctor?.prototype) {
+        ctx2.log("popups.autoDismissRewards: falta UTGameRewardsView");
+        return;
+      }
+      const queue = [];
+      let timer = null;
+      let draining = false;
+      const drain = async () => {
+        if (draining) return;
+        draining = true;
+        try {
+          while (queue.length) {
+            const el = queue.shift();
+            if (el?.isConnected) {
+              tapElement(el, "mouse");
+              ctx2.log("popups.autoDismissRewards: recompensa despachada");
+              await new Promise((r) => setTimeout(r, BETWEEN_MS));
+            }
+          }
+        } finally {
+          draining = false;
+        }
+      };
+      const restore = patchMethod(
+        ctor.prototype,
+        "_generate",
+        (original) => function(...args) {
+          const result = original.apply(this, args);
+          try {
+            const btn = this._actionBtn?.getRootElement?.();
+            if (btn) queue.push(btn);
+            if (timer !== null) clearTimeout(timer);
+            timer = window.setTimeout(() => {
+              timer = null;
+              void drain();
+            }, SETTLE_MS);
+          } catch {
+          }
+          return result;
+        }
+      );
+      undo3 = () => {
+        restore();
+        if (timer !== null) clearTimeout(timer);
+        timer = null;
+        queue.length = 0;
+      };
+    },
+    disable() {
+      undo3?.();
+      undo3 = null;
+    }
+  });
+
+  // src/tweaks/unassigned-back.ts
+  var undo4 = null;
+  registerTweak({
+    id: "nav.unassignedAutoBack",
+    label: "Salir solo de \xABsin asignar\xBB vac\xEDo",
+    hint: "Cuando la pila de objetos sin asignar queda vac\xEDa, vuelve atr\xE1s sin que tengas que apretar.",
+    category: "navegacion",
+    defaultOn: true,
+    enable(ctx2) {
+      if (undo4) return;
+      const ctor = getGlobal("UTUnassignedItemsViewController");
+      if (!ctor?.prototype) {
+        ctx2.log("nav.unassignedAutoBack: falta UTUnassignedItemsViewController");
+        return;
+      }
+      undo4 = patchMethod(
+        ctor.prototype,
+        "renderView",
+        (original) => function(...args) {
+          const result = original.apply(this, args);
+          try {
+            const stillHasItems = (this.viewmodel?.length ?? 0) > 0;
+            const services = getGlobal("services");
+            const picksPending = services?.User?.getUser?.()?.hasPlayerPicksPending === true;
+            if (!stillHasItems && !picksPending) {
+              ctx2.log("nav.unassignedAutoBack: pila vac\xEDa, volviendo atr\xE1s");
+              tapBack();
+            }
+          } catch {
+          }
+          return result;
+        }
+      );
+    },
+    disable() {
+      undo4?.();
+      undo4 = null;
+    }
+  });
+
+  // src/tweaks/types.ts
+  var CATEGORY_LABELS = {
+    packs: "Packs",
+    popups: "Pop-ups",
+    interfaz: "Interfaz",
+    navegacion: "Navegaci\xF3n"
+  };
+  var CATEGORY_ORDER = [
+    "packs",
+    "popups",
+    "interfaz",
+    "navegacion"
+  ];
+
+  // src/ui/options-panel.ts
+  var OPTIONS_CSS = `
+.opts { width: 360px; }
+.opts .card-body { gap: 0; padding: 0; }
+
+.opt-tabs {
+  display: flex;
+  gap: 2px;
+  padding: 8px 8px 0;
+  border-bottom: 1px solid var(--border);
+  overflow-x: auto;
+}
+.opt-tab {
+  font: inherit;
+  font-size: 12px;
+  padding: 5px 10px;
+  border: 1px solid transparent;
+  border-bottom: none;
+  border-radius: 6px 6px 0 0;
+  background: transparent;
+  color: var(--muted);
+  cursor: pointer;
+  white-space: nowrap;
+}
+.opt-tab:hover { color: var(--fg); }
+.opt-tab.active {
+  background: var(--bg);
+  border-color: var(--border);
+  color: var(--fg);
+  font-weight: 600;
+  margin-bottom: -1px;
+}
+
+.opt-list {
+  display: flex;
+  flex-direction: column;
+  padding: 8px;
+  gap: 2px;
+  max-height: 46vh;
+  overflow: auto;
+}
+.opt-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 9px;
+  padding: 8px;
+  border-radius: 6px;
+  cursor: pointer;
+}
+.opt-row:hover { background: var(--field-bg); }
+.opt-row input { margin: 2px 0 0; flex: none; }
+.opt-text { display: flex; flex-direction: column; gap: 2px; }
+.opt-label { font-weight: 600; }
+.opt-hint { font-size: 11px; color: var(--muted); line-height: 1.45; }
+.opt-flag {
+  align-self: flex-start;
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  color: var(--danger);
+  border: 1px solid var(--danger);
+  border-radius: 4px;
+  padding: 0 3px;
+}
+.opt-empty { padding: 16px 8px; font-size: 12px; color: var(--muted); text-align: center; }
+`;
+  function tweaksIn(category) {
+    return allTweaks().filter((t) => t.category === category);
+  }
+  function activeCategories() {
+    return CATEGORY_ORDER.filter((c) => tweaksIn(c).length > 0);
+  }
+  function renderRow(tweak) {
+    const row = document.createElement("label");
+    row.className = "opt-row";
+    const input = document.createElement("input");
+    input.type = "checkbox";
+    input.checked = isEnabled(tweak.id);
+    input.addEventListener("change", () => setEnabled(tweak.id, input.checked));
+    const text = document.createElement("span");
+    text.className = "opt-text";
+    const label = document.createElement("span");
+    label.className = "opt-label";
+    label.textContent = tweak.label;
+    const hint = document.createElement("span");
+    hint.className = "opt-hint";
+    hint.textContent = tweak.hint;
+    text.append(label, hint);
+    if (tweak.unverified) {
+      const flag = document.createElement("span");
+      flag.className = "opt-flag";
+      flag.textContent = "sin verificar";
+      text.append(flag);
+    }
+    row.append(input, text);
+    return row;
+  }
+  function createOptionsPanel(opts) {
+    const el = document.createElement("div");
+    el.className = "card opts";
+    const head = document.createElement("div");
+    head.className = "card-head";
+    const title = document.createElement("span");
+    title.textContent = "Opciones";
+    const close = document.createElement("button");
+    close.className = "icon-btn";
+    close.type = "button";
+    close.setAttribute("aria-label", "Cerrar");
+    close.textContent = "\xD7";
+    close.addEventListener("click", () => opts.onClose());
+    head.append(title, close);
+    const body = document.createElement("div");
+    body.className = "card-body";
+    const categories = activeCategories();
+    const tabs = document.createElement("div");
+    tabs.className = "opt-tabs";
+    const list = document.createElement("div");
+    list.className = "opt-list";
+    const show = (category) => {
+      for (const b of tabs.querySelectorAll(".opt-tab")) {
+        b.classList.toggle("active", b.dataset["cat"] === category);
+      }
+      const rows = tweaksIn(category).map(renderRow);
+      list.replaceChildren(...rows);
+    };
+    for (const category of categories) {
+      const tab = document.createElement("button");
+      tab.type = "button";
+      tab.className = "opt-tab";
+      tab.dataset["cat"] = category;
+      tab.textContent = CATEGORY_LABELS[category];
+      tab.addEventListener("click", () => show(category));
+      tabs.append(tab);
+    }
+    if (categories.length > 0) {
+      body.append(tabs, list);
+      show(categories[0]);
+    } else {
+      const empty = document.createElement("p");
+      empty.className = "opt-empty";
+      empty.textContent = "No hay opciones registradas.";
+      body.append(empty);
+    }
+    el.append(head, body);
+    return {
+      el,
+      destroy() {
+        el.remove();
+      }
+    };
+  }
+
   // src/ui/settings.ts
-  var STORAGE_KEY = "fut-sbc-solver:ui-settings";
+  var STORAGE_KEY2 = "fut-sbc-solver:ui-settings";
   var STRATEGIES = [
     "solo-club",
     "club-y-concept",
@@ -2371,7 +2947,7 @@
   }
   function loadSettings() {
     try {
-      const raw = localStorage.getItem(STORAGE_KEY);
+      const raw = localStorage.getItem(STORAGE_KEY2);
       if (!raw) return { ...DEFAULT_SETTINGS };
       const parsed = JSON.parse(raw);
       const strategy = typeof parsed.strategy === "string" && STRATEGIES.includes(parsed.strategy) ? parsed.strategy : DEFAULT_SETTINGS.strategy;
@@ -2397,12 +2973,12 @@
   }
   function saveSettings(settings) {
     try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(settings));
+      localStorage.setItem(STORAGE_KEY2, JSON.stringify(settings));
     } catch {
     }
   }
   function createSettingsPopover(opts) {
-    let state = { ...opts.initial };
+    let state2 = { ...opts.initial };
     const el = document.createElement("div");
     el.className = "card popover";
     const head = document.createElement("div");
@@ -2418,7 +2994,7 @@
     head.append(title, close);
     const body = document.createElement("div");
     body.className = "card-body";
-    const emit = () => opts.onChange({ ...state });
+    const emit = () => opts.onChange({ ...state2 });
     const stratRow = document.createElement("label");
     stratRow.className = "field";
     const stratLabel = document.createElement("span");
@@ -2430,18 +3006,18 @@
       o.textContent = STRATEGY_LABELS[s];
       stratSelect.append(o);
     }
-    stratSelect.value = state.strategy;
+    stratSelect.value = state2.strategy;
     stratSelect.addEventListener("change", () => {
-      state = { ...state, strategy: stratSelect.value };
+      state2 = { ...state2, strategy: stratSelect.value };
       emit();
     });
     stratRow.append(stratLabel, stratSelect);
-    const exclActive = checkboxField("Excluir once activo", state.excludeActiveSquad, (v) => {
-      state = { ...state, excludeActiveSquad: v };
+    const exclActive = checkboxField("Excluir once activo", state2.excludeActiveSquad, (v) => {
+      state2 = { ...state2, excludeActiveSquad: v };
       emit();
     });
-    const exclAll = checkboxField("Excluir todas las plantillas", state.excludeAllSquads, (v) => {
-      state = { ...state, excludeAllSquads: v };
+    const exclAll = checkboxField("Excluir todas las plantillas", state2.excludeAllSquads, (v) => {
+      state2 = { ...state2, excludeAllSquads: v };
       emit();
     });
     const countRow = document.createElement("label");
@@ -2453,32 +3029,32 @@
     countInput.min = "1";
     countInput.max = "20";
     countInput.step = "1";
-    countInput.value = String(state.multiCount);
+    countInput.value = String(state2.multiCount);
     countInput.addEventListener("change", () => {
       const next = clampCount(countInput.valueAsNumber);
       countInput.value = String(next);
-      state = { ...state, multiCount: next };
+      state2 = { ...state2, multiCount: next };
       emit();
     });
     countRow.append(countLabel, countInput);
-    const dryRow = checkboxField("Dry-run (no aplicar solo)", state.dryRun, (v) => {
-      state = { ...state, dryRun: v };
+    const dryRow = checkboxField("Dry-run (no aplicar solo)", state2.dryRun, (v) => {
+      state2 = { ...state2, dryRun: v };
       emit();
     });
-    const unassignedRow = checkboxField("Usar sin asignar", state.useUnassigned, (v) => {
-      state = { ...state, useUnassigned: v };
+    const unassignedRow = checkboxField("Usar sin asignar", state2.useUnassigned, (v) => {
+      state2 = { ...state2, useUnassigned: v };
       emit();
     });
-    const storageRow = checkboxField("Usar almacenamiento SBC", state.useStorage, (v) => {
-      state = { ...state, useStorage: v };
+    const storageRow = checkboxField("Usar almacenamiento SBC", state2.useStorage, (v) => {
+      state2 = { ...state2, useStorage: v };
       emit();
     });
-    const tradeableRow = checkboxField("Incluir transferibles", state.allowTradeable, (v) => {
-      state = { ...state, allowTradeable: v };
+    const tradeableRow = checkboxField("Incluir transferibles", state2.allowTradeable, (v) => {
+      state2 = { ...state2, allowTradeable: v };
       emit();
     });
-    const specialsRow = checkboxField("Incluir cartas especiales", state.allowSpecials, (v) => {
-      state = { ...state, allowSpecials: v };
+    const specialsRow = checkboxField("Incluir cartas especiales", state2.allowSpecials, (v) => {
+      state2 = { ...state2, allowSpecials: v };
       emit();
     });
     body.append(
@@ -2818,6 +3394,7 @@ input[type="number"] { width: 56px; }
 .field.check { justify-content: flex-start; }
 .field.check span { flex: 1; }
 .popover .card-body { gap: 8px; }
+${OPTIONS_CSS}
 `;
   function makeButton(label, variant) {
     const b = document.createElement("button");
@@ -2902,6 +3479,7 @@ input[type="number"] { width: 56px; }
     let settings = loadSettings();
     let busy = false;
     let popover = null;
+    let options = null;
     const solveBtn = makeButton("Resolver", "primary");
     const solveNBtn = makeButton(`Resolver \xD7${settings.multiCount}`);
     const excludeToggle = document.createElement("label");
@@ -2924,8 +3502,13 @@ input[type="number"] { width: 56px; }
     const gearBtn = document.createElement("button");
     gearBtn.type = "button";
     gearBtn.className = "icon-btn";
-    gearBtn.setAttribute("aria-label", "Ajustes");
+    gearBtn.setAttribute("aria-label", "Ajustes del solver");
     gearBtn.textContent = "\u2699";
+    const optionsBtn = document.createElement("button");
+    optionsBtn.type = "button";
+    optionsBtn.className = "icon-btn";
+    optionsBtn.setAttribute("aria-label", "Opciones");
+    optionsBtn.textContent = "\u2630";
     const spinner = document.createElement("span");
     spinner.className = "spinner hidden";
     const sub = document.createElement("span");
@@ -2939,6 +3522,7 @@ input[type="number"] { width: 56px; }
       strategySelect,
       combosBtn,
       gearBtn,
+      optionsBtn,
       spinner
     );
     const controls = [
@@ -2947,6 +3531,7 @@ input[type="number"] { width: 56px; }
       strategySelect,
       combosBtn,
       gearBtn,
+      optionsBtn,
       excludeInput
     ];
     function setBusy(next) {
@@ -2969,6 +3554,10 @@ input[type="number"] { width: 56px; }
       if (popover) {
         popover.destroy();
         popover = null;
+      }
+      if (options) {
+        options.destroy();
+        options = null;
       }
       overlay.replaceChildren();
     }
@@ -3064,12 +3653,21 @@ Cada vuelta arma la plantilla, la env\xEDa y vuelve a entrar. Consume las cartas
       settings = { ...settings, strategy: strategySelect.value };
       saveSettings(settings);
     });
+    optionsBtn.addEventListener("click", () => {
+      if (options) {
+        clearOverlay();
+        return;
+      }
+      clearOverlay();
+      options = createOptionsPanel({ onClose: () => clearOverlay() });
+      overlay.append(options.el);
+    });
     gearBtn.addEventListener("click", () => {
       if (popover) {
         clearOverlay();
         return;
       }
-      overlay.replaceChildren();
+      clearOverlay();
       popover = createSettingsPopover({
         initial: settings,
         onChange: (next) => {
@@ -3195,8 +3793,30 @@ Cada vuelta arma la plantilla, la env\xEDa y vuelve a entrar. Consume las cartas
     runBtn.type = "button";
     runBtn.className = "btn primary";
     runBtn.textContent = runLabel;
-    quick.append(chip, rounds, runBtn);
+    const optionsBtn = document.createElement("button");
+    optionsBtn.type = "button";
+    optionsBtn.className = "icon-btn";
+    optionsBtn.setAttribute("aria-label", "Opciones");
+    optionsBtn.textContent = "\u2630";
+    quick.append(chip, rounds, runBtn, optionsBtn);
     wrap.append(quick);
+    const overlay = document.createElement("div");
+    overlay.className = "overlay";
+    shadow.append(overlay);
+    let optionsPanel = null;
+    const closeOptions = () => {
+      optionsPanel?.destroy();
+      optionsPanel = null;
+      overlay.replaceChildren();
+    };
+    optionsBtn.addEventListener("click", () => {
+      if (optionsPanel) {
+        closeOptions();
+        return;
+      }
+      optionsPanel = createOptionsPanel({ onClose: closeOptions });
+      overlay.append(optionsPanel.el);
+    });
     const blocker = document.createElement("div");
     blocker.className = "blocker";
     const panel = document.createElement("div");
@@ -3208,8 +3828,8 @@ Cada vuelta arma la plantilla, la env\xEDa y vuelve a entrar. Consume las cartas
     const title = document.createElement("span");
     title.textContent = "Resolviendo\u2026";
     head.append(spinner, title);
-    const log = document.createElement("pre");
-    log.className = "blocker-log";
+    const log2 = document.createElement("pre");
+    log2.className = "blocker-log";
     const hint = document.createElement("p");
     hint.className = "blocker-hint";
     const actionsRow = document.createElement("div");
@@ -3220,7 +3840,7 @@ Cada vuelta arma la plantilla, la env\xEDa y vuelve a entrar. Consume las cartas
     closeBtn.textContent = "Cerrar";
     closeBtn.style.display = "none";
     actionsRow.append(closeBtn);
-    panel.append(head, log, hint, actionsRow);
+    panel.append(head, log2, hint, actionsRow);
     blocker.append(panel);
     shadow.append(blocker);
     for (const ev of ["click", "mousedown", "pointerdown", "keydown", "wheel"]) {
@@ -3234,7 +3854,7 @@ Cada vuelta arma la plantilla, la env\xEDa y vuelve a entrar. Consume las cartas
       fn?.();
     });
     function showProgress(lines, done, cb) {
-      log.textContent = lines.join("\n");
+      log2.textContent = lines.join("\n");
       blocker.classList.add("on");
       spinner.classList.toggle("hidden", done);
       title.textContent = done ? "Terminado" : "Resolviendo\u2026";
@@ -3249,7 +3869,7 @@ Cada vuelta arma la plantilla, la env\xEDa y vuelve a entrar. Consume las cartas
       saveRounds(n);
     });
     function showPicker(items, roundsPerSet) {
-      log.textContent = "";
+      log2.textContent = "";
       actionsRow.replaceChildren(closeBtn);
       blocker.classList.add("on");
       spinner.classList.add("hidden");
@@ -3310,7 +3930,7 @@ Cada vuelta arma la plantilla, la env\xEDa y vuelve a entrar. Consume las cartas
         }
         list.append(group);
       }
-      log.append(list);
+      log2.append(list);
       closeBtn.style.display = "";
       closeBtn.textContent = "Cancelar";
       const goBtn = document.createElement("button");
@@ -4330,9 +4950,9 @@ ${text}`);
           break;
         }
         const { items } = await getPool(extras);
-        const applied = await applySolution(current, result.solution, items);
-        if (!applied.ok) {
-          done.push(`\u2717 ronda ${round}: no se pudo aplicar \u2014 ${applied.reason ?? "?"}`);
+        const applied2 = await applySolution(current, result.solution, items);
+        if (!applied2.ok) {
+          done.push(`\u2717 ronda ${round}: no se pudo aplicar \u2014 ${applied2.reason ?? "?"}`);
           break;
         }
         const sent = await submitChallenge(current);
@@ -4345,7 +4965,7 @@ ${text}`);
           done.push(`\u2717 ronda ${round}: EA rechaz\xF3 \u2014 ${why}`);
           break;
         }
-        done.push(`\u2713 ronda ${round}: enviado (media ${applied.teamRating ?? "?"})`);
+        done.push(`\u2713 ronda ${round}: enviado (media ${applied2.teamRating ?? "?"})`);
         handle()?.showProgress(done, false);
         await dismissPostSubmit();
         current = round < budget ? await reenterChallenge(challenge.setId, challenge.id) : null;
@@ -4415,14 +5035,14 @@ ${text}`);
         continue;
       }
       const { items } = await getPool(extras);
-      const applied = await applySolution(challenge, result.solution, items);
-      if (!applied.ok) {
-        push(`  \u2717 ${child.name}: no se pudo aplicar \u2014 ${applied.reason ?? "?"}`);
+      const applied2 = await applySolution(challenge, result.solution, items);
+      if (!applied2.ok) {
+        push(`  \u2717 ${child.name}: no se pudo aplicar \u2014 ${applied2.reason ?? "?"}`);
         continue;
       }
       for (const p of result.solution.players) used.add(p.id);
       filled++;
-      push(`  \u2713 ${child.name}: rellenado (media ${applied.teamRating ?? "?"})`);
+      push(`  \u2713 ${child.name}: rellenado (media ${applied2.teamRating ?? "?"})`);
     }
     resetPoolCache();
     lines.push(
@@ -4479,9 +5099,9 @@ ${filled}/${pending.length} rellenadas. NO se envi\xF3 nada \u2014 revisalas y e
         return "fail";
       }
       const { items } = await getPool(extras);
-      const applied = await applySolution(challenge, result.solution, items);
-      if (!applied.ok) {
-        push(`  \u2717 ${tag}: no se pudo aplicar \u2014 ${applied.reason ?? "?"}`);
+      const applied2 = await applySolution(challenge, result.solution, items);
+      if (!applied2.ok) {
+        push(`  \u2717 ${tag}: no se pudo aplicar \u2014 ${applied2.reason ?? "?"}`);
         return "fail";
       }
       const sent = await submitChallenge(challenge);
@@ -4494,7 +5114,7 @@ ${filled}/${pending.length} rellenadas. NO se envi\xF3 nada \u2014 revisalas y e
         push(`  \u2717 ${tag}: EA rechaz\xF3 \u2014 ${why}`);
         return "fail";
       }
-      push(`  \u2713 ${tag}: enviado (media ${applied.teamRating ?? "?"})`);
+      push(`  \u2713 ${tag}: enviado (media ${applied2.teamRating ?? "?"})`);
       await dismissPostSubmit();
       return "ok";
     };
@@ -4537,6 +5157,7 @@ Total SBC enviados: ${submitted}`);
   async function boot() {
     await waitForServices();
     console.info(LOG, "services ready");
+    applyAllTweaks();
     window.__fut = {
       getOpenChallenge,
       parseRequirements,
