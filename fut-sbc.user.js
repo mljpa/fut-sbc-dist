@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         FUT SBC Solver v2
 // @namespace    https://github.com/mljpa/fut-sbc-solver-v2
-// @version      0.1.0.1788464593
+// @version      0.1.0.1788466050
 // @description  Userscript to solve EA SPORTS FC 26 SBCs with your own club
 // @match        https://www.ea.com/*/ea-sports-fc/ultimate-team/web-app*
 // @match        https://www.ea.com/ea-sports-fc/ultimate-team/web-app*
@@ -455,14 +455,17 @@
       } catch {
         break;
       }
+      let added = 0;
       for (const raw of batch) {
         if (typeof raw.loans === "number" && raw.loans > -1) continue;
         const mapped = toSolverPlayer(raw);
         if (!mapped) continue;
+        if (items.has(mapped.id)) continue;
         players.push(mapped);
         items.set(mapped.id, raw);
+        added++;
       }
-      if (retrievedAll || batch.length === 0) break;
+      if (retrievedAll || batch.length === 0 || added === 0) break;
       criteria["offset"] = Number(criteria["offset"] ?? 0) + batch.length;
     }
     markDuplicates(players);
