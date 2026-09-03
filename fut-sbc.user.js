@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         FUT SBC Solver v2
 // @namespace    https://github.com/mljpa/fut-sbc-solver-v2
-// @version      0.1.0.1788404030
+// @version      0.1.0.1788404434
 // @description  Userscript to solve EA SPORTS FC 26 SBCs with your own club
 // @match        https://www.ea.com/*/ea-sports-fc/ultimate-team/web-app*
 // @match        https://www.ea.com/ea-sports-fc/ultimate-team/web-app*
@@ -2998,8 +2998,16 @@ Cada vuelta arma la plantilla, la env\xEDa y vuelve a entrar. Consume las cartas
 .blocker-head { font-size: 15px; }
 .blocker-actions { gap: 8px; }
 `;
-  var CORNER_POSITION = `
-:host { position: absolute; right: 14px; bottom: 10px; }
+  var GUTTER_POSITION = `
+:host { position: absolute; left: 12px; top: 56px; }
+.quick {
+  flex-direction: column;
+  align-items: stretch;
+  gap: 6px;
+  max-width: 190px;
+}
+.quick .chip { justify-content: center; }
+.quick input[type="number"] { width: 100%; text-align: center; }
 `;
   function mountDailyBar(host, actions, options = {}) {
     const chipLabel = options.label ?? "SBC diarios";
@@ -3008,7 +3016,7 @@ Cada vuelta arma la plantilla, la env\xEDa y vuelve a entrar. Consume las cartas
     const mountHost = document.createElement("div");
     mountHost.className = "fut-sbc-daily-host";
     const shadow = mountHost.attachShadow({ mode: "open" });
-    const placement = options.placement === "corner" ? CORNER_POSITION : HUB_POSITION;
+    const placement = options.placement === "gutter" ? GUTTER_POSITION : HUB_POSITION;
     const style = document.createElement("style");
     style.textContent = CSS + placement + SHARED_CSS;
     shadow.append(style);
@@ -4385,12 +4393,13 @@ Total SBC enviados: ${submitted}`);
         dailyBar = null;
       }
       const setView = document.querySelector(".ut-sbc-challenges-view");
+      const setHost = setView ? document.querySelector(".ut-navigation-container-view--content") : null;
       const openSetId = setView ? getOpenSetId() : null;
-      if (setView && openSetId != null && setBarFor !== openSetId) {
+      if (setHost && openSetId != null && setBarFor !== openSetId) {
         setBar?.destroy();
         const theSetId = openSetId;
         setBar = mountDailyBar(
-          setView,
+          setHost,
           {
             async previewDailies() {
               const name = setNameOf(theSetId);
@@ -4419,7 +4428,7 @@ Total SBC enviados: ${submitted}`);
             label: "Set completo",
             runLabel: "Resolver set",
             pickerTitle: "Resolver este set entero",
-            placement: "corner"
+            placement: "gutter"
           }
         );
         setBarFor = openSetId;
