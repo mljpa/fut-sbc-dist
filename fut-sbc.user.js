@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         FUT SBC Solver v2
 // @namespace    https://github.com/mljpa/fut-sbc-solver-v2
-// @version      0.1.0.1788404434
+// @version      0.1.0.1788404982
 // @description  Userscript to solve EA SPORTS FC 26 SBCs with your own club
 // @match        https://www.ea.com/*/ea-sports-fc/ultimate-team/web-app*
 // @match        https://www.ea.com/ea-sports-fc/ultimate-team/web-app*
@@ -1871,6 +1871,50 @@
       return [];
     }
   }
+  async function openChallengeById(setId, challengeId) {
+    const sbc = sbcService2();
+    if (!sbc) return null;
+    try {
+      const set = await findSet2(sbc, setId);
+      if (!set) return null;
+      let challenge = challengesOf2(set).find(
+        (c) => safeNum3(c.id) === challengeId
+      );
+      if (!challenge && typeof sbc.requestChallengesForSet === "function") {
+        try {
+          await toPromise(
+            sbc.requestChallengesForSet.call(sbc, set)
+          );
+        } catch {
+        }
+        challenge = challengesOf2(set).find(
+          (c) => safeNum3(c.id) === challengeId
+        );
+      }
+      if (!challenge) return null;
+      if (!challenge.squad || !safeInProgress3(challenge)) {
+        await openInPlace(sbc, challenge);
+      }
+      if (!challenge.squad) return null;
+      const constraints = parseRequirements(challenge);
+      const slotPositions = readSlotPositions3(challenge);
+      if (slotPositions.length === constraints.slots) {
+        constraints.slotPositions = slotPositions;
+      }
+      if (constraints.slots <= 0) return null;
+      return {
+        id: safeNum3(challenge.id) ?? challengeId,
+        setId: safeNum3(challenge.setId) ?? setId,
+        name: String(challenge.name ?? ""),
+        slots: constraints.slots,
+        constraints,
+        raw: challenge
+      };
+    } catch (err) {
+      console.warn("[fut-sbc] openChallengeById fall\xF3", err);
+      return null;
+    }
+  }
   async function openSetChallenge(setId) {
     const sbc = sbcService2();
     if (!sbc || !Number.isFinite(setId)) return null;
@@ -2184,6 +2228,112 @@
     l.textContent = label;
     wrap.append(v, l);
     return wrap;
+  }
+
+  // src/ui/draggable.ts
+  var DRAG_THRESHOLD_PX = 4;
+  function readPos(key) {
+    try {
+      const raw = localStorage.getItem(key);
+      if (!raw) return null;
+      const p = JSON.parse(raw);
+      if (typeof p.x !== "number" || typeof p.y !== "number") return null;
+      if (!Number.isFinite(p.x) || !Number.isFinite(p.y)) return null;
+      return { x: p.x, y: p.y };
+    } catch {
+      return null;
+    }
+  }
+  function writePos(key, p) {
+    try {
+      localStorage.setItem(key, JSON.stringify(p));
+    } catch {
+    }
+  }
+  function clampToViewport(el, p) {
+    const r = el.getBoundingClientRect();
+    const maxX = Math.max(0, window.innerWidth - Math.max(40, r.width));
+    const maxY = Math.max(0, window.innerHeight - Math.max(24, r.height));
+    return {
+      x: Math.min(Math.max(0, p.x), maxX),
+      y: Math.min(Math.max(0, p.y), maxY)
+    };
+  }
+  function makeDraggable(el, handle, key) {
+    let dragged = false;
+    let active = false;
+    let start = { x: 0, y: 0 };
+    let origin = { x: 0, y: 0 };
+    const applyPos = (p) => {
+      const safe = clampToViewport(el, p);
+      el.style.position = "fixed";
+      el.style.left = `${safe.x}px`;
+      el.style.top = `${safe.y}px`;
+      el.style.right = "auto";
+      el.style.bottom = "auto";
+      el.style.transform = "none";
+    };
+    const saved = readPos(key);
+    if (saved) applyPos(saved);
+    handle.style.touchAction = "none";
+    handle.style.cursor = "grab";
+    const onDown = (e) => {
+      if (e.button !== 0) return;
+      active = true;
+      dragged = false;
+      start = { x: e.clientX, y: e.clientY };
+      const r = el.getBoundingClientRect();
+      origin = { x: r.left, y: r.top };
+      handle.style.cursor = "grabbing";
+      try {
+        handle.setPointerCapture(e.pointerId);
+      } catch {
+      }
+    };
+    const onMove = (e) => {
+      if (!active) return;
+      const dx = e.clientX - start.x;
+      const dy = e.clientY - start.y;
+      if (!dragged && Math.hypot(dx, dy) < DRAG_THRESHOLD_PX) return;
+      dragged = true;
+      e.preventDefault();
+      e.stopPropagation();
+      applyPos({ x: origin.x + dx, y: origin.y + dy });
+    };
+    const onUp = (e) => {
+      if (!active) return;
+      active = false;
+      handle.style.cursor = "grab";
+      try {
+        handle.releasePointerCapture(e.pointerId);
+      } catch {
+      }
+      if (dragged) {
+        const r = el.getBoundingClientRect();
+        writePos(key, { x: r.left, y: r.top });
+        e.preventDefault();
+        e.stopPropagation();
+      }
+    };
+    handle.addEventListener("pointerdown", onDown);
+    handle.addEventListener("pointermove", onMove);
+    handle.addEventListener("pointerup", onUp);
+    handle.addEventListener("pointercancel", onUp);
+    const onResize = () => {
+      const p = readPos(key);
+      if (p) applyPos(p);
+    };
+    window.addEventListener("resize", onResize);
+    return {
+      wasDragged: () => dragged,
+      destroy() {
+        handle.removeEventListener("pointerdown", onDown);
+        handle.removeEventListener("pointermove", onMove);
+        handle.removeEventListener("pointerup", onUp);
+        handle.removeEventListener("pointercancel", onUp);
+        window.removeEventListener("resize", onResize);
+      }
+    };
   }
 
   // src/ui/settings.ts
@@ -2883,6 +3033,7 @@ input[type="number"] { width: 56px; }
     }
     setOpen(settings.panelOpen);
     chip.addEventListener("click", () => {
+      if (drag.wasDragged()) return;
       const next = !bar.classList.contains("open");
       if (!next) clearOverlay();
       setOpen(next);
@@ -2931,9 +3082,11 @@ Cada vuelta arma la plantilla, la env\xEDa y vuelve a entrar. Consume las cartas
       overlay.append(popover.el);
     });
     host.append(mountHost);
+    const drag = makeDraggable(mountHost, chip, "fut-sbc-solver:pos:pitch");
     return {
       destroy() {
         clearOverlay();
+        drag.destroy();
         mountHost.remove();
       },
       setBusy,
@@ -3170,6 +3323,29 @@ Cada vuelta arma la plantilla, la env\xEDa y vuelve a entrar. Consume las cartas
         closeBtn.textContent = "Cerrar";
       };
       onClose = cleanup;
+      const tickedIds = () => [...boxes.entries()].filter(([, c]) => c.checked).map(([id]) => id);
+      if (actions.fillOnly) {
+        const fillBtn = document.createElement("button");
+        fillBtn.type = "button";
+        fillBtn.className = "btn";
+        fillBtn.textContent = "Solo rellenar";
+        fillBtn.title = "Arma las plantillas pero NO las env\xEDa";
+        actionsRow.prepend(fillBtn);
+        fillBtn.addEventListener("click", () => {
+          const chosen = tickedIds();
+          if (chosen.length === 0) return;
+          cleanup();
+          onClose = null;
+          busy = true;
+          runBtn.disabled = true;
+          rounds.disabled = true;
+          void actions.fillOnly?.(chosen).finally(() => {
+            busy = false;
+            runBtn.disabled = false;
+            rounds.disabled = false;
+          });
+        });
+      }
       goBtn.addEventListener("click", () => {
         const chosen = [...boxes.entries()].filter(([, cb]) => cb.checked).map(([id]) => id);
         if (chosen.length === 0) return;
@@ -3218,8 +3394,14 @@ Consume las cartas que use. Esto NO se puede deshacer.
       host.style.position = "relative";
     }
     host.append(mountHost);
+    const drag = makeDraggable(
+      mountHost,
+      chip,
+      options.dragKey ?? "fut-sbc-solver:pos:daily"
+    );
     return {
       destroy() {
+        drag.destroy();
         mountHost.remove();
         host.style.position = previousPosition;
       },
@@ -4187,6 +4369,69 @@ ${text}`);
       return `Set ${setId}`;
     }
   }
+  async function runSetFill(setId, report) {
+    const lines = [];
+    const push = (s) => {
+      lines.push(s);
+      report(lines, false);
+    };
+    const children = await describeSetChallenges(setId);
+    const pending = children.filter((c) => !c.completed);
+    if (pending.length === 0) {
+      report(["Este set ya est\xE1 completo."], true);
+      return;
+    }
+    push(`Rellenando ${pending.length} ${pending.length === 1 ? "plantilla" : "plantillas"} (sin enviar).`);
+    const strategy = "optimizar-rating-bajo";
+    const extras = {
+      excludeActiveSquad: true,
+      excludeAllSquads: false,
+      dryRun: false,
+      allowTradeable: true,
+      allowSpecials: true,
+      useUnassigned: true,
+      useStorage: true
+    };
+    const used = /* @__PURE__ */ new Set();
+    let filled = 0;
+    for (const child of pending) {
+      const challenge = await openChallengeById(setId, child.id);
+      if (!challenge) {
+        push(`  \u2717 ${child.name}: no se pudo abrir`);
+        continue;
+      }
+      resetPoolCache();
+      const pool = (await buildPool(challenge, strategy, extras)).filter(
+        (p) => !used.has(p.id)
+      );
+      const result = solve(pool, challenge.constraints, {
+        strategy,
+        timeBudgetMs: SOLVE_BUDGET_MS
+      });
+      if (!result.solution || !result.ok) {
+        push(
+          `  \u2717 ${child.name}: sin soluci\xF3n${result.unmet.length ? ` \u2014 ${result.unmet.join(", ")}` : ""}`
+        );
+        continue;
+      }
+      const { items } = await getPool(extras);
+      const applied = await applySolution(challenge, result.solution, items);
+      if (!applied.ok) {
+        push(`  \u2717 ${child.name}: no se pudo aplicar \u2014 ${applied.reason ?? "?"}`);
+        continue;
+      }
+      for (const p of result.solution.players) used.add(p.id);
+      filled++;
+      push(`  \u2713 ${child.name}: rellenado (media ${applied.teamRating ?? "?"})`);
+    }
+    resetPoolCache();
+    lines.push(
+      `
+${filled}/${pending.length} rellenadas. NO se envi\xF3 nada \u2014 revisalas y envi\xE1 vos.`
+    );
+    report(lines, true);
+    console.info(LOG, "set fill finished", lines);
+  }
   async function runSetBatch(setId, rounds, report) {
     const budget = Math.max(1, Math.min(rounds, setRepeatsRemaining(setId) || rounds));
     const challengeCount = Math.max(1, (await describeSetChallenges(setId)).length);
@@ -4422,13 +4667,29 @@ Total SBC enviados: ${submitted}`);
                   true
                 );
               }
+            },
+            async fillOnly() {
+              try {
+                await runSetFill(
+                  theSetId,
+                  (lines, done) => setBar?.showProgress(lines, done)
+                );
+              } catch (err) {
+                window.__futErr = err;
+                console.error(LOG, err);
+                setBar?.showProgress(
+                  [`\u2717 ${err instanceof Error ? err.message : String(err)}`],
+                  true
+                );
+              }
             }
           },
           {
             label: "Set completo",
             runLabel: "Resolver set",
             pickerTitle: "Resolver este set entero",
-            placement: "gutter"
+            placement: "gutter",
+            dragKey: "fut-sbc-solver:pos:set"
           }
         );
         setBarFor = openSetId;
