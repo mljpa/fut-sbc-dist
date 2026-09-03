@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         FUT SBC Solver v2
 // @namespace    https://github.com/mljpa/fut-sbc-solver-v2
-// @version      0.1.0.1788441564
+// @version      0.1.0.1788448194
 // @description  Userscript to solve EA SPORTS FC 26 SBCs with your own club
 // @match        https://www.ea.com/*/ea-sports-fc/ultimate-team/web-app*
 // @match        https://www.ea.com/ea-sports-fc/ultimate-team/web-app*
@@ -2476,11 +2476,11 @@
     }
   }
   function revertOne(tweak) {
-    const undo6 = applied.get(tweak.id);
-    if (!undo6) return;
+    const undo7 = applied.get(tweak.id);
+    if (!undo7) return;
     applied.delete(tweak.id);
     try {
-      undo6();
+      undo7();
       log(`OFF ${tweak.id}`);
     } catch (e) {
       log(`FALL\xD3 al desactivar ${tweak.id}: ${String(e)}`);
@@ -2753,10 +2753,109 @@
     }
   });
 
+  // src/tweaks/back-to-packs.ts
+  var FLOW_WINDOW_MS = 12e4;
+  function findLiveNav() {
+    const getAppMain = getGlobal("getAppMain");
+    const root = getAppMain?.()?.getRootViewController?.();
+    if (!root) return null;
+    const seen = /* @__PURE__ */ new Set();
+    let found = null;
+    const isMounted = (n) => {
+      try {
+        const view = n["getView"]?.call(n);
+        return view?.getRootElement?.()?.isConnected === true;
+      } catch {
+        return false;
+      }
+    };
+    const walk = (node, depth) => {
+      if (!node || depth > 12 || found || seen.has(node)) return;
+      seen.add(node);
+      const n = node;
+      if (node.constructor?.name === "UTGameFlowNavigationController" && isMounted(n)) {
+        found = node;
+        return;
+      }
+      for (const key of ["currentController", "presentedViewController", "presentationController"]) {
+        walk(n[key], depth + 1);
+      }
+      for (const key of ["childViewControllers", "gameflowControllers"]) {
+        const arr = n[key];
+        if (Array.isArray(arr)) for (const c of arr) walk(c, depth + 1);
+      }
+    };
+    walk(root, 0);
+    return found;
+  }
+  var undo4 = null;
+  registerTweak({
+    id: "packs.backToPacksAfterOpen",
+    label: "Volver a Packs al abrir uno",
+    hint: "Despu\xE9s de abrir un pack te deja en la lista de packs, no en la Tienda. Abrir varios seguidos deja de ser un ida y vuelta.",
+    category: "packs",
+    defaultOn: true,
+    enable(ctx) {
+      if (undo4) return;
+      const entityCtor = getGlobal("UTStorePurchasableArticleEntity");
+      const hubCtor = getGlobal("UTStoreHubViewController");
+      const packVcCtor = getGlobal("UTStorePackViewController");
+      if (!entityCtor?.prototype || !hubCtor?.prototype || typeof packVcCtor !== "function") {
+        ctx.log("packs.backToPacksAfterOpen: falta alguno de los hooks de tienda");
+        return;
+      }
+      let openedAt = 0;
+      const restoreOpen = patchMethod(
+        entityCtor.prototype,
+        "open",
+        (original) => function(...args) {
+          openedAt = Date.now();
+          return original.apply(this, args);
+        }
+      );
+      const restoreHub = patchMethod(
+        hubCtor.prototype,
+        "viewDidAppear",
+        (original) => function(...args) {
+          const result = original.apply(this, args);
+          try {
+            if (openedAt === 0 || Date.now() - openedAt > FLOW_WINDOW_MS) return result;
+            openedAt = 0;
+            const nav = findLiveNav();
+            if (!nav?.pushViewController) {
+              ctx.log("packs.backToPacksAfterOpen: no encontr\xE9 el navigation controller");
+              return result;
+            }
+            setTimeout(() => {
+              try {
+                nav.pushViewController?.(new packVcCtor());
+                ctx.log("packs.backToPacksAfterOpen: de vuelta en Packs");
+              } catch (e) {
+                ctx.log(`packs.backToPacksAfterOpen: fall\xF3 el push \u2014 ${String(e)}`);
+              }
+            }, 0);
+          } catch (e) {
+            ctx.log(`packs.backToPacksAfterOpen: ${String(e)}`);
+          }
+          return result;
+        }
+      );
+      undo4 = combine(restoreOpen, restoreHub);
+    },
+    disable() {
+      undo4?.();
+      undo4 = null;
+    }
+  });
+
   // src/tweaks/redeem.ts
   var FACTOR = "factor";
   var BY_RATING = "rating";
   var BY_NON_DUPLICATE = "duplicate";
+  var MODE = "mode";
+  var MODE_MARK = "mark";
+  var MODE_CONFIRM = "confirm";
+  var CONFIRM_DELAY_MS = 400;
   function pickBest(items, factor) {
     const byRating = [...items].sort((a, b) => (b.rating ?? 0) - (a.rating ?? 0));
     if (factor !== BY_NON_DUPLICATE) return byRating[0];
@@ -2768,11 +2867,11 @@
     const c = candidate;
     return typeof c?.markSelectedByItem === "function" ? c : null;
   }
-  var undo4 = null;
+  var undo5 = null;
   registerTweak({
     id: "redeem.autoSelectPlayerPick",
     label: "Elegir solo en los Player Pick",
-    hint: "Marca una carta cuando aparece un Player Pick, para que un ciclo largo no se frene ah\xED. NO confirma: el bot\xF3n Confirmar lo apret\xE1s vos.",
+    hint: "Marca una carta cuando aparece un Player Pick, para que un ciclo largo no se frene ah\xED. Por defecto solo marca; en \xABMarcar y confirmar\xBB adem\xE1s cierra el pick solo.",
     category: "recompensas",
     defaultOn: false,
     irreversible: true,
@@ -2785,16 +2884,28 @@
           { value: BY_NON_DUPLICATE, label: "Que no sea repetida" }
         ],
         defaultValue: BY_RATING
+      },
+      {
+        id: MODE,
+        label: "Hasta d\xF3nde",
+        values: [
+          { value: MODE_MARK, label: "Solo marcar" },
+          { value: MODE_CONFIRM, label: "Marcar y confirmar" }
+        ],
+        // Marking is already irreversible enough to warrant an opt-in; committing
+        // is a second, larger step, so turning the tweak on must not start doing
+        // it by itself.
+        defaultValue: MODE_MARK
       }
     ],
     enable(ctx) {
-      if (undo4) return;
+      if (undo5) return;
       const ctor = getGlobal("UTPlayerPicksView");
       if (!ctor?.prototype) {
         ctx.log("redeem.autoSelectPlayerPick: falta UTPlayerPicksView");
         return;
       }
-      undo4 = patchMethod(
+      undo5 = patchMethod(
         ctor.prototype,
         "setCarouselItems",
         (original) => function(items, ...rest) {
@@ -2818,6 +2929,20 @@
             ctx.log(
               `redeem.autoSelectPlayerPick: marcada ${best.rating ?? "?"} (de ${items.length}, criterio ${ctx.choice(FACTOR)})`
             );
+            if (ctx.choice(MODE) !== MODE_CONFIRM) return result;
+            const confirm = controller.eConfirmSelection;
+            if (typeof confirm !== "function") {
+              ctx.log("redeem.autoSelectPlayerPick: no hay eConfirmSelection, queda sin confirmar");
+              return result;
+            }
+            setTimeout(() => {
+              try {
+                confirm.call(controller);
+                ctx.log("redeem.autoSelectPlayerPick: pick CONFIRMADO");
+              } catch (e) {
+                ctx.log(`redeem.autoSelectPlayerPick: fall\xF3 el confirm \u2014 ${String(e)}`);
+              }
+            }, CONFIRM_DELAY_MS);
           } catch (e) {
             ctx.log(`redeem.autoSelectPlayerPick: abortado, eleg\xED a mano \u2014 ${String(e)}`);
           }
@@ -2826,13 +2951,13 @@
       );
     },
     disable() {
-      undo4?.();
-      undo4 = null;
+      undo5?.();
+      undo5 = null;
     }
   });
 
   // src/tweaks/unassigned-back.ts
-  var undo5 = null;
+  var undo6 = null;
   registerTweak({
     id: "nav.unassignedAutoBack",
     label: "Salir solo de \xABsin asignar\xBB vac\xEDo",
@@ -2840,13 +2965,13 @@
     category: "navegacion",
     defaultOn: true,
     enable(ctx) {
-      if (undo5) return;
+      if (undo6) return;
       const ctor = getGlobal("UTUnassignedItemsViewController");
       if (!ctor?.prototype) {
         ctx.log("nav.unassignedAutoBack: falta UTUnassignedItemsViewController");
         return;
       }
-      undo5 = patchMethod(
+      undo6 = patchMethod(
         ctor.prototype,
         "renderView",
         (original) => function(...args) {
@@ -2866,8 +2991,8 @@
       );
     },
     disable() {
-      undo5?.();
-      undo5 = null;
+      undo6?.();
+      undo6 = null;
     }
   });
 
@@ -5357,7 +5482,10 @@ Total SBC enviados: ${submitted}`);
       setRunComplete,
       setRepeatsRemaining,
       describeSetChallenges,
-      getOpenSetId
+      getOpenSetId,
+      // Options, exposed so a misbehaving tweak can be flipped from the console
+      // without rebuilding — the same handles the panel uses.
+      tweaks: { allTweaks, isEnabled, setEnabled, getChoice, setChoice }
     };
     let handle = null;
     let dailyBar = null;
