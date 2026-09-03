@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         FUT SBC Solver v2
 // @namespace    https://github.com/mljpa/fut-sbc-solver-v2
-// @version      0.1.0.1788466050
+// @version      0.1.0.1788466508
 // @description  Userscript to solve EA SPORTS FC 26 SBCs with your own club
 // @match        https://www.ea.com/*/ea-sports-fc/ultimate-team/web-app*
 // @match        https://www.ea.com/ea-sports-fc/ultimate-team/web-app*
@@ -4810,7 +4810,10 @@ Consume las cartas que use. Esto NO se puede deshacer.
       const matches = (p) => group != null ? groupKey(req.kind, p) === group : playerSatisfies(p, req);
       let have = picked.filter(matches).length;
       const sub = available().filter(matches).sort(
-        (a, b) => Number(inWindow(b)) - Number(inWindow(a)) || chemRank(a) - chemRank(b)
+        (a, b) => Number(inWindow(b)) - Number(inWindow(a)) || chemRank(a) - chemRank(b) || // Spend the cheapest card that qualifies. "Min. 1 TOTW" is satisfied
+        // by any one of them, so burning a 90 when an 88 also counts is pure
+        // loss — and these are exactly the cards worth keeping.
+        a.rating - b.rating
       );
       for (const p of sub) {
         if (have >= req.count || picked.length >= c.slots) break;
@@ -4829,6 +4832,18 @@ Consume las cartas que use. Esto NO se puede deshacer.
           chosen = chooseForRating(
             fixedRatings,
             linked,
+            remaining,
+            target,
+            deadline
+          );
+        }
+      }
+      if (!chosen) {
+        const withoutSpecials = windowPool.filter((p) => !p.isSpecial);
+        if (withoutSpecials.length >= remaining) {
+          chosen = chooseForRating(
+            fixedRatings,
+            withoutSpecials,
             remaining,
             target,
             deadline
@@ -4930,6 +4945,9 @@ Consume las cartas que use. Esto NO se puede deshacer.
       if (arr) arr.push(p);
       else bucket.set(p.rating, [p]);
     }
+    for (const arr of bucket.values()) {
+      arr.sort((a, b) => Number(a.isSpecial) - Number(b.isSpecial));
+    }
     const ratingsAsc = [...bucket.keys()].sort((a, b) => a - b);
     const allRatingsDesc = pool.map((p) => p.rating).sort((a, b) => b - a);
     let bestChosen = null;
@@ -4955,7 +4973,7 @@ Consume las cartas que use. Esto NO se puede deshacer.
       for (let k = maxTake; k >= 0; k--) {
         const next = chosen.slice();
         for (let x = 0; x < k; x++) next.push(rating);
-        dfs(i + 1, next, costSoFar + k * rating);
+        dfs(i + 1, next, costSoFar + k * shadowCost(rating, target));
       }
     };
     dfs(0, [], 0);
