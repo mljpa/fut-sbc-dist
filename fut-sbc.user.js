@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         FUT SBC Solver v2
 // @namespace    https://github.com/mljpa/fut-sbc-solver-v2
-// @version      0.1.0.1788388612
+// @version      0.1.0.1788400046
 // @description  Userscript to solve EA SPORTS FC 26 SBCs with your own club
 // @match        https://www.ea.com/*/ea-sports-fc/ultimate-team/web-app*
 // @match        https://www.ea.com/ea-sports-fc/ultimate-team/web-app*
@@ -1769,6 +1769,74 @@
     const challenges = challengesOf2(set);
     return challenges.length > 0 && challenges.every(safeCompleted);
   }
+  async function describeSetChallenges(setId) {
+    const sbc = sbcService2();
+    if (!sbc || !Number.isFinite(setId)) return [];
+    try {
+      const set = await findSet2(sbc, setId);
+      if (!set) return [];
+      let challenges = challengesOf2(set);
+      if (challenges.length === 0 && typeof sbc.requestChallengesForSet === "function") {
+        for (let attempt = 0; attempt < 2 && challenges.length === 0; attempt++) {
+          try {
+            await toPromise(
+              sbc.requestChallengesForSet.call(sbc, set)
+            );
+          } catch (err) {
+            console.warn("[fut-sbc] requestChallengesForSet fall\xF3", err);
+          }
+          challenges = challengesOf2(set);
+          if (challenges.length === 0) await delay(400);
+        }
+      }
+      const out = [];
+      for (const ch of challenges) {
+        const completed = safeCompleted(ch);
+        const info = {
+          id: safeNum3(ch.id) ?? -1,
+          name: String(ch.name ?? ""),
+          completed,
+          slots: null,
+          requirements: []
+        };
+        if (!completed) {
+          try {
+            if (!ch.squad || !safeInProgress3(ch)) await openInPlace(sbc, ch);
+            if (ch.squad) {
+              const constraints = parseRequirements(ch);
+              info.slots = constraints.slots;
+              const d = constraints.minOvrPerPlayer ?? constraints.exactOvr ?? constraints.teamRatingMin;
+              if (d != null) info.demandsOvr = d;
+              info.requirements = readRequirementStrings(ch);
+            }
+          } catch (err) {
+            console.warn(`[fut-sbc] describeSetChallenges: ${info.name} fall\xF3`, err);
+          }
+        }
+        out.push(info);
+      }
+      return out;
+    } catch (err) {
+      console.warn("[fut-sbc] describeSetChallenges fall\xF3", err);
+      return [];
+    }
+  }
+  function readRequirementStrings(ch) {
+    try {
+      const reqs = ch.eligibilityRequirements;
+      if (!Array.isArray(reqs)) return [];
+      return reqs.map((r) => {
+        try {
+          const fn = r.buildString;
+          return typeof fn === "function" ? String(fn.call(r) ?? "") : "";
+        } catch {
+          return "";
+        }
+      }).filter((s) => s.length > 0);
+    } catch {
+      return [];
+    }
+  }
   async function openSetChallenge(setId) {
     const sbc = sbcService2();
     if (!sbc || !Number.isFinite(setId)) return null;
@@ -2871,7 +2939,24 @@ Cada vuelta arma la plantilla, la env\xEDa y vuelve a entrar. Consume las cartas
 .picker { display: flex; flex-direction: column; gap: 2px; }
 .picker .field.check { gap: 8px; cursor: pointer; padding: 5px 2px; font-size: 13px; }
 .picker .field.check:hover { color: var(--accent); }
-.picker .cost { color: var(--danger); font-size: 11px; }
+.picker .cost { color: var(--danger); font-size: 11px; flex: none; }
+.picker-group { padding: 2px 0; }
+.picker-parent { font-weight: 600; }
+/* Children hang off the parent with a guide line, like a tree. */
+.picker-kids {
+  margin: 0 0 4px 9px;
+  padding-left: 12px;
+  border-left: 1px solid var(--border);
+}
+.picker-child {
+  font-size: 12px;
+  font-weight: 400;
+  color: var(--muted);
+  cursor: default;
+  padding: 3px 2px;
+}
+.picker-child:hover { color: var(--muted); }
+.picker-child .done { text-decoration: line-through; opacity: 0.65; }
 /* Roomier panel \u2014 the picker lists ten sets with long names. */
 .blocker-panel { width: min(620px, 92vw); max-height: 80vh; padding: 20px; }
 .blocker-head { font-size: 15px; }
@@ -2970,13 +3055,16 @@ Cada vuelta arma la plantilla, la env\xEDa y vuelve a entrar. Consume las cartas
       list.className = "picker";
       const boxes = /* @__PURE__ */ new Map();
       for (const d of items) {
+        const group = document.createElement("div");
+        group.className = "picker-group";
         const row = document.createElement("label");
-        row.className = "field check";
+        row.className = "field check picker-parent";
         const cb = document.createElement("input");
         cb.type = "checkbox";
         cb.checked = d.readable && (d.demandsOvr == null || d.demandsOvr <= CHEAP_OVR_LIMIT);
         const text = document.createElement("span");
-        text.textContent = `${d.name} \u2014 hasta ${Math.min(roundsPerSet, d.remaining)}`;
+        const multi = d.children.length > 1;
+        text.textContent = `${d.name} \u2014 hasta ${Math.min(roundsPerSet, d.remaining)}` + (multi ? `  \xB7  ${d.children.length} plantillas` : "");
         row.append(cb, text);
         if (d.demandsOvr != null) {
           const cost = document.createElement("span");
@@ -2989,8 +3077,34 @@ Cada vuelta arma la plantilla, la env\xEDa y vuelve a entrar. Consume las cartas
           cost.textContent = "no se pudo leer";
           row.append(cost);
         }
-        list.append(row);
+        group.append(row);
         boxes.set(d.id, cb);
+        if (multi) {
+          const kids = document.createElement("div");
+          kids.className = "picker-kids";
+          const childBoxes = [];
+          for (const c of d.children) {
+            const krow = document.createElement("label");
+            krow.className = "field check picker-child";
+            const kcb = document.createElement("input");
+            kcb.type = "checkbox";
+            kcb.checked = cb.checked && !c.completed;
+            kcb.disabled = true;
+            kcb.title = "El set se resuelve entero \u2014 se controla desde arriba";
+            const ktext = document.createElement("span");
+            const detail = c.completed ? "ya completado" : [c.slots != null ? `${c.slots} slots` : null, ...c.requirements].filter(Boolean).join(" \xB7 ");
+            ktext.textContent = `${c.name || "SBC"}${detail ? ` \u2014 ${detail}` : ""}`;
+            if (c.completed) ktext.classList.add("done");
+            krow.append(kcb, ktext);
+            kids.append(krow);
+            if (!c.completed) childBoxes.push(kcb);
+          }
+          group.append(kids);
+          cb.addEventListener("change", () => {
+            for (const kcb of childBoxes) kcb.checked = cb.checked;
+          });
+        }
+        list.append(group);
       }
       log.append(list);
       closeBtn.style.display = "";
@@ -4127,7 +4241,8 @@ Total SBC enviados: ${submitted}`);
       resetPoolCache,
       listDailySets,
       openSetChallenge,
-      setRunComplete
+      setRunComplete,
+      describeSetChallenges
     };
     let handle = null;
     let dailyBar = null;
@@ -4161,21 +4276,15 @@ Total SBC enviados: ${submitted}`);
             const sets = await listDailySets();
             const out = [];
             for (const s of sets) {
+              const children = await describeSetChallenges(s.id);
+              const pending = children.filter((c) => !c.completed);
               let demandsOvr;
-              let readable = false;
-              try {
-                for (let step = 0; step < s.challengeCount + 1; step++) {
-                  if (setRunComplete(s.id)) break;
-                  const ch = await openSetChallenge(s.id);
-                  if (!ch) break;
-                  readable = true;
-                  const c = ch.constraints;
-                  const d = c.minOvrPerPlayer ?? c.exactOvr ?? c.teamRatingMin;
-                  if (d != null) demandsOvr = Math.max(demandsOvr ?? 0, d);
-                  if (s.challengeCount <= 1) break;
+              for (const c of pending) {
+                if (c.demandsOvr != null) {
+                  demandsOvr = Math.max(demandsOvr ?? 0, c.demandsOvr);
                 }
-              } catch {
               }
+              const readable = pending.some((c) => c.slots != null);
               if (demandsOvr == null) {
                 const m = /(\d{2})\s*\+/.exec(s.name);
                 if (m) demandsOvr = Number(m[1]);
@@ -4185,7 +4294,8 @@ Total SBC enviados: ${submitted}`);
                 name: s.name,
                 remaining: s.remaining,
                 demandsOvr,
-                readable
+                readable,
+                children
               });
             }
             return out;
