@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         FUT SBC Solver v2
 // @namespace    https://github.com/mljpa/fut-sbc-solver-v2
-// @version      0.1.0.1788466782
+// @version      0.1.0.1788529404
 // @description  Userscript to solve EA SPORTS FC 26 SBCs with your own club
 // @match        https://www.ea.com/*/ea-sports-fc/ultimate-team/web-app*
 // @match        https://www.ea.com/ea-sports-fc/ultimate-team/web-app*
@@ -4349,97 +4349,11 @@ Consume las cartas que use. Esto NO se puede deshacer.
     const avg = sum / n;
     let excess = 0;
     for (const r of ratings) if (r > avg) excess += r - avg;
-    return Math.floor((sum + excess) / n);
+    return Math.floor(Math.round(sum + excess) / n);
   }
   function shadowCost(rating, target) {
     const t = target ?? rating;
     return 1e3 * rating + 1e4 * Math.abs(t - rating);
-  }
-
-  // src/solver/chemistry.ts
-  function inPosition(p, slotPos) {
-    if (slotPos == null) return true;
-    if (p.concept) return true;
-    return p.positions.length === 0 || p.positions.includes(slotPos);
-  }
-  function estimateChemistry(players, slotPositions) {
-    const active = players.map((p, i) => ({ p, ok: inPosition(p, slotPositions?.[i]) })).filter((x) => x.ok && !x.p.concept).map((x) => x.p);
-    const club = /* @__PURE__ */ new Map();
-    const league = /* @__PURE__ */ new Map();
-    const nation = /* @__PURE__ */ new Map();
-    for (const p of active) {
-      bump(club, p.teamId);
-      bump(league, p.leagueId);
-      bump(nation, p.nationId);
-    }
-    let total = 0;
-    for (const p of active) {
-      const pts = tier(club.get(p.teamId) ?? 0, 2, 4, 7) + tier(league.get(p.leagueId) ?? 0, 3, 5, 8) + tier(nation.get(p.nationId) ?? 0, 2, 5, 8);
-      total += Math.min(3, pts);
-    }
-    return Math.min(33, total);
-  }
-  function assignSlots(players, slotPositions, deadline = Infinity) {
-    if (!slotPositions || slotPositions.length !== players.length) {
-      return players.slice();
-    }
-    const n = players.length;
-    const pool = players.slice();
-    const slots = new Array(n).fill(null);
-    const canFill = (pl, s) => inPosition(pl, slotPositions[s]);
-    const order = [...slotPositions.keys()].sort(
-      (a, b) => pool.filter((pl) => canFill(pl, a)).length - pool.filter((pl) => canFill(pl, b)).length
-    );
-    for (const s of order) {
-      let best = null;
-      let bestGain = -Infinity;
-      for (const pl of pool) {
-        if (slots.includes(pl)) continue;
-        const fits = canFill(pl, s);
-        const trial = slots.slice();
-        trial[s] = pl;
-        const gain = estimateChemistry(compact(trial), compactPos(trial, slotPositions)) + (fits ? 0 : -100);
-        if (gain > bestGain) {
-          bestGain = gain;
-          best = pl;
-        }
-      }
-      slots[s] = best;
-    }
-    let current = slots.map((p) => p ?? pool.find((x) => !slots.includes(x)));
-    let bestChem = estimateChemistry(current, slotPositions);
-    let improved = true;
-    while (improved && Date.now() < deadline) {
-      improved = false;
-      for (let i = 0; i < n && Date.now() < deadline; i++) {
-        for (let j = i + 1; j < n; j++) {
-          const swapped = current.slice();
-          [swapped[i], swapped[j]] = [swapped[j], swapped[i]];
-          const chem = estimateChemistry(swapped, slotPositions);
-          if (chem > bestChem) {
-            current = swapped;
-            bestChem = chem;
-            improved = true;
-          }
-        }
-      }
-    }
-    return current;
-  }
-  function compact(arr) {
-    return arr.filter((p) => p != null);
-  }
-  function compactPos(arr, pos) {
-    return pos.filter((_, i) => arr[i] != null);
-  }
-  function bump(m, k) {
-    if (k > 0) m.set(k, (m.get(k) ?? 0) + 1);
-  }
-  function tier(n, a, b, c) {
-    if (n >= c) return 3;
-    if (n >= b) return 2;
-    if (n >= a) return 1;
-    return 0;
   }
 
   // src/solver/constraints.ts
@@ -4563,6 +4477,97 @@ Consume las cartas que use. Esto NO se puede deshacer.
       unmet.push(`requisito no interpretado: ${text}`);
     }
     return { ok: unmet.length === 0, unmet };
+  }
+  function eaRatingShortfall(need, got) {
+    if (need == null) return null;
+    if (typeof got !== "number" || !Number.isFinite(got) || got <= 0) return null;
+    return got < need ? { need, got } : null;
+  }
+
+  // src/solver/chemistry.ts
+  function inPosition(p, slotPos) {
+    if (slotPos == null) return true;
+    if (p.concept) return true;
+    return p.positions.length === 0 || p.positions.includes(slotPos);
+  }
+  function estimateChemistry(players, slotPositions) {
+    const active = players.map((p, i) => ({ p, ok: inPosition(p, slotPositions?.[i]) })).filter((x) => x.ok && !x.p.concept).map((x) => x.p);
+    const club = /* @__PURE__ */ new Map();
+    const league = /* @__PURE__ */ new Map();
+    const nation = /* @__PURE__ */ new Map();
+    for (const p of active) {
+      bump(club, p.teamId);
+      bump(league, p.leagueId);
+      bump(nation, p.nationId);
+    }
+    let total = 0;
+    for (const p of active) {
+      const pts = tier(club.get(p.teamId) ?? 0, 2, 4, 7) + tier(league.get(p.leagueId) ?? 0, 3, 5, 8) + tier(nation.get(p.nationId) ?? 0, 2, 5, 8);
+      total += Math.min(3, pts);
+    }
+    return Math.min(33, total);
+  }
+  function assignSlots(players, slotPositions, deadline = Infinity) {
+    if (!slotPositions || slotPositions.length !== players.length) {
+      return players.slice();
+    }
+    const n = players.length;
+    const pool = players.slice();
+    const slots = new Array(n).fill(null);
+    const canFill = (pl, s) => inPosition(pl, slotPositions[s]);
+    const order = [...slotPositions.keys()].sort(
+      (a, b) => pool.filter((pl) => canFill(pl, a)).length - pool.filter((pl) => canFill(pl, b)).length
+    );
+    for (const s of order) {
+      let best = null;
+      let bestGain = -Infinity;
+      for (const pl of pool) {
+        if (slots.includes(pl)) continue;
+        const fits = canFill(pl, s);
+        const trial = slots.slice();
+        trial[s] = pl;
+        const gain = estimateChemistry(compact(trial), compactPos(trial, slotPositions)) + (fits ? 0 : -100);
+        if (gain > bestGain) {
+          bestGain = gain;
+          best = pl;
+        }
+      }
+      slots[s] = best;
+    }
+    let current = slots.map((p) => p ?? pool.find((x) => !slots.includes(x)));
+    let bestChem = estimateChemistry(current, slotPositions);
+    let improved = true;
+    while (improved && Date.now() < deadline) {
+      improved = false;
+      for (let i = 0; i < n && Date.now() < deadline; i++) {
+        for (let j = i + 1; j < n; j++) {
+          const swapped = current.slice();
+          [swapped[i], swapped[j]] = [swapped[j], swapped[i]];
+          const chem = estimateChemistry(swapped, slotPositions);
+          if (chem > bestChem) {
+            current = swapped;
+            bestChem = chem;
+            improved = true;
+          }
+        }
+      }
+    }
+    return current;
+  }
+  function compact(arr) {
+    return arr.filter((p) => p != null);
+  }
+  function compactPos(arr, pos) {
+    return pos.filter((_, i) => arr[i] != null);
+  }
+  function bump(m, k) {
+    if (k > 0) m.set(k, (m.get(k) ?? 0) + 1);
+  }
+  function tier(n, a, b, c) {
+    if (n >= c) return 3;
+    if (n >= b) return 2;
+    if (n >= a) return 1;
+    return 0;
   }
 
   // src/solver/strategies.ts
@@ -5123,6 +5128,13 @@ Consume las cartas que use. Esto NO se puede deshacer.
     );
     return [...owned, ...concepts];
   }
+  function ratingShortfall(challenge, applied2) {
+    const short = eaRatingShortfall(
+      challenge.constraints.teamRatingMin,
+      applied2.teamRating
+    );
+    return short ? `EA calcul\xF3 media ${short.got}, el SBC pide ${short.need}` : null;
+  }
   function bootActions(challenge, handle) {
     let lastExtras;
     const run = async (fn) => {
@@ -5288,6 +5300,11 @@ ${text}`);
           done.push(`\u2717 ronda ${round}: no se pudo aplicar \u2014 ${applied2.reason ?? "?"}`);
           break;
         }
+        const short = ratingShortfall(current, applied2);
+        if (short) {
+          done.push(`\u2717 ronda ${round}: no env\xEDo \u2014 ${short}`);
+          break;
+        }
         const sent = await submitChallenge(current);
         if (sent.softBanned) {
           done.push(`\u26D4 ronda ${round}: soft-ban de EA (426/429) \u2014 parado.`);
@@ -5435,6 +5452,11 @@ ${filled}/${pending.length} rellenadas. NO se envi\xF3 nada \u2014 revisalas y e
       const applied2 = await applySolution(challenge, result.solution, items);
       if (!applied2.ok) {
         push(`  \u2717 ${tag}: no se pudo aplicar \u2014 ${applied2.reason ?? "?"}`);
+        return "fail";
+      }
+      const short = ratingShortfall(challenge, applied2);
+      if (short) {
+        push(`  \u2717 ${tag}: no env\xEDo \u2014 ${short}`);
         return "fail";
       }
       const sent = await submitChallenge(challenge);
