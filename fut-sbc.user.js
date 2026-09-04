@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         FUT SBC Solver v2
 // @namespace    https://github.com/mljpa/fut-sbc-solver-v2
-// @version      0.1.0.1788536467
+// @version      0.1.0.1788536719
 // @description  Userscript to solve EA SPORTS FC 26 SBCs with your own club
 // @match        https://www.ea.com/*/ea-sports-fc/ultimate-team/web-app*
 // @match        https://www.ea.com/ea-sports-fc/ultimate-team/web-app*
@@ -2140,6 +2140,9 @@
       stat("Qu\xEDmica", solution.chemistry < 0 ? "\u2014" : String(solution.chemistry)),
       stat("Jugadores", String(solution.players.length))
     );
+    if (typeof solution.costCoins === "number") {
+      stats.append(stat("Costo", formatCoins(solution.costCoins)));
+    }
     body.append(stats);
     const list = document.createElement("ul");
     list.className = "player-list";
@@ -2226,6 +2229,12 @@
         el.remove();
       }
     };
+  }
+  function formatCoins(coins) {
+    if (coins >= 1e6) return `${(coins / 1e6).toFixed(1)}M`;
+    if (coins >= 1e4) return `${Math.round(coins / 1e3)}k`;
+    if (coins >= 1e3) return `${(coins / 1e3).toFixed(1)}k`;
+    return String(Math.round(coins));
   }
   function createNoticeCard(message, opts) {
     const { el, body } = cardShell("Listo", opts.onClose);
@@ -5305,6 +5314,20 @@ Consume las cartas que use. Esto NO se puede deshacer.
     );
     return short ? `EA calcul\xF3 media ${short.got}, el SBC pide ${short.need}` : null;
   }
+  function squadBill(players) {
+    const snap = readSnapshot();
+    if (!snap || !freshness(snap, snap.platform).fresh) return void 0;
+    let total = 0;
+    let known = 0;
+    for (const p of players) {
+      const coins = snap.prices.get(p.definitionId);
+      if (coins != null) {
+        total += coins;
+        known++;
+      }
+    }
+    return known === players.length ? total : void 0;
+  }
   function costsFor(pool) {
     const snap = readSnapshot();
     if (!snap || !freshness(snap, snap.platform).fresh) return {};
@@ -5357,6 +5380,7 @@ Consume las cartas que use. Esto NO se puede deshacer.
           if (specials) notes.push(specials);
           const priceNote = costsFor(pool).note;
           if (priceNote) notes.push(priceNote);
+          result.solution.costCoins = squadBill(result.solution.players);
           handle()?.showSolution(result.solution, notes);
           if (extras && extras.dryRun === false) await doApply(result.solution);
         });
