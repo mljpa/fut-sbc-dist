@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         FUT SBC Solver v2
 // @namespace    https://github.com/mljpa/fut-sbc-solver-v2
-// @version      0.1.0.1788535902
+// @version      0.1.0.1788536467
 // @description  Userscript to solve EA SPORTS FC 26 SBCs with your own club
 // @match        https://www.ea.com/*/ea-sports-fc/ultimate-team/web-app*
 // @match        https://www.ea.com/ea-sports-fc/ultimate-team/web-app*
@@ -2227,6 +2227,23 @@
       }
     };
   }
+  function createNoticeCard(message, opts) {
+    const { el, body } = cardShell("Listo", opts.onClose);
+    const msg = document.createElement("p");
+    msg.className = "err-msg";
+    msg.textContent = message;
+    body.append(msg);
+    const actions = document.createElement("div");
+    actions.className = "card-actions";
+    const closeBtn = document.createElement("button");
+    closeBtn.className = "btn";
+    closeBtn.type = "button";
+    closeBtn.textContent = "Cerrar";
+    closeBtn.addEventListener("click", opts.onClose);
+    actions.append(closeBtn);
+    body.append(actions);
+    return { el, destroy: () => el.remove() };
+  }
   function createErrorCard(message, opts) {
     const { el, body } = cardShell("Error", opts.onClose);
     el.classList.add("card-error");
@@ -3873,6 +3890,10 @@ ${OPTIONS_CSS}
       }
       overlay.replaceChildren();
     }
+    function showNotice(message) {
+      clearOverlay();
+      overlay.append(createNoticeCard(message, { onClose: clearOverlay }).el);
+    }
     function showError(message) {
       window.__futErr = message;
       clearOverlay();
@@ -4001,6 +4022,7 @@ Cada vuelta arma la plantilla, la env\xEDa y vuelve a entrar. Consume las cartas
       },
       setBusy,
       showError,
+      showNotice,
       showSolution,
       showProgress
     };
@@ -5431,7 +5453,7 @@ ${text}`);
       const parts = [];
       if (res.teamRating != null) parts.push(`media ${res.teamRating}`);
       if (res.chemistry != null) parts.push(`qu\xEDmica ${res.chemistry}`);
-      if (parts.length) handle()?.showError(`Aplicado \u2713  (${parts.join(" \xB7 ")})`);
+      if (parts.length) handle()?.showNotice(`Aplicado \u2713  (${parts.join(" \xB7 ")})`);
     }
     async function repeatLoop(strategy, rounds, extras) {
       let current = challenge;
