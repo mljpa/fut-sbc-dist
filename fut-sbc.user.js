@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         FUT SBC Solver v2
 // @namespace    https://github.com/mljpa/fut-sbc-solver-v2
-// @version      0.1.0.1788536719
+// @version      0.1.0.1788536881
 // @description  Userscript to solve EA SPORTS FC 26 SBCs with your own club
 // @match        https://www.ea.com/*/ea-sports-fc/ultimate-team/web-app*
 // @match        https://www.ea.com/ea-sports-fc/ultimate-team/web-app*
@@ -2113,7 +2113,7 @@
     el.append(head, body);
     return { el, body };
   }
-  function createResultCard(solution, opts, unmet = []) {
+  function createResultCard(solution, opts, unmet = [], notes = []) {
     const { el, body } = cardShell(
       unmet.length > 0 ? "Soluci\xF3n parcial" : "Soluci\xF3n",
       opts.onClose
@@ -2142,6 +2142,21 @@
     );
     if (typeof solution.costCoins === "number") {
       stats.append(stat("Costo", formatCoins(solution.costCoins)));
+    }
+    if (notes.length > 0) {
+      const info = document.createElement("div");
+      info.className = "buy";
+      const head = document.createElement("div");
+      head.className = "buy-head";
+      head.textContent = "Nota";
+      const list2 = document.createElement("ul");
+      for (const n of notes) {
+        const li = document.createElement("li");
+        li.textContent = n;
+        list2.append(li);
+      }
+      info.append(head, list2);
+      body.append(info);
     }
     body.append(stats);
     const list = document.createElement("ul");
@@ -3908,7 +3923,7 @@ ${OPTIONS_CSS}
       clearOverlay();
       overlay.append(createErrorCard(message, { onClose: clearOverlay }).el);
     }
-    function showSolution(solution, unmet = []) {
+    function showSolution(solution, unmet = [], notes = []) {
       clearOverlay();
       const card = createResultCard(
         solution,
@@ -3921,7 +3936,8 @@ ${OPTIONS_CSS}
             void run(() => actions.buyAndApply(s, cap));
           }
         },
-        unmet
+        unmet,
+        notes
       );
       overlay.append(card.el);
     }
@@ -5375,13 +5391,14 @@ Consume las cartas que use. Esto NO se puede deshacer.
             );
             return;
           }
-          const notes = withChemNote(result.unmet);
+          const unmet = withChemNote(result.unmet);
+          const notes = [];
           const specials = explainSpecialUse(result.solution.players, challenge.constraints);
           if (specials) notes.push(specials);
           const priceNote = costsFor(pool).note;
           if (priceNote) notes.push(priceNote);
           result.solution.costCoins = squadBill(result.solution.players);
-          handle()?.showSolution(result.solution, notes);
+          handle()?.showSolution(result.solution, unmet, notes);
           if (extras && extras.dryRun === false) await doApply(result.solution);
         });
       },
