@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         FUT SBC Solver v2
 // @namespace    https://github.com/mljpa/fut-sbc-solver-v2
-// @version      0.1.0.1788535621
+// @version      0.1.0.1788535902
 // @description  Userscript to solve EA SPORTS FC 26 SBCs with your own club
 // @match        https://www.ea.com/*/ea-sports-fc/ultimate-team/web-app*
 // @match        https://www.ea.com/ea-sports-fc/ultimate-team/web-app*
@@ -4493,6 +4493,129 @@ Consume las cartas que use. Esto NO se puede deshacer.
     return `Gast\xF3 ${used} cartas especiales y el SBC pide ${demanded || 1}. No hay con qu\xE9 reemplazarlas: la mejor carta normal disponible es ${best ?? "\u2014"}, y sin las especiales no se llega a la media pedida.`;
   }
 
+  // src/prices/cache.ts
+  var KEY = "fut-sbc-solver:prices";
+  var MANIFEST_POLL_MS = 15 * 60 * 1e3;
+  var STALE_AFTER_MS = 6 * 60 * 60 * 1e3;
+  function storage2() {
+    try {
+      return globalThis.localStorage ?? null;
+    } catch {
+      return null;
+    }
+  }
+  function readSnapshot() {
+    try {
+      const raw = storage2()?.getItem(KEY);
+      if (!raw) return null;
+      const parsed = JSON.parse(raw);
+      if (typeof parsed.revision !== "string" || typeof parsed.fetchedAt !== "number" || !parsed.prices || typeof parsed.prices !== "object") {
+        return null;
+      }
+      const prices = /* @__PURE__ */ new Map();
+      for (const [id, coins] of Object.entries(parsed.prices)) {
+        const key = Number(id);
+        if (Number.isFinite(key) && typeof coins === "number" && coins > 0) {
+          prices.set(key, coins);
+        }
+      }
+      if (prices.size === 0) return null;
+      return {
+        platform: parsed.platform === "pc" ? "pc" : "console",
+        fetchedAt: parsed.fetchedAt,
+        revision: parsed.revision,
+        prices
+      };
+    } catch {
+      return null;
+    }
+  }
+  function freshness(snapshot, platform, now = Date.now()) {
+    if (!snapshot) return { fresh: false, shouldPoll: true, ageMs: null };
+    if (snapshot.platform !== platform) {
+      return { fresh: false, shouldPoll: true, ageMs: null };
+    }
+    const ageMs = now - snapshot.fetchedAt;
+    return {
+      fresh: ageMs >= 0 && ageMs < STALE_AFTER_MS,
+      shouldPoll: !(ageMs >= 0 && ageMs < MANIFEST_POLL_MS),
+      ageMs
+    };
+  }
+
+  // src/prices/cost.ts
+  var UNTRADEABLE_WEIGHT = 0.35;
+  var STORAGE_WEIGHT = 0.2;
+  function cardCost(player, prices) {
+    const market = prices.get(player.definitionId);
+    if (market == null || market <= 0) return null;
+    if (player.inStorage) return market * STORAGE_WEIGHT;
+    if (player.untradeable) return market * UNTRADEABLE_WEIGHT;
+    return market;
+  }
+  function priceByRating(pool, prices) {
+    const cheapest = /* @__PURE__ */ new Map();
+    const allRatings = /* @__PURE__ */ new Set();
+    for (const p of pool) {
+      allRatings.add(p.rating);
+      const cost = cardCost(p, prices);
+      if (cost == null) continue;
+      const seen = cheapest.get(p.rating);
+      if (seen == null || cost < seen) cheapest.set(p.rating, cost);
+    }
+    const interpolated = fillGaps(cheapest, allRatings);
+    const coverage = allRatings.size === 0 ? 0 : cheapest.size / allRatings.size;
+    return { byRating: cheapest, coverage, interpolated };
+  }
+  function fillGaps(byRating, allRatings) {
+    const known = [...byRating.keys()].sort((a, b) => a - b);
+    if (known.length < 2) return [];
+    const lo = known[0];
+    const hi = known[known.length - 1];
+    const added = [];
+    for (const rating of [...allRatings].sort((a, b) => a - b)) {
+      if (byRating.has(rating) || rating < lo || rating > hi) continue;
+      let below = lo;
+      let above = hi;
+      for (const k of known) {
+        if (k < rating) below = k;
+        else if (k > rating) {
+          above = k;
+          break;
+        }
+      }
+      const a = byRating.get(below);
+      const b = byRating.get(above);
+      const t = (rating - below) / (above - below);
+      const value = Math.exp(Math.log(a) + t * (Math.log(b) - Math.log(a)));
+      byRating.set(rating, Math.round(value));
+      added.push(rating);
+    }
+    return added;
+  }
+  var MIN_COVERAGE = 0.6;
+  function usable(rp) {
+    return rp.coverage >= MIN_COVERAGE;
+  }
+  function makeRatingCost(rp) {
+    if (!usable(rp)) return null;
+    const known = [...rp.byRating.keys()].sort((a, b) => a - b);
+    if (known.length === 0) return null;
+    const lo = known[0];
+    const hi = known[known.length - 1];
+    const loPrice = rp.byRating.get(lo);
+    const hiPrice = rp.byRating.get(hi);
+    const span = hi - lo;
+    const step = span > 0 ? Math.pow(hiPrice / loPrice, 1 / span) : 1;
+    const growth = Number.isFinite(step) && step > 1 ? step : 1;
+    return (rating) => {
+      const exact = rp.byRating.get(rating);
+      if (exact != null) return exact;
+      if (rating < lo) return Math.max(1, loPrice / Math.pow(growth, lo - rating));
+      return hiPrice * Math.pow(growth, rating - hi);
+    };
+  }
+
   // src/solver/chemistry.ts
   function inPosition(p, slotPos) {
     if (slotPos == null) return true;
@@ -4751,14 +4874,14 @@ Consume las cartas que use. Esto NO se puede deshacer.
     );
     return combos.slice(0, 12).map((c) => c.map);
   }
-  function search(eligible, c, deadline, ratingCost, cardCost) {
+  function search(eligible, c, deadline, ratingCost, cardCost2) {
     const restrictions = distinctCapRestrictions(eligible, c);
     let best = { ok: false, players: [], unmet: ["infeasible"] };
     for (const pred of restrictions) {
       if (Date.now() > deadline) break;
       const sub = pred ? eligible.filter(pred) : eligible;
       if (sub.length < c.slots) continue;
-      const r = greedyThenRating(sub, c, deadline, ratingCost, cardCost);
+      const r = greedyThenRating(sub, c, deadline, ratingCost, cardCost2);
       if (r.ok) return r;
       if (r.players.length > best.players.length) best = r;
     }
@@ -4783,7 +4906,7 @@ Consume las cartas que use. Esto NO se puede deshacer.
       return (p) => allow.has(groupKey(req.kind, p));
     });
   }
-  function greedyThenRating(pool, c, deadline, ratingCost, cardCost) {
+  function greedyThenRating(pool, c, deadline, ratingCost, cardCost2) {
     const picked = [];
     const usedDef = /* @__PURE__ */ new Set();
     const usedId = /* @__PURE__ */ new Set();
@@ -4850,7 +4973,7 @@ Consume las cartas que use. Esto NO se puede deshacer.
             target,
             deadline,
             ratingCost,
-            cardCost
+            cardCost2
           );
         }
       }
@@ -4864,7 +4987,7 @@ Consume las cartas que use. Esto NO se puede deshacer.
             target,
             deadline,
             ratingCost,
-            cardCost
+            cardCost2
           );
         }
       }
@@ -4876,7 +4999,7 @@ Consume las cartas que use. Esto NO se puede deshacer.
           target,
           deadline,
           ratingCost,
-          cardCost
+          cardCost2
         );
       }
       if (chosen) {
@@ -4956,7 +5079,7 @@ Consume las cartas que use. Esto NO se puede deshacer.
     }
     return bestK;
   }
-  function chooseForRating(fixed, pool, need, target, deadline, ratingCost, cardCost) {
+  function chooseForRating(fixed, pool, need, target, deadline, ratingCost, cardCost2) {
     if (need <= 0) return [];
     if (pool.length < need) return null;
     const cost = ratingCost ?? ((rating) => shadowCost(rating, target));
@@ -4974,7 +5097,7 @@ Consume las cartas que use. Esto NO se puede deshacer.
           Number(a.isSpecial) - Number(b.isSpecial) || // Then cheapest first, when we know. A rating bucket routinely holds a
           // common and a special of equal rating; handing over the wrong one is
           // where the coins actually go.
-          (cardCost ? cardCost(a) - cardCost(b) : 0)
+          (cardCost2 ? cardCost2(a) - cardCost2(b) : 0)
         )
       );
     }
@@ -5160,6 +5283,21 @@ Consume las cartas que use. Esto NO se puede deshacer.
     );
     return short ? `EA calcul\xF3 media ${short.got}, el SBC pide ${short.need}` : null;
   }
+  function costsFor(pool) {
+    const snap = readSnapshot();
+    if (!snap || !freshness(snap, snap.platform).fresh) return {};
+    const rp = priceByRating(pool, snap.prices);
+    const ratingCost = makeRatingCost(rp);
+    if (!ratingCost) return {};
+    const mins = Math.round((Date.now() - snap.fetchedAt) / 6e4);
+    return {
+      ratingCost,
+      // Decides which card of a chosen rating gets spent. Unpriced cards sort
+      // last rather than first: unknown is not the same as free.
+      cardCost: (p) => cardCost(p, snap.prices) ?? Number.MAX_SAFE_INTEGER,
+      note: `Precios de fut.gg (${snap.platform === "pc" ? "PC" : "consola"}, ${mins} min).`
+    };
+  }
   function bootActions(challenge, handle) {
     let lastExtras;
     const run = async (fn) => {
@@ -5183,7 +5321,8 @@ Consume las cartas que use. Esto NO se puede deshacer.
           const pool = await buildPool(challenge, strategy, extras);
           const result = solve(pool, challenge.constraints, {
             strategy,
-            timeBudgetMs: SOLVE_BUDGET_MS
+            timeBudgetMs: SOLVE_BUDGET_MS,
+            ...costsFor(pool)
           });
           if (!result.solution) {
             handle()?.showError(
@@ -5194,6 +5333,8 @@ Consume las cartas que use. Esto NO se puede deshacer.
           const notes = withChemNote(result.unmet);
           const specials = explainSpecialUse(result.solution.players, challenge.constraints);
           if (specials) notes.push(specials);
+          const priceNote = costsFor(pool).note;
+          if (priceNote) notes.push(priceNote);
           handle()?.showSolution(result.solution, notes);
           if (extras && extras.dryRun === false) await doApply(result.solution);
         });
@@ -5314,7 +5455,8 @@ ${text}`);
         const pool = await buildPool(current, strategy, extras);
         const result = solve(pool, current.constraints, {
           strategy,
-          timeBudgetMs: SOLVE_BUDGET_MS
+          timeBudgetMs: SOLVE_BUDGET_MS,
+          ...costsFor(pool)
         });
         if (!result.solution || !result.ok) {
           done.push(
@@ -5404,7 +5546,8 @@ ${text}`);
       );
       const result = solve(pool, challenge.constraints, {
         strategy,
-        timeBudgetMs: SOLVE_BUDGET_MS
+        timeBudgetMs: SOLVE_BUDGET_MS,
+        ...costsFor(pool)
       });
       if (!result.solution || !result.ok) {
         push(
@@ -5470,7 +5613,8 @@ ${filled}/${pending.length} rellenadas. NO se envi\xF3 nada \u2014 revisalas y e
       const pool = await buildPool(challenge, strategy, extras);
       const result = solve(pool, challenge.constraints, {
         strategy,
-        timeBudgetMs: SOLVE_BUDGET_MS
+        timeBudgetMs: SOLVE_BUDGET_MS,
+        ...costsFor(pool)
       });
       if (!result.solution || !result.ok) {
         push(`  \u2717 ${tag}: sin soluci\xF3n${result.unmet.length ? ` \u2014 ${result.unmet.join(", ")}` : ""}`);
