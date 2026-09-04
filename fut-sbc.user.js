@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         FUT SBC Solver v2
 // @namespace    https://github.com/mljpa/fut-sbc-solver-v2
-// @version      0.1.0.1788529404
+// @version      0.1.0.1788535621
 // @description  Userscript to solve EA SPORTS FC 26 SBCs with your own club
 // @match        https://www.ea.com/*/ea-sports-fc/ultimate-team/web-app*
 // @match        https://www.ea.com/ea-sports-fc/ultimate-team/web-app*
@@ -4483,6 +4483,15 @@ Consume las cartas que use. Esto NO se puede deshacer.
     if (typeof got !== "number" || !Number.isFinite(got) || got <= 0) return null;
     return got < need ? { need, got } : null;
   }
+  function explainSpecialUse(players, c) {
+    const used = players.filter((p) => p.isSpecial).length;
+    if (used === 0) return null;
+    const demanded = c.counted.filter((r) => r.kind === "group" && (r.scope === "min" || r.scope === "exact")).reduce((most, r) => Math.max(most, r.count), 0);
+    if (used <= Math.max(demanded, 1)) return null;
+    const spare = players.filter((p) => !p.isSpecial).map((p) => p.rating).sort((a, b) => b - a);
+    const best = spare[0];
+    return `Gast\xF3 ${used} cartas especiales y el SBC pide ${demanded || 1}. No hay con qu\xE9 reemplazarlas: la mejor carta normal disponible es ${best ?? "\u2014"}, y sin las especiales no se llega a la media pedida.`;
+  }
 
   // src/solver/chemistry.ts
   function inPosition(p, slotPos) {
@@ -4637,7 +4646,7 @@ Consume las cartas que use. Esto NO se puede deshacer.
     for (const allowSpecial of [false, true]) {
       const sub = allowSpecial ? eligible : eligible.filter((p) => !p.isSpecial);
       if (sub.length < constraints.slots) continue;
-      const attempt = search(sub, constraints, deadline);
+      const attempt = search(sub, constraints, deadline, opts.ratingCost, opts.cardCost);
       if (attempt.ok) return finalize(attempt.players, constraints, deadline);
       if (!best || attempt.players.length > best.players.length) {
         best = { players: attempt.players, unmet: attempt.unmet };
@@ -4742,14 +4751,14 @@ Consume las cartas que use. Esto NO se puede deshacer.
     );
     return combos.slice(0, 12).map((c) => c.map);
   }
-  function search(eligible, c, deadline) {
+  function search(eligible, c, deadline, ratingCost, cardCost) {
     const restrictions = distinctCapRestrictions(eligible, c);
     let best = { ok: false, players: [], unmet: ["infeasible"] };
     for (const pred of restrictions) {
       if (Date.now() > deadline) break;
       const sub = pred ? eligible.filter(pred) : eligible;
       if (sub.length < c.slots) continue;
-      const r = greedyThenRating(sub, c, deadline);
+      const r = greedyThenRating(sub, c, deadline, ratingCost, cardCost);
       if (r.ok) return r;
       if (r.players.length > best.players.length) best = r;
     }
@@ -4774,7 +4783,7 @@ Consume las cartas que use. Esto NO se puede deshacer.
       return (p) => allow.has(groupKey(req.kind, p));
     });
   }
-  function greedyThenRating(pool, c, deadline) {
+  function greedyThenRating(pool, c, deadline, ratingCost, cardCost) {
     const picked = [];
     const usedDef = /* @__PURE__ */ new Set();
     const usedId = /* @__PURE__ */ new Set();
@@ -4839,7 +4848,9 @@ Consume las cartas que use. Esto NO se puede deshacer.
             linked,
             remaining,
             target,
-            deadline
+            deadline,
+            ratingCost,
+            cardCost
           );
         }
       }
@@ -4851,7 +4862,9 @@ Consume las cartas que use. Esto NO se puede deshacer.
             withoutSpecials,
             remaining,
             target,
-            deadline
+            deadline,
+            ratingCost,
+            cardCost
           );
         }
       }
@@ -4861,7 +4874,9 @@ Consume las cartas que use. Esto NO se puede deshacer.
           windowPool,
           remaining,
           target,
-          deadline
+          deadline,
+          ratingCost,
+          cardCost
         );
       }
       if (chosen) {
@@ -4941,9 +4956,10 @@ Consume las cartas que use. Esto NO se puede deshacer.
     }
     return bestK;
   }
-  function chooseForRating(fixed, pool, need, target, deadline) {
+  function chooseForRating(fixed, pool, need, target, deadline, ratingCost, cardCost) {
     if (need <= 0) return [];
     if (pool.length < need) return null;
+    const cost = ratingCost ?? ((rating) => shadowCost(rating, target));
     const bucket = /* @__PURE__ */ new Map();
     for (const p of pool) {
       const arr = bucket.get(p.rating);
@@ -4951,7 +4967,16 @@ Consume las cartas que use. Esto NO se puede deshacer.
       else bucket.set(p.rating, [p]);
     }
     for (const arr of bucket.values()) {
-      arr.sort((a, b) => Number(a.isSpecial) - Number(b.isSpecial));
+      arr.sort(
+        (a, b) => (
+          // Specials last regardless of price — they are worth more than any
+          // market number says, and the group requirements pull them in already.
+          Number(a.isSpecial) - Number(b.isSpecial) || // Then cheapest first, when we know. A rating bucket routinely holds a
+          // common and a special of equal rating; handing over the wrong one is
+          // where the coins actually go.
+          (cardCost ? cardCost(a) - cardCost(b) : 0)
+        )
+      );
     }
     const ratingsAsc = [...bucket.keys()].sort((a, b) => a - b);
     const allRatingsDesc = pool.map((p) => p.rating).sort((a, b) => b - a);
@@ -4978,7 +5003,7 @@ Consume las cartas que use. Esto NO se puede deshacer.
       for (let k = maxTake; k >= 0; k--) {
         const next = chosen.slice();
         for (let x = 0; x < k; x++) next.push(rating);
-        dfs(i + 1, next, costSoFar + k * shadowCost(rating, target));
+        dfs(i + 1, next, costSoFar + k * cost(rating));
       }
     };
     dfs(0, [], 0);
@@ -5166,7 +5191,10 @@ Consume las cartas que use. Esto NO se puede deshacer.
             );
             return;
           }
-          handle()?.showSolution(result.solution, withChemNote(result.unmet));
+          const notes = withChemNote(result.unmet);
+          const specials = explainSpecialUse(result.solution.players, challenge.constraints);
+          if (specials) notes.push(specials);
+          handle()?.showSolution(result.solution, notes);
           if (extras && extras.dryRun === false) await doApply(result.solution);
         });
       },
