@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         FUT SBC Solver v2
 // @namespace    https://github.com/mljpa/fut-sbc-solver-v2
-// @version      0.1.0.1788536881
+// @version      0.1.0.1788537994
 // @description  Userscript to solve EA SPORTS FC 26 SBCs with your own club
 // @match        https://www.ea.com/*/ea-sports-fc/ultimate-team/web-app*
 // @match        https://www.ea.com/ea-sports-fc/ultimate-team/web-app*
@@ -4663,6 +4663,64 @@ Consume las cartas que use. Esto NO se puede deshacer.
     };
   }
 
+  // src/solver/combos.ts
+  var WINDOW_BELOW = 5;
+  var WINDOW_ABOVE = 8;
+  function expand(counts, fixed) {
+    const out = [...fixed];
+    for (const [rating, n] of counts) for (let i = 0; i < n; i++) out.push(rating);
+    return out;
+  }
+  function feasibleCombos(opts) {
+    const { target, slots, available, ratingCost } = opts;
+    const fixed = opts.fixed ?? [];
+    const limit = opts.limit ?? 8;
+    const deadline = opts.deadline ?? Date.now() + 2e3;
+    const need = slots - fixed.length;
+    if (need <= 0 || slots <= 0) return [];
+    const ratings = [...available.keys()].filter((r) => r >= target - WINDOW_BELOW && r <= target + WINDOW_ABOVE).filter((r) => (available.get(r) ?? 0) > 0).sort((a, b) => b - a);
+    if (ratings.length === 0) return [];
+    const best = [];
+    let worstKept = Infinity;
+    const counts = /* @__PURE__ */ new Map();
+    const record = () => {
+      const rating = squadRating(expand(counts, fixed));
+      if (rating < target) return;
+      let cost = 0;
+      for (const [r, n] of counts) cost += ratingCost(r) * n;
+      if (best.length >= limit && cost >= worstKept) return;
+      best.push({ counts: new Map(counts), rating, cost });
+      best.sort((a, b) => a.cost - b.cost);
+      if (best.length > limit) best.length = limit;
+      worstKept = best[best.length - 1]?.cost ?? Infinity;
+    };
+    const dfs = (i, left, cost) => {
+      if (Date.now() > deadline) return;
+      if (best.length >= limit && cost >= worstKept) return;
+      if (left === 0) {
+        record();
+        return;
+      }
+      if (i >= ratings.length) return;
+      const bestLeft = ratings[i];
+      const optimistic = expand(counts, fixed).concat(Array(left).fill(bestLeft));
+      if (squadRating(optimistic) < target) return;
+      const rating = ratings[i];
+      const canTake = Math.min(left, available.get(rating) ?? 0);
+      for (let take = canTake; take >= 0; take--) {
+        if (take > 0) counts.set(rating, take);
+        dfs(i + 1, left - take, cost + ratingCost(rating) * take);
+        counts.delete(rating);
+      }
+    };
+    dfs(0, need, 0);
+    return best;
+  }
+  function comboAllows(combo) {
+    const allowed = new Set(combo.counts.keys());
+    return (rating) => allowed.has(rating);
+  }
+
   // src/solver/chemistry.ts
   function inPosition(p, slotPos) {
     if (slotPos == null) return true;
@@ -4812,6 +4870,8 @@ Consume las cartas que use. Esto NO se puede deshacer.
         unmet: [why]
       };
     }
+    const shaped = solveByShape(eligible, constraints, opts, deadline);
+    if (shaped) return finalize(shaped, constraints, deadline);
     let best = null;
     for (const allowSpecial of [false, true]) {
       const sub = allowSpecial ? eligible : eligible.filter((p) => !p.isSpecial);
@@ -4830,6 +4890,31 @@ Consume las cartas que use. Esto NO se puede deshacer.
       unmet: partial.unmet,
       solution: partial.players.length > 0 ? buildSolution(partial.players, constraints, deadline) : void 0
     };
+  }
+  function solveByShape(eligible, c, opts, deadline) {
+    const target = c.teamRatingMin;
+    if (target == null) return null;
+    const available = /* @__PURE__ */ new Map();
+    for (const p of eligible) available.set(p.rating, (available.get(p.rating) ?? 0) + 1);
+    const ratingCost = opts.ratingCost ?? ((r) => shadowCost(r, target));
+    const combos = feasibleCombos({
+      target,
+      slots: c.slots,
+      available,
+      ratingCost,
+      limit: 6,
+      // Leave most of the budget for actually filling the shapes.
+      deadline: Math.min(deadline, Date.now() + 1200)
+    });
+    for (const combo of combos) {
+      if (Date.now() > deadline) break;
+      const allows = comboAllows(combo);
+      const sub = eligible.filter((p) => allows(p.rating));
+      if (sub.length < c.slots) continue;
+      const attempt = search(sub, c, deadline, opts.ratingCost, opts.cardCost);
+      if (attempt.ok) return attempt.players;
+    }
+    return null;
   }
   function solveMultiple(pool, constraints, opts, n) {
     const out = [];
