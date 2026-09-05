@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         FUT SBC Solver v2
 // @namespace    https://github.com/mljpa/fut-sbc-solver-v2
-// @version      0.1.0.1788537994
+// @version      0.1.0.1788618344
 // @description  Userscript to solve EA SPORTS FC 26 SBCs with your own club
 // @match        https://www.ea.com/*/ea-sports-fc/ultimate-team/web-app*
 // @match        https://www.ea.com/ea-sports-fc/ultimate-team/web-app*
@@ -2529,11 +2529,11 @@
     }
   }
   function revertOne(tweak) {
-    const undo7 = applied.get(tweak.id);
-    if (!undo7) return;
+    const undo9 = applied.get(tweak.id);
+    if (!undo9) return;
     applied.delete(tweak.id);
     try {
-      undo7();
+      undo9();
       log(`OFF ${tweak.id}`);
     } catch (e) {
       log(`FALL\xD3 al desactivar ${tweak.id}: ${String(e)}`);
@@ -3048,6 +3048,454 @@
       undo6 = null;
     }
   });
+
+  // src/ea/piles.ts
+  var MOVE_BATCH = 50;
+  var DISCARD_BATCH = 35;
+  var BATCH_DELAY_MS = 800;
+  var SOFT_BAN3 = /* @__PURE__ */ new Set([426, 429]);
+  var CLUB_PILE_FALLBACK = 7;
+  function defaultEnv() {
+    return {
+      services: getGlobal("services"),
+      repositories: getGlobal("repositories"),
+      itemPile: getGlobal("ItemPile")
+    };
+  }
+  function pileId(env, key) {
+    return (env.itemPile ?? getGlobal("ItemPile"))?.[key];
+  }
+  function isDuplicate(item) {
+    return typeof item?.isDuplicate === "function" && item.isDuplicate() === true;
+  }
+  function isTradeable(item) {
+    return typeof item.isTradeable === "function" ? item.isTradeable() === true : true;
+  }
+  function chunk(arr, size) {
+    const out = [];
+    for (let i = 0; i < arr.length; i += size) out.push(arr.slice(i, i + size));
+    return out;
+  }
+  async function runBatches(targets, size, op) {
+    const batches = chunk(targets, size);
+    let done = 0;
+    for (const [i, batch] of batches.entries()) {
+      if (i > 0) await delay(BATCH_DELAY_MS);
+      let res;
+      try {
+        res = await op(batch);
+      } catch {
+        return { done, softBanned: false, stoppedEarly: true };
+      }
+      const status = Number(res.status);
+      if (SOFT_BAN3.has(status)) {
+        return { done, softBanned: true, stoppedEarly: true };
+      }
+      const failed = res.success === false || Number.isFinite(status) && status >= 400;
+      if (failed) {
+        return {
+          done,
+          softBanned: false,
+          stoppedEarly: true,
+          failStatus: Number.isFinite(status) ? status : void 0
+        };
+      }
+      done += batch.length;
+    }
+    return { done, softBanned: false, stoppedEarly: false };
+  }
+  function summarize(run, targeted, pastParticiple) {
+    const failed = targeted - run.done;
+    let reason;
+    if (run.softBanned) {
+      reason = `EA respondi\xF3 con un c\xF3digo de soft-ban (426/429). Fren\xE9: ${run.done} ${pastParticiple}, ${failed} sin procesar.`;
+    } else if (run.stoppedEarly) {
+      reason = `Un lote fall\xF3${run.failStatus != null ? ` (status ${run.failStatus})` : ""}. Fren\xE9: ${run.done} ${pastParticiple}, ${failed} sin procesar.`;
+    }
+    return {
+      moved: run.done,
+      failed,
+      softBanned: run.softBanned,
+      stoppedEarly: run.stoppedEarly,
+      reason
+    };
+  }
+  var nothingToDo = (reason) => ({
+    moved: 0,
+    failed: 0,
+    softBanned: false,
+    stoppedEarly: false,
+    reason
+  });
+  var cannotStart = (reason) => ({
+    moved: 0,
+    failed: 0,
+    softBanned: false,
+    stoppedEarly: true,
+    reason
+  });
+  async function sendToClub(items, env = defaultEnv()) {
+    const move = env.services?.Item?.move;
+    if (typeof move !== "function") {
+      return cannotStart("services.Item.move no est\xE1 disponible.");
+    }
+    const club = pileId(env, "CLUB") ?? CLUB_PILE_FALLBACK;
+    const targets = items.filter((it) => it && it.pile !== club && !isDuplicate(it));
+    if (targets.length === 0) {
+      return nothingToDo(
+        "No hab\xEDa objetos para enviar al club (ya estaban en el club o eran repetidos)."
+      );
+    }
+    const run = await runBatches(
+      targets,
+      MOVE_BATCH,
+      (batch) => toPromise(move(batch, club))
+    );
+    return summarize(run, targets.length, "enviados al club");
+  }
+  async function duplicatesToTransferList(items, env = defaultEnv()) {
+    const move = env.services?.Item?.move;
+    if (typeof move !== "function") {
+      return cannotStart("services.Item.move no est\xE1 disponible.");
+    }
+    const transfer = pileId(env, "TRANSFER");
+    if (transfer == null) {
+      return cannotStart(
+        "No pude resolver ItemPile.TRANSFER \u2014 no muevo nada a ciegas."
+      );
+    }
+    const dupes = items.filter((it) => it && isDuplicate(it) && isTradeable(it));
+    if (dupes.length === 0) {
+      return nothingToDo("No hab\xEDa repetidos transferibles para mover.");
+    }
+    const room = transferRoom(env, transfer);
+    if (room == null) {
+      return cannotStart(
+        "No pude leer cu\xE1ntos espacios quedan en la lista de transferibles (repositories.Item no disponible). No mov\xED nada."
+      );
+    }
+    if (room <= 0) {
+      return cannotStart(
+        `La lista de transferibles est\xE1 llena. No mov\xED ninguno de los ${dupes.length} repetidos.`
+      );
+    }
+    const fits = dupes.slice(0, room);
+    const shortfall = dupes.length - fits.length;
+    const run = await runBatches(
+      fits,
+      MOVE_BATCH,
+      (batch) => toPromise(move(batch, transfer))
+    );
+    const result = summarize(run, fits.length, "movidos a transferibles");
+    if (shortfall > 0 && !run.softBanned) {
+      const tail = `${shortfall} repetido(s) no entraron: solo hab\xEDa ${room} espacio(s) libre(s) en la lista de transferibles.`;
+      result.reason = result.reason ? `${result.reason} ${tail}` : tail;
+      result.failed += shortfall;
+      result.stoppedEarly = true;
+    }
+    return result;
+  }
+  async function quickSell(items, env = defaultEnv()) {
+    const discard = env.services?.Item?.discard;
+    if (typeof discard !== "function") {
+      return cannotStart("services.Item.discard no est\xE1 disponible.");
+    }
+    const targets = items.filter((it) => Boolean(it));
+    if (targets.length === 0) {
+      return nothingToDo("No hab\xEDa objetos para vender.");
+    }
+    const run = await runBatches(
+      targets,
+      DISCARD_BATCH,
+      (batch) => toPromise(discard(batch))
+    );
+    return summarize(run, targets.length, "vendidos");
+  }
+  function transferRoom(env, transferPile) {
+    const repo = (env.repositories ?? getGlobal("repositories"))?.Item;
+    const size = repo?.getPileSize?.(transferPile);
+    const used = repo?.numItemsInCache?.(transferPile);
+    if (typeof size !== "number" || typeof used !== "number") return null;
+    if (!Number.isFinite(size) || !Number.isFinite(used)) return null;
+    return Math.max(0, size - used);
+  }
+
+  // src/tweaks/unassigned-actions.ts
+  var ROW_CLASS = "fut-bulk-actions";
+  var undo7 = null;
+  registerTweak({
+    id: "unassigned.bulkActions",
+    label: "Acciones masivas en \xABsin asignar\xBB",
+    hint: "Agrega \xABAl club\xBB y \xABRepetidos a transferibles\xBB a la pantalla de objetos sin asignar. NO verificado contra la webapp.",
+    category: "navegacion",
+    defaultOn: false,
+    unverified: true,
+    enable(ctx) {
+      if (undo7) return;
+      const ctor = getGlobal("UTUnassignedItemsView");
+      if (!ctor?.prototype) {
+        ctx.log("unassigned.bulkActions: falta UTUnassignedItemsView");
+        return;
+      }
+      undo7 = patchMethod(
+        ctor.prototype,
+        "renderSection",
+        (original) => function(...args) {
+          const result = original.apply(this, args);
+          try {
+            mountRow(this, ctx);
+          } catch (e) {
+            ctx.log(`unassigned.bulkActions: no pude montar la barra \u2014 ${String(e)}`);
+          }
+          return result;
+        }
+      );
+    },
+    disable() {
+      undo7?.();
+      undo7 = null;
+      if (typeof document !== "undefined") {
+        document.querySelectorAll(`.${ROW_CLASS}`).forEach((el) => el.remove());
+      }
+    }
+  });
+  function mountRow(view, ctx) {
+    const root = view?.getRootElement?.();
+    if (!(root instanceof HTMLElement)) {
+      ctx.log("unassigned.bulkActions: la vista no expone getRootElement");
+      return;
+    }
+    if (root.querySelector(`.${ROW_CLASS}`)) return;
+    const row = document.createElement("div");
+    row.className = ROW_CLASS;
+    row.style.cssText = "display:flex;gap:8px;margin-left:auto;padding:6px 8px;flex-wrap:wrap;";
+    const toClub = makeBulkButton(
+      "Al club",
+      () => runBulkJob(async () => {
+        const items = await readUnassignedItems(ctx);
+        if (items.length === 0) {
+          bulkToast("No hay objetos sin asignar.");
+          return;
+        }
+        bulkToast(describeOutcome("Al club", await sendToClub(items)));
+      }, ctx),
+      ctx
+    );
+    const dupes = makeBulkButton(
+      "Repetidos a transferibles",
+      () => runBulkJob(async () => {
+        const items = await readUnassignedItems(ctx);
+        if (items.length === 0) {
+          bulkToast("No hay objetos sin asignar.");
+          return;
+        }
+        bulkToast(
+          describeOutcome(
+            "Repetidos a transferibles",
+            await duplicatesToTransferList(items)
+          )
+        );
+      }, ctx),
+      ctx
+    );
+    row.append(toClub.el, dupes.el);
+    root.prepend(row);
+  }
+  function makeBulkButton(label, onClick, ctx) {
+    const Ctrl = getGlobal("UTStandardButtonControl");
+    if (typeof Ctrl === "function") {
+      try {
+        const b = new Ctrl();
+        b.init?.();
+        b.setText?.(label);
+        const eventType = getGlobal("EventType")?.["TAP"] ?? "tap";
+        b.addTarget?.(b, onClick, eventType);
+        const el = b.getRootElement?.();
+        if (el instanceof HTMLElement) {
+          el.classList.add("primary", "mini");
+          return { el, setLabel: (s) => b.setText?.(s) };
+        }
+      } catch (e) {
+        ctx.log(
+          `unassigned.bulkActions: UTStandardButtonControl fall\xF3, uso <button> \u2014 ${String(e)}`
+        );
+      }
+    }
+    const btn = document.createElement("button");
+    btn.type = "button";
+    btn.className = "btn primary mini";
+    btn.style.cssText = "padding:4px 10px;font:12px/1 system-ui,-apple-system,sans-serif;cursor:pointer;";
+    btn.textContent = label;
+    btn.addEventListener("click", onClick);
+    return {
+      el: btn,
+      setLabel: (s) => {
+        btn.textContent = s;
+      }
+    };
+  }
+  async function readUnassignedItems(ctx) {
+    const services = getGlobal("services");
+    const req = services?.Item?.requestUnassignedItems;
+    if (typeof req === "function") {
+      try {
+        const res = await toPromise(req.call(services.Item));
+        const items = res?.data?.items;
+        if (Array.isArray(items)) return items;
+      } catch (e) {
+        ctx.log(
+          `unassigned.bulkActions: requestUnassignedItems fall\xF3 \u2014 ${String(e)}`
+        );
+      }
+    }
+    const repos = getGlobal(
+      "repositories"
+    );
+    const cached = repos?.Item?.getUnassignedItems?.();
+    return Array.isArray(cached) ? cached : [];
+  }
+  function describeOutcome(action, r) {
+    if (r.reason) return `${action}: ${r.moved} ok \xB7 ${r.reason}`;
+    return `${action}: ${r.moved} ${r.moved === 1 ? "objeto" : "objetos"} \u2713`;
+  }
+  var running = false;
+  function runBulkJob(job, ctx) {
+    if (running) {
+      bulkToast("Esper\xE1 \u2014 hay una acci\xF3n en curso.");
+      return;
+    }
+    running = true;
+    void job().catch((e) => {
+      ctx.log(`unassigned bulk: la acci\xF3n fall\xF3 \u2014 ${String(e)}`);
+      bulkToast("Algo fall\xF3. Mir\xE1 la consola (window.__futTweaks).");
+    }).finally(() => {
+      running = false;
+    });
+  }
+  var TOAST_CSS = `
+.toast{
+  max-width:80vw;padding:10px 16px;border-radius:8px;pointer-events:auto;
+  font:13px/1.4 system-ui,-apple-system,sans-serif;
+  background:#f4f4f5;color:#18181b;box-shadow:0 6px 24px rgba(0,0,0,.25);
+}
+@media (prefers-color-scheme: dark){
+  .toast{background:#27272a;color:#fafafa;box-shadow:0 6px 24px rgba(0,0,0,.5);}
+}`;
+  var toastHost = null;
+  function bulkToast(message) {
+    try {
+      if (typeof document === "undefined") return;
+      if (!toastHost || !toastHost.isConnected) {
+        toastHost = document.createElement("div");
+        toastHost.style.cssText = "position:fixed;left:0;right:0;bottom:24px;display:flex;flex-direction:column;align-items:center;gap:6px;z-index:2147483647;pointer-events:none;";
+        const shadow2 = toastHost.attachShadow({ mode: "open" });
+        const style = document.createElement("style");
+        style.textContent = TOAST_CSS;
+        shadow2.append(style);
+        document.body.append(toastHost);
+      }
+      const shadow = toastHost.shadowRoot;
+      if (!shadow) return;
+      const bubble = document.createElement("div");
+      bubble.className = "toast";
+      bubble.textContent = message;
+      shadow.append(bubble);
+      setTimeout(() => bubble.remove(), 6500);
+    } catch {
+    }
+  }
+
+  // src/tweaks/unassigned-quicksell.ts
+  var ROW_CLASS2 = "fut-bulk-quicksell";
+  var ARM_MS = 5e3;
+  var IDLE_LABEL = "Venta r\xE1pida";
+  var ARMED_LABEL = "\xBFSeguro? Toc\xE1 otra vez";
+  var undo8 = null;
+  var armed = false;
+  var armTimer;
+  var setLabel = null;
+  function disarm() {
+    armed = false;
+    if (armTimer) clearTimeout(armTimer);
+    armTimer = void 0;
+    setLabel?.(IDLE_LABEL);
+  }
+  registerTweak({
+    id: "unassigned.quickSell",
+    label: "Venta r\xE1pida masiva (sin asignar)",
+    hint: "Bot\xF3n para hacer quick-sell de TODO lo que est\xE1 sin asignar. Doble toque para confirmar. Irreversible: EA descarta las cartas.",
+    category: "navegacion",
+    defaultOn: false,
+    irreversible: true,
+    unverified: true,
+    enable(ctx) {
+      if (undo8) return;
+      const ctor = getGlobal("UTUnassignedItemsView");
+      if (!ctor?.prototype) {
+        ctx.log("unassigned.quickSell: falta UTUnassignedItemsView");
+        return;
+      }
+      undo8 = patchMethod(
+        ctor.prototype,
+        "renderSection",
+        (original) => function(...args) {
+          const result = original.apply(this, args);
+          try {
+            mountButton(this, ctx);
+          } catch (e) {
+            ctx.log(`unassigned.quickSell: no pude montar el bot\xF3n \u2014 ${String(e)}`);
+          }
+          return result;
+        }
+      );
+    },
+    disable() {
+      undo8?.();
+      undo8 = null;
+      disarm();
+      setLabel = null;
+      if (typeof document !== "undefined") {
+        document.querySelectorAll(`.${ROW_CLASS2}`).forEach((el) => el.remove());
+      }
+    }
+  });
+  function mountButton(view, ctx) {
+    const root = view?.getRootElement?.();
+    if (!(root instanceof HTMLElement)) {
+      ctx.log("unassigned.quickSell: la vista no expone getRootElement");
+      return;
+    }
+    if (root.querySelector(`.${ROW_CLASS2}`)) return;
+    const row = document.createElement("div");
+    row.className = ROW_CLASS2;
+    row.style.cssText = "display:flex;margin-left:auto;padding:6px 8px;";
+    const button = makeBulkButton(IDLE_LABEL, () => onPress(ctx), ctx);
+    setLabel = button.setLabel;
+    disarm();
+    row.append(button.el);
+    root.prepend(row);
+  }
+  function onPress(ctx) {
+    if (!armed) {
+      armed = true;
+      setLabel?.(ARMED_LABEL);
+      armTimer = setTimeout(disarm, ARM_MS);
+      return;
+    }
+    disarm();
+    runBulkJob(async () => {
+      const items = await readUnassignedItems(ctx);
+      if (items.length === 0) {
+        bulkToast("No hay objetos sin asignar.");
+        return;
+      }
+      const result = await quickSell(items);
+      ctx.log(
+        `unassigned.quickSell: ${result.moved} vendidos, ${result.failed} sin procesar`
+      );
+      bulkToast(describeOutcome("Venta r\xE1pida", result));
+    }, ctx);
+  }
 
   // src/tweaks/types.ts
   var CATEGORY_LABELS = {
