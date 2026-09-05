@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         FUT SBC Solver v2
 // @namespace    https://github.com/mljpa/fut-sbc-solver-v2
-// @version      0.1.0.1788618344
+// @version      0.1.0.1788618731
 // @description  Userscript to solve EA SPORTS FC 26 SBCs with your own club
 // @match        https://www.ea.com/*/ea-sports-fc/ultimate-team/web-app*
 // @match        https://www.ea.com/ea-sports-fc/ultimate-team/web-app*
@@ -3279,7 +3279,8 @@
         }
         bulkToast(describeOutcome("Al club", await sendToClub(items)));
       }, ctx),
-      ctx
+      ctx,
+      view
     );
     const dupes = makeBulkButton(
       "Repetidos a transferibles",
@@ -3296,20 +3297,22 @@
           )
         );
       }, ctx),
-      ctx
+      ctx,
+      view
     );
     row.append(toClub.el, dupes.el);
     root.prepend(row);
   }
-  function makeBulkButton(label, onClick, ctx) {
+  function makeBulkButton(label, onClick, ctx, host) {
     const Ctrl = getGlobal("UTStandardButtonControl");
-    if (typeof Ctrl === "function") {
+    if (typeof Ctrl === "function" && typeof host?.addSubview === "function") {
       try {
         const b = new Ctrl();
         b.init?.();
         b.setText?.(label);
         const eventType = getGlobal("EventType")?.["TAP"] ?? "tap";
         b.addTarget?.(b, onClick, eventType);
+        host.addSubview(b);
         const el = b.getRootElement?.();
         if (el instanceof HTMLElement) {
           el.classList.add("primary", "mini");
@@ -3469,7 +3472,7 @@
     const row = document.createElement("div");
     row.className = ROW_CLASS2;
     row.style.cssText = "display:flex;margin-left:auto;padding:6px 8px;";
-    const button = makeBulkButton(IDLE_LABEL, () => onPress(ctx), ctx);
+    const button = makeBulkButton(IDLE_LABEL, () => onPress(ctx), ctx, view);
     setLabel = button.setLabel;
     disarm();
     row.append(button.el);
