@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         FUT SBC Solver — precios
 // @namespace    https://github.com/mljpa/fut-sbc-solver-v2
-// @version      0.1.0.1788622065
+// @version      0.1.0.1788623293
 // @description  Baja precios de mercado de fut.gg y los deja para el solver. Complemento de FUT SBC Solver v2.
 // @match        https://www.ea.com/*/ea-sports-fc/ultimate-team/web-app*
 // @match        https://www.ea.com/ea-sports-fc/ultimate-team/web-app*

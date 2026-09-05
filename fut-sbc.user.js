@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         FUT SBC Solver v2
 // @namespace    https://github.com/mljpa/fut-sbc-solver-v2
-// @version      0.1.0.1788622065
+// @version      0.1.0.1788623293
 // @description  Userscript to solve EA SPORTS FC 26 SBCs with your own club
 // @match        https://www.ea.com/*/ea-sports-fc/ultimate-team/web-app*
 // @match        https://www.ea.com/ea-sports-fc/ultimate-team/web-app*
@@ -2529,11 +2529,11 @@
     }
   }
   function revertOne(tweak) {
-    const undo9 = applied.get(tweak.id);
-    if (!undo9) return;
+    const undo10 = applied.get(tweak.id);
+    if (!undo10) return;
     applied.delete(tweak.id);
     try {
-      undo9();
+      undo10();
       log(`OFF ${tweak.id}`);
     } catch (e) {
       log(`FALL\xD3 al desactivar ${tweak.id}: ${String(e)}`);
@@ -3190,7 +3190,7 @@
     const run = await runBatches(
       fits,
       MOVE_BATCH,
-      (batch) => toPromise(move(batch, pile))
+      (batch) => toPromise(move(batch, pile, true))
     );
     const result = summarize(run, fits.length, dest.movedLabel);
     if (shortfall > 0 && !run.softBanned) {
@@ -3278,21 +3278,33 @@
     disable() {
       undo7?.();
       undo7 = null;
-      if (typeof document !== "undefined") {
-        document.querySelectorAll(`.${ROW_CLASS}`).forEach((el) => el.remove());
-      }
+      unmountOwned("bulkActions");
     }
   });
+  function getActionRow(root) {
+    const existing = root.querySelector(`.${ROW_CLASS}`);
+    if (existing) return existing;
+    const row = document.createElement("div");
+    row.className = ROW_CLASS;
+    row.style.cssText = "display:flex;gap:8px;margin-left:auto;padding:6px 8px;flex-wrap:wrap;";
+    root.prepend(row);
+    return row;
+  }
+  function unmountOwned(owner) {
+    if (typeof document === "undefined") return;
+    document.querySelectorAll(`.${ROW_CLASS} [data-fut-owner="${owner}"]`).forEach((el) => el.remove());
+    document.querySelectorAll(`.${ROW_CLASS}`).forEach((row) => {
+      if (row.childElementCount === 0) row.remove();
+    });
+  }
   function mountRow(view, ctx) {
     const root = view?.getRootElement?.();
     if (!(root instanceof HTMLElement)) {
       ctx.log("unassigned.bulkActions: la vista no expone getRootElement");
       return;
     }
-    if (root.querySelector(`.${ROW_CLASS}`)) return;
-    const row = document.createElement("div");
-    row.className = ROW_CLASS;
-    row.style.cssText = "display:flex;gap:8px;margin-left:auto;padding:6px 8px;flex-wrap:wrap;";
+    const row = getActionRow(root);
+    if (row.querySelector('[data-fut-owner="bulkActions"]')) return;
     const toClub = makeBulkButton(
       "Al club",
       () => runBulkJob(async () => {
@@ -3326,8 +3338,10 @@
       ctx,
       view
     );
-    row.append(toClub.el, dupes.el);
-    root.prepend(row);
+    for (const b of [toClub, dupes]) {
+      b.el.dataset["futOwner"] = "bulkActions";
+      row.append(b.el);
+    }
   }
   function makeBulkButton(label, onClick, ctx, host) {
     const Ctrl = getGlobal("UTStandardButtonControl");
@@ -3434,12 +3448,105 @@
     }
   }
 
+  // src/tweaks/unassigned-ea-actions.ts
+  var OWNER = "eaActions";
+  var EA_ACTIONS = [
+    { label: "Al club (EA)", method: "storeInClub" },
+    { label: "Repetidos \u2192 transferibles", method: "sendDuplicatesToTransferList" },
+    { label: "Guardables \u2192 transferibles", method: "sendStorablesToTransferList" },
+    { label: "Intransferibles \u2192 almac\xE9n", method: "confirmStoreUntradeablesTapped" },
+    { label: "Intercambiar repetidos", method: "confirmSwapUntradeablesTapped" }
+  ];
+  var undo8 = null;
+  registerTweak({
+    id: "unassigned.eaActions",
+    label: "Acciones de EA como botones",
+    hint: "Saca las acciones del men\xFA \u22EE (almac\xE9n de SBC, intercambiar repetidos, a transferibles) a botones. Llama a los m\xE9todos de EA, as\xED que EA sigue pidiendo su confirmaci\xF3n.",
+    category: "navegacion",
+    defaultOn: false,
+    enable(ctx) {
+      if (undo8) return;
+      const ctor = getGlobal("UTUnassignedItemsView");
+      if (!ctor?.prototype) {
+        ctx.log("unassigned.eaActions: falta UTUnassignedItemsView");
+        return;
+      }
+      undo8 = patchMethod(
+        ctor.prototype,
+        "renderSection",
+        (original) => function(...args) {
+          const result = original.apply(this, args);
+          try {
+            mountEaButtons(this, ctx);
+          } catch (e) {
+            ctx.log(`unassigned.eaActions: no pude montar los botones \u2014 ${String(e)}`);
+          }
+          return result;
+        }
+      );
+    },
+    disable() {
+      undo8?.();
+      undo8 = null;
+      unmountOwned(OWNER);
+    }
+  });
+  function liveController() {
+    const Ctor = getGlobal("UTUnassignedItemsViewController");
+    if (typeof Ctor !== "function") return null;
+    const hits = findViewControllers((node) => node instanceof Ctor);
+    return hits[hits.length - 1] ?? null;
+  }
+  function controllerHas(method) {
+    const Ctor = getGlobal(
+      "UTUnassignedItemsViewController"
+    );
+    return typeof Ctor?.prototype?.[method] === "function";
+  }
+  function mountEaButtons(view, ctx) {
+    const root = view?.getRootElement?.();
+    if (!(root instanceof HTMLElement)) {
+      ctx.log("unassigned.eaActions: la vista no expone getRootElement");
+      return;
+    }
+    const row = getActionRow(root);
+    if (row.querySelector(`[data-fut-owner="${OWNER}"]`)) return;
+    const available = EA_ACTIONS.filter((a) => controllerHas(a.method));
+    if (available.length === 0) {
+      ctx.log("unassigned.eaActions: el controlador de EA no expone ninguna acci\xF3n conocida");
+      return;
+    }
+    for (const action of available) {
+      const button = makeBulkButton(
+        action.label,
+        () => {
+          const vc = liveController();
+          const fn = vc?.[action.method];
+          if (typeof fn !== "function") {
+            ctx.log(`unassigned.eaActions: ${action.method} no est\xE1 disponible ahora`);
+            return;
+          }
+          try {
+            fn.call(vc);
+          } catch (e) {
+            ctx.log(`unassigned.eaActions: ${action.method} fall\xF3 \u2014 ${String(e)}`);
+          }
+        },
+        ctx,
+        view
+      );
+      button.el.dataset["futOwner"] = OWNER;
+      row.append(button.el);
+    }
+    ctx.log(`unassigned.eaActions: ${available.length}/${EA_ACTIONS.length} acciones disponibles`);
+  }
+
   // src/tweaks/unassigned-quicksell.ts
-  var ROW_CLASS2 = "fut-bulk-quicksell";
+  var OWNER2 = "quickSell";
   var ARM_MS = 5e3;
   var IDLE_LABEL = "Venta r\xE1pida";
   var ARMED_LABEL = "\xBFSeguro? Toc\xE1 otra vez";
-  var undo8 = null;
+  var undo9 = null;
   var armed = false;
   var armTimer;
   var setLabel = null;
@@ -3458,13 +3565,13 @@
     irreversible: true,
     unverified: true,
     enable(ctx) {
-      if (undo8) return;
+      if (undo9) return;
       const ctor = getGlobal("UTUnassignedItemsView");
       if (!ctor?.prototype) {
         ctx.log("unassigned.quickSell: falta UTUnassignedItemsView");
         return;
       }
-      undo8 = patchMethod(
+      undo9 = patchMethod(
         ctor.prototype,
         "renderSection",
         (original) => function(...args) {
@@ -3479,13 +3586,11 @@
       );
     },
     disable() {
-      undo8?.();
-      undo8 = null;
+      undo9?.();
+      undo9 = null;
       disarm();
       setLabel = null;
-      if (typeof document !== "undefined") {
-        document.querySelectorAll(`.${ROW_CLASS2}`).forEach((el) => el.remove());
-      }
+      unmountOwned(OWNER2);
     }
   });
   function mountButton(view, ctx) {
@@ -3494,15 +3599,13 @@
       ctx.log("unassigned.quickSell: la vista no expone getRootElement");
       return;
     }
-    if (root.querySelector(`.${ROW_CLASS2}`)) return;
-    const row = document.createElement("div");
-    row.className = ROW_CLASS2;
-    row.style.cssText = "display:flex;margin-left:auto;padding:6px 8px;";
+    const row = getActionRow(root);
+    if (row.querySelector(`[data-fut-owner="${OWNER2}"]`)) return;
     const button = makeBulkButton(IDLE_LABEL, () => onPress(ctx), ctx, view);
     setLabel = button.setLabel;
     disarm();
+    button.el.dataset["futOwner"] = OWNER2;
     row.append(button.el);
-    root.prepend(row);
   }
   function onPress(ctx) {
     if (!armed) {
