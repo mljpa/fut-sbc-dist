@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         FUT SBC Solver v2
 // @namespace    https://github.com/mljpa/fut-sbc-solver-v2
-// @version      0.1.0.1788618731
+// @version      0.1.0.1788621693
 // @description  Userscript to solve EA SPORTS FC 26 SBCs with your own club
 // @match        https://www.ea.com/*/ea-sports-fc/ultimate-team/web-app*
 // @match        https://www.ea.com/ea-sports-fc/ultimate-team/web-app*
@@ -3084,8 +3084,13 @@
       let res;
       try {
         res = await op(batch);
-      } catch {
-        return { done, softBanned: false, stoppedEarly: true };
+      } catch (e) {
+        return {
+          done,
+          softBanned: false,
+          stoppedEarly: true,
+          failNote: String(e?.message ?? e)
+        };
       }
       const status = Number(res.status);
       if (SOFT_BAN3.has(status)) {
@@ -3110,7 +3115,8 @@
     if (run.softBanned) {
       reason = `EA respondi\xF3 con un c\xF3digo de soft-ban (426/429). Fren\xE9: ${run.done} ${pastParticiple}, ${failed} sin procesar.`;
     } else if (run.stoppedEarly) {
-      reason = `Un lote fall\xF3${run.failStatus != null ? ` (status ${run.failStatus})` : ""}. Fren\xE9: ${run.done} ${pastParticiple}, ${failed} sin procesar.`;
+      const why = run.failStatus != null ? ` (status ${run.failStatus})` : run.failNote ? ` (${run.failNote})` : "";
+      reason = `Un lote fall\xF3${why}. Fren\xE9: ${run.done} ${pastParticiple}, ${failed} sin procesar.`;
     }
     return {
       moved: run.done,
@@ -3226,7 +3232,7 @@
   registerTweak({
     id: "unassigned.bulkActions",
     label: "Acciones masivas en \xABsin asignar\xBB",
-    hint: "Agrega \xABAl club\xBB y \xABRepetidos a transferibles\xBB a la pantalla de objetos sin asignar. NO verificado contra la webapp.",
+    hint: "Agrega \xABAl club\xBB y \xABRepetidos a transferibles\xBB a la pantalla de objetos sin asignar. \xABAl club\xBB verificado en vivo; \xABRepetidos\xBB todavia no (no hubo repetidos con que probarlo).",
     category: "navegacion",
     defaultOn: false,
     unverified: true,
