@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         FUT SBC Solver v2
 // @namespace    https://github.com/mljpa/fut-sbc-solver-v2
-// @version      0.1.0.1788621693
+// @version      0.1.0.1788622065
 // @description  Userscript to solve EA SPORTS FC 26 SBCs with your own club
 // @match        https://www.ea.com/*/ea-sports-fc/ultimate-team/web-app*
 // @match        https://www.ea.com/ea-sports-fc/ultimate-team/web-app*
@@ -3159,30 +3159,30 @@
     );
     return summarize(run, targets.length, "enviados al club");
   }
-  async function duplicatesToTransferList(items, env = defaultEnv()) {
+  async function parkDuplicates(items, env, dest) {
     const move = env.services?.Item?.move;
     if (typeof move !== "function") {
       return cannotStart("services.Item.move no est\xE1 disponible.");
     }
-    const transfer = pileId(env, "TRANSFER");
-    if (transfer == null) {
+    const pile = pileId(env, dest.pileKey);
+    if (pile == null) {
       return cannotStart(
-        "No pude resolver ItemPile.TRANSFER \u2014 no muevo nada a ciegas."
+        `No pude resolver ItemPile.${dest.pileKey} \u2014 no muevo nada a ciegas.`
       );
     }
-    const dupes = items.filter((it) => it && isDuplicate(it) && isTradeable(it));
+    const dupes = items.filter((it) => it && isDuplicate(it) && dest.keep(it));
     if (dupes.length === 0) {
-      return nothingToDo("No hab\xEDa repetidos transferibles para mover.");
+      return nothingToDo(`No hab\xEDa repetidos ${dest.emptyNote} para mover.`);
     }
-    const room = transferRoom(env, transfer);
+    const room = pileRoom(env, pile);
     if (room == null) {
       return cannotStart(
-        "No pude leer cu\xE1ntos espacios quedan en la lista de transferibles (repositories.Item no disponible). No mov\xED nada."
+        `No pude leer cu\xE1ntos espacios quedan en ${dest.placeLabel} (repositories.Item no disponible). No mov\xED nada.`
       );
     }
     if (room <= 0) {
       return cannotStart(
-        `La lista de transferibles est\xE1 llena. No mov\xED ninguno de los ${dupes.length} repetidos.`
+        `Sin espacio en ${dest.placeLabel}. No mov\xED ninguno de los ${dupes.length} repetidos.`
       );
     }
     const fits = dupes.slice(0, room);
@@ -3190,16 +3190,34 @@
     const run = await runBatches(
       fits,
       MOVE_BATCH,
-      (batch) => toPromise(move(batch, transfer))
+      (batch) => toPromise(move(batch, pile))
     );
-    const result = summarize(run, fits.length, "movidos a transferibles");
+    const result = summarize(run, fits.length, dest.movedLabel);
     if (shortfall > 0 && !run.softBanned) {
-      const tail = `${shortfall} repetido(s) no entraron: solo hab\xEDa ${room} espacio(s) libre(s) en la lista de transferibles.`;
+      const tail = `${shortfall} repetido(s) no entraron: solo hab\xEDa ${room} espacio(s) libre(s) en ${dest.placeLabel}.`;
       result.reason = result.reason ? `${result.reason} ${tail}` : tail;
       result.failed += shortfall;
       result.stoppedEarly = true;
     }
     return result;
+  }
+  async function duplicatesToTransferList(items, env = defaultEnv()) {
+    return parkDuplicates(items, env, {
+      pileKey: "TRANSFER",
+      keep: isTradeable,
+      emptyNote: "transferibles",
+      movedLabel: "movidos a transferibles",
+      placeLabel: "la lista de transferibles"
+    });
+  }
+  async function untradeableDuplicatesToStorage(items, env = defaultEnv()) {
+    return parkDuplicates(items, env, {
+      pileKey: "STORAGE",
+      keep: (it) => !isTradeable(it),
+      emptyNote: "intransferibles",
+      movedLabel: "movidos al almac\xE9n de SBC",
+      placeLabel: "el almac\xE9n de SBC"
+    });
   }
   async function quickSell(items, env = defaultEnv()) {
     const discard = env.services?.Item?.discard;
@@ -3217,10 +3235,10 @@
     );
     return summarize(run, targets.length, "vendidos");
   }
-  function transferRoom(env, transferPile) {
+  function pileRoom(env, pile) {
     const repo = (env.repositories ?? getGlobal("repositories"))?.Item;
-    const size = repo?.getPileSize?.(transferPile);
-    const used = repo?.numItemsInCache?.(transferPile);
+    const size = repo?.getPileSize?.(pile);
+    const used = repo?.numItemsInCache?.(pile);
     if (typeof size !== "number" || typeof used !== "number") return null;
     if (!Number.isFinite(size) || !Number.isFinite(used)) return null;
     return Math.max(0, size - used);
@@ -3232,7 +3250,7 @@
   registerTweak({
     id: "unassigned.bulkActions",
     label: "Acciones masivas en \xABsin asignar\xBB",
-    hint: "Agrega \xABAl club\xBB y \xABRepetidos a transferibles\xBB a la pantalla de objetos sin asignar. \xABAl club\xBB verificado en vivo; \xABRepetidos\xBB todavia no (no hubo repetidos con que probarlo).",
+    hint: "Agrega \xABAl club\xBB y \xABGuardar repetidos\xBB (transferibles a la lista, intransferibles al almacen de SBC). \xABAl club\xBB verificado en vivo; \xABGuardar repetidos\xBB todavia no.",
     category: "navegacion",
     defaultOn: false,
     unverified: true,
@@ -3289,18 +3307,20 @@
       view
     );
     const dupes = makeBulkButton(
-      "Repetidos a transferibles",
+      "Guardar repetidos",
       () => runBulkJob(async () => {
         const items = await readUnassignedItems(ctx);
         if (items.length === 0) {
           bulkToast("No hay objetos sin asignar.");
           return;
         }
+        const sold = await duplicatesToTransferList(items);
+        const stored = await untradeableDuplicatesToStorage(items);
         bulkToast(
-          describeOutcome(
-            "Repetidos a transferibles",
-            await duplicatesToTransferList(items)
-          )
+          [
+            describeOutcome("Transferibles", sold),
+            describeOutcome("Almac\xE9n SBC", stored)
+          ].join(" \xB7 ")
         );
       }, ctx),
       ctx,
