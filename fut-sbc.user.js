@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         FUT SBC Solver v2
 // @namespace    https://github.com/mljpa/fut-sbc-solver-v2
-// @version      0.2.8
+// @version      0.2.9
 // @description  Userscript to solve EA SPORTS FC 26 SBCs with your own club
 // @match        https://www.ea.com/*/ea-sports-fc/ultimate-team/web-app*
 // @match        https://www.ea.com/ea-sports-fc/ultimate-team/web-app*
@@ -5424,6 +5424,62 @@ Consume las cartas que use. Esto NO se puede deshacer.
     return results;
   }
 
+  // src/gallery/preferences.ts
+  var KEY = "fut-sbc-gallery:preferences:v1";
+  var DEFAULT_GALLERY_PREFERENCES = {
+    trade: {
+      firstPercent: 85,
+      lastPercent: 90,
+      retries: 3,
+      stepMode: "percent",
+      stepCoins: 100,
+      saleDiscountPercent: 0
+    },
+    collectionFilter: "all",
+    collectionSort: "most",
+    advancedTradeOpen: false
+  };
+  function record(value) {
+    return value !== null && typeof value === "object" && !Array.isArray(value) ? value : {};
+  }
+  function integer(value, min, max, fallback) {
+    return Number.isSafeInteger(value) && value >= min && value <= max ? value : fallback;
+  }
+  function decodeGalleryPreferences(value) {
+    const raw = record(value);
+    const trade = record(raw.trade);
+    const defaults = DEFAULT_GALLERY_PREFERENCES.trade;
+    const firstPercent = integer(trade.firstPercent, 1, MAX_BUY_PERCENT, defaults.firstPercent);
+    const lastPercent = Math.max(firstPercent, integer(trade.lastPercent, 1, MAX_BUY_PERCENT, defaults.lastPercent));
+    return {
+      trade: {
+        firstPercent,
+        lastPercent,
+        retries: integer(trade.retries, 1, 10, defaults.retries),
+        stepMode: trade.stepMode === "coins" ? "coins" : "percent",
+        stepCoins: integer(trade.stepCoins, 1, 1e5, defaults.stepCoins),
+        saleDiscountPercent: integer(trade.saleDiscountPercent, 0, 10, defaults.saleDiscountPercent)
+      },
+      collectionFilter: ["all", "missing", "complete", "near"].includes(String(raw.collectionFilter)) ? raw.collectionFilter : DEFAULT_GALLERY_PREFERENCES.collectionFilter,
+      collectionSort: ["most", "least", "name"].includes(String(raw.collectionSort)) ? raw.collectionSort : DEFAULT_GALLERY_PREFERENCES.collectionSort,
+      advancedTradeOpen: raw.advancedTradeOpen === true
+    };
+  }
+  function loadGalleryPreferences(storage3) {
+    try {
+      return decodeGalleryPreferences(JSON.parse((storage3 ?? localStorage).getItem(KEY) ?? "null"));
+    } catch {
+      return decodeGalleryPreferences(null);
+    }
+  }
+  function saveGalleryPreferences(value, storage3) {
+    const safe = decodeGalleryPreferences(value);
+    try {
+      (storage3 ?? localStorage).setItem(KEY, JSON.stringify(safe));
+    } catch {
+    }
+  }
+
   // src/gallery/set-view.ts
   function setProgress(set, owned) {
     return set.cards.filter((card) => owned.has(card.definitionId)).length;
@@ -5785,6 +5841,7 @@ button:disabled { opacity:.5; cursor:default; }
     }
     launcher.addEventListener("pointerup", finishDrag);
     launcher.addEventListener("pointercancel", finishDrag);
+    const savedPreferences = loadGalleryPreferences();
     let owned = loadLedger();
     let current = /* @__PURE__ */ new Set();
     let category = null;
@@ -5792,12 +5849,12 @@ button:disabled { opacity:.5; cursor:default; }
     let selected = null;
     let tab = "missing";
     let filter = "";
-    let collectionFilter = "all";
-    let collectionSort = "most";
+    let collectionFilter = savedPreferences.collectionFilter;
+    let collectionSort = savedPreferences.collectionSort;
     let leagueFilter = null;
     let busy = false;
     let tradeView = false;
-    let advancedTradeOpen = false;
+    let advancedTradeOpen = savedPreferences.advancedTradeOpen;
     let chosen = /* @__PURE__ */ new Set();
     let prices = /* @__PURE__ */ new Map();
     let priceLoading = false;
@@ -5810,17 +5867,17 @@ button:disabled { opacity:.5; cursor:default; }
     let pendingTrade = null;
     let confirmReturnFocus = null;
     let tradeSettings = {
-      firstPercent: 85,
-      lastPercent: 90,
-      retries: 3,
-      stepMode: "percent",
-      stepCoins: 100,
-      saleDiscountPercent: 0,
+      ...savedPreferences.trade,
       maxPerCard: 15e6,
       maxTotal: 15e6
     };
     let status = "Sincroniza el club para registrar las cartas que tienes ahora. El historial queda guardado en este navegador.";
     let error = false;
+    function persistPreferences() {
+      const safe = decodeGalleryPreferences({ trade: tradeSettings, collectionFilter, collectionSort, advancedTradeOpen });
+      tradeSettings = { ...tradeSettings, ...safe.trade };
+      saveGalleryPreferences(safe);
+    }
     function setStatus(message, isError = false) {
       status = message;
       error = isError;
@@ -6094,6 +6151,7 @@ button:disabled { opacity:.5; cursor:default; }
         activeTradeQuote = null;
         if (key === "firstPercent" && tradeSettings.stepMode === "percent" && tradeSettings.firstPercent > tradeSettings.lastPercent)
           tradeSettings.lastPercent = tradeSettings.firstPercent;
+        persistPreferences();
         render();
       });
       wrapper.append(input);
@@ -6142,10 +6200,13 @@ button:disabled { opacity:.5; cursor:default; }
       if (tradeSettings.stepMode === "percent") fields.append(tradeField("Comprar hasta (% del mercado)", "lastPercent", 1, MAX_BUY_PERCENT));
       fields.append(tradeField("Descuento de venta (%)", "saleDiscountPercent", 0, 10));
       body.append(fields);
+      body.append(el("p", "Estos ajustes se guardan en este navegador. Cada lote requiere una confirmaci\xF3n nueva.", "note"));
       const advanced = el("details", void 0, "trade-advanced");
       advanced.open = advancedTradeOpen;
       advanced.addEventListener("toggle", () => {
+        if (!advanced.isConnected) return;
         advancedTradeOpen = advanced.open;
+        persistPreferences();
       });
       advanced.append(el("summary", "Opciones avanzadas"));
       const advancedFields = el("div", void 0, "trade-fields");
@@ -6161,6 +6222,7 @@ button:disabled { opacity:.5; cursor:default; }
       select.addEventListener("change", () => {
         tradeSettings.stepMode = select.value;
         activeTradeQuote = null;
+        persistPreferences();
         render();
       });
       mode2.append(select);
@@ -6373,6 +6435,7 @@ button:disabled { opacity:.5; cursor:default; }
         stateSelect.value = collectionFilter;
         stateSelect.addEventListener("change", () => {
           collectionFilter = stateSelect.value;
+          persistPreferences();
           render();
         });
         stateLabel.append(stateSelect);
@@ -6411,6 +6474,7 @@ button:disabled { opacity:.5; cursor:default; }
         sortSelect.value = collectionSort;
         sortSelect.addEventListener("change", () => {
           collectionSort = sortSelect.value;
+          persistPreferences();
           render();
         });
         sortLabel.append(sortSelect);
@@ -6444,6 +6508,7 @@ button:disabled { opacity:.5; cursor:default; }
             filter = "";
             collectionFilter = "all";
             leagueFilter = null;
+            persistPreferences();
             render();
           }));
           body.append(empty);
@@ -6657,7 +6722,7 @@ button:disabled { opacity:.5; cursor:default; }
   }
 
   // src/prices/cache.ts
-  var KEY = "fut-sbc-solver:prices";
+  var KEY2 = "fut-sbc-solver:prices";
   var MANIFEST_POLL_MS = 15 * 60 * 1e3;
   var STALE_AFTER_MS = 6 * 60 * 60 * 1e3;
   function storage2() {
@@ -6669,7 +6734,7 @@ button:disabled { opacity:.5; cursor:default; }
   }
   function readSnapshot() {
     try {
-      const raw = storage2()?.getItem(KEY);
+      const raw = storage2()?.getItem(KEY2);
       if (!raw) return null;
       const parsed = JSON.parse(raw);
       if (typeof parsed.revision !== "string" || typeof parsed.fetchedAt !== "number" || !parsed.prices || typeof parsed.prices !== "object") {
@@ -6799,7 +6864,7 @@ button:disabled { opacity:.5; cursor:default; }
     const best = [];
     let worstKept = Infinity;
     const counts = /* @__PURE__ */ new Map();
-    const record = () => {
+    const record2 = () => {
       const rating = squadRating(expand(counts, fixed));
       if (rating < target) return;
       let cost = 0;
@@ -6814,7 +6879,7 @@ button:disabled { opacity:.5; cursor:default; }
       if (Date.now() > deadline) return;
       if (best.length >= limit && cost >= worstKept) return;
       if (left === 0) {
-        record();
+        record2();
         return;
       }
       if (i >= ratings.length) return;
