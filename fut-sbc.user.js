@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         FUT SBC Solver v2
 // @namespace    https://github.com/mljpa/fut-sbc-solver-v2
-// @version      0.2.0
+// @version      0.2.1
 // @description  Userscript to solve EA SPORTS FC 26 SBCs with your own club
 // @match        https://www.ea.com/*/ea-sports-fc/ultimate-team/web-app*
 // @match        https://www.ea.com/ea-sports-fc/ultimate-team/web-app*
@@ -5525,7 +5525,6 @@ button:disabled { opacity:.5; cursor:default; }
 .trade-state.done { color:#24966b; font-weight:600; }
 .trade-state.failed { color:#cf5555; font-weight:600; }
 .trade-state.active { color:var(--accent); }
-.trade-log { white-space:pre-wrap; }
 .empty { padding:24px; text-align:center; color:var(--muted); }
 `;
   function loadLedger() {
@@ -5592,7 +5591,6 @@ button:disabled { opacity:.5; cursor:default; }
     let prices = /* @__PURE__ */ new Map();
     let manualPrices = /* @__PURE__ */ new Map();
     let manualSalePrices = /* @__PURE__ */ new Map();
-    let tradeLog = [];
     let tradeProgress = /* @__PURE__ */ new Map();
     let tradeResultState = /* @__PURE__ */ new Map();
     let activeTradeQuote = null;
@@ -5713,7 +5711,6 @@ button:disabled { opacity:.5; cursor:default; }
       tradeProgress.clear();
       tradeResultState.clear();
       activeTradeQuote = null;
-      tradeLog = [];
       setStatus(`Consultando ${chosen.size} precios en Enhancer\u2026`);
       try {
         prices = await fetchEnhancerPrices([...chosen], force);
@@ -5741,26 +5738,20 @@ button:disabled { opacity:.5; cursor:default; }
       const settings = quote.settings;
       activeTradeQuote = quote;
       busy = true;
-      tradeLog = [];
       tradeProgress = new Map(ids.map((id) => [id, "Pendiente"]));
       tradeResultState.clear();
       setStatus("Buscando cartas con los topes confirmados\u2026");
       try {
         await buyAndList(ids, settings, (result) => {
-          const card = selected?.cards.find((c) => c.definitionId === result.definitionId);
-          tradeLog.push(`${card?.name ?? result.definitionId}: ${result.message}`);
           tradeProgress.set(result.definitionId, result.message);
           tradeResultState.set(result.definitionId, result.state);
           if (result.state === "bought" || result.state === "listed") {
             owned.add(result.definitionId);
             saveLedger(owned);
           }
-          status = tradeLog.at(-1) ?? "";
           render();
         }, (progress2) => {
-          const card = selected?.cards.find((c) => c.definitionId === progress2.definitionId);
           tradeProgress.set(progress2.definitionId, progress2.message);
-          status = `${card?.name ?? progress2.definitionId}: ${progress2.message}`;
           render();
         });
         setStatus("Lote terminado. Revisa el estado de cada carta y la lista de transferibles.");
@@ -5925,7 +5916,6 @@ button:disabled { opacity:.5; cursor:default; }
       const submitRow = el("div", void 0, "trade-actions");
       submitRow.append(submit);
       body.append(submitRow);
-      if (tradeLog.length) body.append(el("p", tradeLog.join("\n"), "status trade-log"));
     }
     function cardRows(cards) {
       const list = el("div", void 0, "list");
