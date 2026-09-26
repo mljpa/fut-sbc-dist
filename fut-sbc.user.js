@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         FUT SBC Solver v2
 // @namespace    https://github.com/mljpa/fut-sbc-solver-v2
-// @version      0.2.5
+// @version      0.2.6
 // @description  Userscript to solve EA SPORTS FC 26 SBCs with your own club
 // @match        https://www.ea.com/*/ea-sports-fc/ultimate-team/web-app*
 // @match        https://www.ea.com/ea-sports-fc/ultimate-team/web-app*
@@ -5468,8 +5468,8 @@ Consume las cartas que use. Esto NO se puede deshacer.
   var LEDGER_KEY = "fut-sbc-gallery:owned:fc27";
   var LAUNCHER_POSITION_KEY = "fut-sbc-gallery:launcher-position";
   var CSS2 = `
-:host { all: initial; font: 13px/1.4 -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif; color:var(--fg); --bg:#fff;--fg:#1d2329;--muted:#65717d;--line:#d8dfe5;--soft:#f3f6f8;--accent:#176d50;--accent-fg:#fff; }
-@media (prefers-color-scheme:dark) { :host { --bg:#1d2228;--fg:#f1f4f6;--muted:#a4adb6;--line:#39424b;--soft:#293039;--accent:#29a477; } }
+:host { all: initial; font: 14px/1.45 -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif; color:var(--fg); --bg:#fff;--fg:#1d2329;--muted:#606d78;--line:#d8dfe5;--soft:#f3f6f8;--accent:#176d50;--accent-fg:#fff;--warning:#9a5a16; }
+@media (prefers-color-scheme:dark) { :host { --bg:#1d2228;--fg:#f1f4f6;--muted:#aeb7bf;--line:#39424b;--soft:#293039;--accent:#29a477;--warning:#e3aa6c; } }
 * { box-sizing:border-box; }
 button,input,select { font:inherit; }
 button { cursor:pointer; }
@@ -5485,6 +5485,14 @@ button { cursor:pointer; }
 button:disabled { opacity:.5; cursor:default; }
 .head button:hover,.tools button:hover,.back:hover,.tabs button:hover,.row button:hover,.card button:hover { border-color:var(--accent); }
 .body { padding:16px 18px; overflow:auto; flex:1; }
+.panel-footer { display:flex; align-items:center; justify-content:space-between; gap:14px; padding:12px 18px; border-top:1px solid var(--line); background:var(--bg); box-shadow:0 -5px 18px #0001; }
+.panel-footer:empty { display:none; }
+.footer-copy { min-width:0; }
+.footer-copy strong,.footer-copy small { display:block; }
+.footer-copy strong { font-size:15px; }
+.footer-copy small { color:var(--muted); }
+.panel-footer button { flex:none; border:1px solid var(--accent); border-radius:5px; padding:9px 15px; background:var(--accent); color:var(--accent-fg); font-weight:700; }
+.panel-footer button:focus-visible,.row button:focus-visible,.trade-actions button:focus-visible,.tabs button:focus-visible { outline:2px solid var(--accent); outline-offset:2px; }
 .tools { display:flex; flex-wrap:wrap; align-items:center; gap:8px; margin-bottom:14px; }
 .tools .spacer { flex:1; }
 .tools input { min-width:180px; padding:6px 9px; color:var(--fg); background:var(--bg); border:1px solid var(--line); border-radius:5px; }
@@ -5507,8 +5515,9 @@ button:disabled { opacity:.5; cursor:default; }
 .ovr { font-size:16px; font-weight:700; width:32px; text-align:center; }
 .row .who { flex:1; min-width:0; }
 .row small { display:block; color:var(--muted); }
-.row .market-price { min-width:150px; color:var(--fg); }
-.row.chosen { border-color:var(--accent); }
+.row .market-price { min-width:150px; text-align:right; color:var(--fg); font-variant-numeric:tabular-nums; }
+.row.chosen { border-color:var(--accent); background:color-mix(in srgb,var(--accent) 9%,var(--bg)); }
+.row.chosen button { border-color:var(--accent); }
 .trade-fields { display:grid; grid-template-columns:repeat(auto-fit,minmax(160px,1fr)); gap:10px; margin:12px 0; }
 .trade-fields label { display:flex; flex-direction:column; gap:3px; color:var(--muted); }
 .trade-fields input,.trade-fields select { width:100%; padding:7px 8px; color:var(--fg); background:var(--bg); border:1px solid var(--line); border-radius:5px; }
@@ -5522,13 +5531,31 @@ button:disabled { opacity:.5; cursor:default; }
 .gallery-cost small { display:block; margin-top:3px; color:var(--muted); }
 .trade-advanced { border:1px solid var(--line); border-radius:5px; padding:8px 11px; margin:10px 0; }
 .trade-advanced summary { cursor:pointer; font-weight:600; }
-.trade-summary { padding:10px 12px; background:var(--soft); border:1px solid var(--line); border-radius:5px; margin:12px 0; }
-.trade-table-wrap { overflow-x:auto; }
-.trade-table { width:100%; border-collapse:collapse; min-width:800px; }
-.trade-table th,.trade-table td { text-align:left; padding:9px 8px; border-bottom:1px solid var(--line); vertical-align:top; }
-.trade-table th { color:var(--muted); font-size:12px; }
-.trade-table small { display:block; color:var(--muted); }
-.trade-table input { width:105px; padding:6px 7px; color:var(--fg); background:var(--bg); border:1px solid var(--line); border-radius:5px; }
+.trade-summary { display:flex; justify-content:space-between; align-items:baseline; gap:12px; padding:12px 14px; background:var(--soft); border:1px solid var(--line); border-radius:5px; margin:14px 0; }
+.trade-summary strong { font-size:20px; font-variant-numeric:tabular-nums; }
+.trade-summary small { color:var(--muted); }
+.trade-cards { display:flex; flex-direction:column; gap:8px; margin:14px 0; }
+.trade-card { border:1px solid var(--line); border-radius:6px; padding:13px 14px; background:var(--bg); }
+.trade-card.done { border-color:var(--accent); }
+.trade-card.failed { border-color:#c64242; }
+.trade-card-head { display:flex; align-items:flex-start; gap:10px; }
+.trade-card-name { flex:1; min-width:0; }
+.trade-card-name strong,.trade-card-name small { display:block; }
+.trade-card-name strong { font-size:15px; }
+.trade-card-name small { color:var(--muted); }
+.trade-card-head button { border:1px solid var(--line); border-radius:5px; padding:5px 8px; background:var(--soft); color:var(--fg); }
+.trade-card-metrics { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:8px; margin-top:11px; }
+.trade-card-metrics div { min-width:0; padding:8px 10px; background:var(--soft); border-radius:4px; }
+.trade-card-metrics small,.trade-card-metrics strong { display:block; }
+.trade-card-metrics small { color:var(--muted); }
+.trade-card-metrics strong { font-size:15px; font-variant-numeric:tabular-nums; }
+.trade-card-metrics strong.negative { color:#c64242; }
+.trade-card input { width:135px; max-width:100%; padding:6px 7px; color:var(--fg); background:var(--bg); border:1px solid var(--line); border-radius:5px; }
+.manual-fields { display:flex; flex-wrap:wrap; gap:10px; margin-top:11px; }
+.manual-fields label { display:flex; flex-direction:column; gap:4px; color:var(--muted); }
+.trade-card details { margin-top:9px; color:var(--muted); }
+.trade-card details summary { cursor:pointer; }
+.trade-card .trade-state { display:block; margin-top:10px; min-width:0; overflow-wrap:anywhere; }
 .trade-state { min-width:160px; }
 .trade-state.done { color:#24966b; font-weight:600; }
 .trade-state.failed { color:#cf5555; font-weight:600; }
@@ -5555,6 +5582,7 @@ button:disabled { opacity:.5; cursor:default; }
 .confirm-actions .primary { background:var(--accent); border-color:var(--accent); color:var(--accent-fg); font-weight:600; }
 .confirm-actions button:focus-visible { outline:2px solid var(--accent); outline-offset:2px; }
 @media (max-width:540px) { .confirm-item { grid-template-columns:1fr 1fr; } .confirm-item strong { grid-column:1/-1; } .confirm-total { align-items:flex-start; flex-direction:column; gap:2px; } .confirm-actions button { flex:1; } }
+@media (max-width:620px) { .backdrop { padding:6px; } .panel,.panel.trade-panel { width:100%; height:calc(100vh - 12px); max-height:none; } .row { flex-wrap:wrap; } .row .who { flex-basis:calc(100% - 50px); } .row .market-price { flex:1; text-align:left; } .panel-footer { align-items:stretch; flex-direction:column; } .panel-footer button { width:100%; } .trade-card-metrics { grid-template-columns:repeat(2,minmax(0,1fr)); } }
 .empty { padding:24px; text-align:center; color:var(--muted); }
 `;
   function loadLedger() {
@@ -5615,7 +5643,8 @@ button:disabled { opacity:.5; cursor:default; }
     const close = button("Cerrar", () => closeGallery());
     head.append(title, close);
     const body = el("div", void 0, "body");
-    panel.append(head, body);
+    const footer = el("div", void 0, "panel-footer");
+    panel.append(head, body, footer);
     backdrop.append(panel);
     backdrop.addEventListener("click", (event) => {
       if (event.target === backdrop) closeGallery();
@@ -6035,7 +6064,7 @@ button:disabled { opacity:.5; cursor:default; }
     }
     function renderTrade() {
       const actions = el("div", void 0, "trade-actions");
-      actions.append(button("\u2190 Volver a jugadores", () => {
+      actions.append(button("\u2190 Jugadores", () => {
         tradeView = false;
         render();
       }));
@@ -6045,14 +6074,12 @@ button:disabled { opacity:.5; cursor:default; }
       refresh.disabled = busy;
       actions.append(refresh);
       body.append(actions);
-      body.append(el("p", "Enhancer aporta los precios disponibles. Si una carta no tiene precio, puedes indicar manualmente una referencia de compra y otra de venta; puede tratarse de una recompensa que no aparece en el mercado.", "note"));
       const fields = el("div", void 0, "trade-fields");
       fields.append(tradeField("Intentos por jugador", "retries", 1, 10));
       fields.append(tradeField("Comprar desde (% del mercado)", "firstPercent", 1, MAX_BUY_PERCENT));
       if (tradeSettings.stepMode === "percent") fields.append(tradeField("Comprar hasta (% del mercado)", "lastPercent", 1, MAX_BUY_PERCENT));
       fields.append(tradeField("Descuento de venta (%)", "saleDiscountPercent", 0, 10));
       body.append(fields);
-      body.append(el("p", `Puedes llegar hasta ${MAX_BUY_PERCENT}% del precio de referencia. Si compras por encima del precio de venta, la diferencia tras comisi\xF3n ser\xE1 negativa.`, "note"));
       const advanced = el("details", void 0, "trade-advanced");
       advanced.open = advancedTradeOpen;
       advanced.addEventListener("toggle", () => {
@@ -6079,7 +6106,6 @@ button:disabled { opacity:.5; cursor:default; }
       if (tradeSettings.stepMode === "coins") advancedFields.append(tradeField("Subir monedas por intento", "stepCoins", 1, 1e5));
       advanced.append(advancedFields);
       body.append(advanced);
-      body.append(el("p", "Espera entre b\xFAsquedas: 2\u20134 s. EA cobra 5% cuando se concrete una venta; publicar no garantiza recuperar las monedas.", "note"));
       let quote = activeTradeQuote;
       let quoteError = "";
       if (!quote) {
@@ -6090,57 +6116,84 @@ button:disabled { opacity:.5; cursor:default; }
           quoteError = cause instanceof Error ? cause.message : String(cause);
         }
       }
-      if (quote) body.append(el("div", `Gasto m\xE1ximo del lote: ${fmt(quote.settings.maxTotal)} monedas \xB7 ${playerCount(quote.plans.size)} con precio`, "trade-summary"));
-      else body.append(el("p", quoteError, "status error"));
-      const wrap = el("div", void 0, "trade-table-wrap");
-      const table = el("table", void 0, "trade-table");
-      const thead = el("thead");
-      const header = el("tr");
-      for (const label of ["Jugador", "Precio de referencia", "Topes de compra", "Venta", "Diferencia tras 5%", "Estado"])
-        header.append(el("th", label));
-      thead.append(header);
-      table.append(thead);
-      const tbody = el("tbody");
+      if (quote) {
+        const summary = el("div", void 0, "trade-summary");
+        const copy = el("div");
+        copy.append(el("span", "Gasto m\xE1ximo del lote"), el("small", `${playerCount(quote.plans.size)} con precio \xB7 un m\xE1ximo por carta`));
+        summary.append(copy, el("strong", `${fmt(quote.settings.maxTotal)} monedas`));
+        body.append(summary);
+      } else if (quoteError) body.append(el("p", quoteError, "status error"));
+      const cards = el("div", void 0, "trade-cards");
       for (const id of chosen) {
         const card = selected?.cards.find((c) => c.definitionId === id);
         const reference = prices.get(id);
         const plan = quote?.plans.get(id);
-        const row = el("tr");
-        row.append(el("td", card?.name ?? `Carta ${id}`));
-        const market = el("td");
-        if (reference) {
-          market.append(el("span", fmt(reference.price)), el("small", "Enhancer"));
-          if (reference.updatedAt) market.append(el("small", new Date(reference.updatedAt).toLocaleString("es-CL")));
-        } else {
-          market.append(el("small", "Enhancer: sin precio \xB7 posible recompensa"), manualField(id, "reference"));
+        const row = el("article", void 0, "trade-card");
+        const rowHead = el("div", void 0, "trade-card-head");
+        const name = el("div", void 0, "trade-card-name");
+        name.append(el("strong", card?.name ?? `Carta ${id}`));
+        name.append(el("small", reference ? `Referencia Enhancer: ${fmt(reference.price)} monedas` : "Sin precio de Enhancer \xB7 referencia manual"));
+        rowHead.append(name);
+        if (!busy && !owned.has(id)) {
+          const remove = button("Quitar", () => {
+            chosen.delete(id);
+            activeTradeQuote = null;
+            render();
+          });
+          remove.setAttribute("aria-label", `Quitar ${card?.name ?? `carta ${id}`} de la compra`);
+          rowHead.append(remove);
         }
-        row.append(market);
-        row.append(el("td", plan ? plan.buyCaps.map(fmt).join(" \u2192 ") : "Pendiente de precio manual"));
-        const sale = el("td");
-        if (reference) sale.textContent = plan ? fmt(plan.salePrice) : "\u2014";
-        else sale.append(manualField(id, "sale"));
-        row.append(sale);
-        row.append(el("td", plan ? `${plan.worstNet >= 0 ? "+" : ""}${fmt(plan.worstNet)}` : "\u2014"));
+        row.append(rowHead);
+        if (!reference) {
+          const manual = el("div", void 0, "manual-fields");
+          const buyLabel = el("label", "Referencia de compra");
+          buyLabel.append(manualField(id, "reference"));
+          const saleLabel = el("label", "Precio de venta");
+          saleLabel.append(manualField(id, "sale"));
+          manual.append(buyLabel, saleLabel);
+          row.append(manual);
+        }
+        const metrics = el("div", void 0, "trade-card-metrics");
+        for (const [label, value, negative] of [
+          ["Compra m\xE1xima", plan ? fmt(plan.buyCaps.at(-1) ?? 0) : "\u2014", false],
+          ["Venta", plan ? fmt(plan.salePrice) : "\u2014", false],
+          ["Tras comisi\xF3n", plan ? `${plan.worstNet >= 0 ? "+" : ""}${fmt(plan.worstNet)}` : "\u2014", !!plan && plan.worstNet < 0]
+        ]) {
+          const metric = el("div");
+          const amount = el("strong", value);
+          if (negative) amount.classList.add("negative");
+          metric.append(el("small", label), amount);
+          metrics.append(metric);
+        }
+        row.append(metrics);
+        if (plan?.buyCaps.length) {
+          const detail = el("details");
+          detail.append(el("summary", `Ver ${plan.buyCaps.length} ${plan.buyCaps.length === 1 ? "intento" : "intentos"}`), el("div", `Topes: ${plan.buyCaps.map(fmt).join(" \u2192 ")} monedas`));
+          row.append(detail);
+        }
         const missingLabel = !manualPrices.has(id) ? "Ingresa referencia manual" : "Ingresa venta manual";
-        const state2 = el("td", tradeProgress.get(id) ?? (plan ? "Pendiente" : missingLabel), "trade-state");
+        const state2 = el("span", tradeProgress.get(id) ?? (plan ? "Listo para comprar" : missingLabel), "trade-state");
         const resultState = tradeResultState.get(id);
-        if (resultState === "listed" || resultState === "bought") state2.classList.add("done");
-        else if (resultState === "skipped" || resultState === "soft-ban") state2.classList.add("failed");
-        else if (tradeProgress.has(id) && tradeProgress.get(id) !== "Pendiente") state2.classList.add("active");
+        if (resultState === "listed" || resultState === "bought") {
+          state2.classList.add("done");
+          row.classList.add("done");
+        } else if (resultState === "skipped" || resultState === "soft-ban") {
+          state2.classList.add("failed");
+          row.classList.add("failed");
+        } else if (tradeProgress.has(id) && tradeProgress.get(id) !== "Pendiente") state2.classList.add("active");
         state2.setAttribute("aria-live", "polite");
         row.append(state2);
-        tbody.append(row);
+        cards.append(row);
       }
-      table.append(tbody);
-      wrap.append(table);
-      body.append(wrap);
+      body.append(cards);
+      body.append(el("p", "EA cobra 5% al vender. Publicar no garantiza la venta.", "note"));
       const remaining = [...chosen].filter((id) => tradeReference(id) && !owned.has(id)).length;
-      const submit = button(busy ? "Procesando\u2026" : `Comprar ${remaining} y publicar`, requestTradeConfirmation);
-      submit.className = "primary";
+      const submit = button(busy ? "Procesando\u2026" : `Revisar y confirmar ${playerCount(remaining)}`, requestTradeConfirmation);
       submit.disabled = busy || !quote || remaining === 0;
-      const submitRow = el("div", void 0, "trade-actions");
-      submitRow.append(submit);
-      body.append(submitRow);
+      const footerCopy = el("div", void 0, "footer-copy");
+      footerCopy.append(el("strong", quote ? `Hasta ${fmt(quote.settings.maxTotal)} monedas` : "Faltan precios"));
+      footerCopy.append(el("small", `${remaining} con precio \xB7 ${chosen.size - remaining} pendientes o ya obtenidos`));
+      footer.append(footerCopy, submit);
     }
     function cardRows(cards) {
       const list = el("div", void 0, "list");
@@ -6174,6 +6227,7 @@ button:disabled { opacity:.5; cursor:default; }
     }
     function render() {
       body.replaceChildren();
+      footer.replaceChildren();
       panel.classList.toggle("trade-panel", tradeView);
       title.textContent = tradeView ? `Comprar ${playerCount(chosen.size)}` : selected?.name ?? category?.name ?? "Mi Gallery";
       if (tradeView) {
@@ -6274,27 +6328,25 @@ button:disabled { opacity:.5; cursor:default; }
             render();
           }));
         }
-        if (chosen.size > 0) {
-          const buy = button(`Comprar ${playerCount(chosen.size)}`, () => {
-            void showTrade();
-          });
-          buy.disabled = busy || priceLoading;
-          actions.append(buy);
-        }
         if (actions.childElementCount) body.append(actions);
         const costs = el("div", void 0, "gallery-costs");
-        for (const [label, cards2] of [["Seleccionados", selectedCards], ["Completar esta colecci\xF3n", missing]]) {
-          const total = referenceTotal(cards2, prices);
-          const cost = el("div", void 0, "gallery-cost");
-          cost.append(el("strong", `${label} \xB7 ${playerCount(cards2.length)}`));
-          const amountLabel = total.priced < cards2.length ? "Subtotal conocido" : "Referencia estimada";
-          cost.append(el("span", priceLoading ? "Consultando precios\u2026" : `${amountLabel}: ${fmt(total.amount)} monedas`));
-          if (!priceLoading && total.priced < cards2.length)
-            cost.append(el("small", `${total.priced}/${cards2.length} cartas con precio; faltan ${cards2.length - total.priced} por cotizar.`));
-          costs.append(cost);
-        }
+        const total = referenceTotal(missing, prices);
+        const cost = el("div", void 0, "gallery-cost");
+        cost.append(el("strong", `Completar esta colecci\xF3n \xB7 ${playerCount(missing.length)}`));
+        cost.append(el("span", priceLoading ? "Consultando precios\u2026" : total.priced === 0 && missing.length > 0 ? "Sin precios de referencia" : `${fmt(total.amount)} monedas de referencia`));
+        if (!priceLoading && total.priced < missing.length)
+          cost.append(el("small", `Subtotal de ${total.priced}/${missing.length} cartas con precio.`));
+        costs.append(cost);
         body.append(costs);
-        body.append(el("p", "El gasto real depende de los topes de compra que elijas en el siguiente paso.", "note"));
+        const selectedTotal = referenceTotal(selectedCards, prices);
+        const footerCopy = el("div", void 0, "footer-copy");
+        footerCopy.append(el("strong", `${playerCount(selectedCards.length)} \xB7 ${selectedTotal.priced === 0 && selectedCards.length > 0 ? "sin precios de referencia" : `${fmt(selectedTotal.amount)} monedas de referencia`}`));
+        footerCopy.append(el("small", selectedCards.length === 0 ? "Elige las cartas que quieres buscar." : selectedTotal.priced < selectedCards.length ? `${selectedTotal.priced}/${selectedCards.length} con precio; el total puede subir.` : "El tope real se define antes de comprar."));
+        const buy = button(selectedCards.length ? `Revisar ${playerCount(selectedCards.length)}` : "Selecciona jugadores", () => {
+          void showTrade();
+        });
+        buy.disabled = busy || priceLoading || selectedCards.length === 0;
+        footer.append(footerCopy, buy);
       }
       const tabs = el("div", void 0, "tabs");
       for (const value of ["missing", "collected"]) {
