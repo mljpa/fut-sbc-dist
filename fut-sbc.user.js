@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         FUT SBC Solver v2
 // @namespace    https://github.com/mljpa/fut-sbc-solver-v2
-// @version      0.2.3
+// @version      0.2.4
 // @description  Userscript to solve EA SPORTS FC 26 SBCs with your own club
 // @match        https://www.ea.com/*/ea-sports-fc/ultimate-team/web-app*
 // @match        https://www.ea.com/ea-sports-fc/ultimate-team/web-app*
@@ -5466,13 +5466,15 @@ Consume las cartas que use. Esto NO se puede deshacer.
 
   // src/gallery/index.ts
   var LEDGER_KEY = "fut-sbc-gallery:owned:fc27";
+  var LAUNCHER_POSITION_KEY = "fut-sbc-gallery:launcher-position";
   var CSS2 = `
 :host { all: initial; font: 13px/1.4 -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif; color:var(--fg); --bg:#fff;--fg:#1d2329;--muted:#65717d;--line:#d8dfe5;--soft:#f3f6f8;--accent:#176d50;--accent-fg:#fff; }
 @media (prefers-color-scheme:dark) { :host { --bg:#1d2228;--fg:#f1f4f6;--muted:#a4adb6;--line:#39424b;--soft:#293039;--accent:#29a477; } }
 * { box-sizing:border-box; }
 button,input,select { font:inherit; }
 button { cursor:pointer; }
-.launcher { position:fixed; left:160px; bottom:16px; z-index:2147483000; border:1px solid var(--line); border-radius:6px; padding:8px 12px; color:var(--fg); background:var(--bg); box-shadow:0 3px 12px #0004; }
+.launcher { position:fixed; left:160px; bottom:16px; z-index:2147483000; border:1px solid var(--line); border-radius:6px; padding:8px 12px; color:var(--fg); background:var(--bg); box-shadow:0 3px 12px #0004; cursor:grab; touch-action:none; user-select:none; }
+.launcher.dragging { cursor:grabbing; }
 .backdrop { position:fixed; inset:0; z-index:2147483001; display:none; background:#0009; align-items:center; justify-content:center; padding:22px; }
 .backdrop.open { display:flex; }
 .panel { width:min(1100px,96vw); height:min(850px,93vh); display:flex; flex-direction:column; background:var(--bg); color:var(--fg); border:1px solid var(--line); border-radius:8px; box-shadow:0 12px 50px #0006; overflow:hidden; }
@@ -5575,8 +5577,12 @@ button:disabled { opacity:.5; cursor:default; }
     const shadow = host.attachShadow({ mode: "open" });
     const style = el("style");
     style.textContent = CSS2;
-    const launcher = button("Mi Gallery", () => open());
+    let suppressLauncherClick = false;
+    const launcher = button("Mi Gallery", () => {
+      if (!suppressLauncherClick) open();
+    });
     launcher.className = "launcher";
+    launcher.title = "Clic para abrir \xB7 arrastra para mover";
     const backdrop = el("div", void 0, "backdrop");
     const panel = el("section", void 0, "panel");
     panel.setAttribute("role", "dialog");
@@ -5594,6 +5600,71 @@ button:disabled { opacity:.5; cursor:default; }
     });
     shadow.append(style, launcher, backdrop);
     document.body.append(host);
+    let desiredPosition = null;
+    let drag = null;
+    function placeLauncher(position) {
+      const margin = 8;
+      const x = Math.max(margin, Math.min(position.x, Math.max(margin, innerWidth - launcher.offsetWidth - margin)));
+      const y = Math.max(margin, Math.min(position.y, Math.max(margin, innerHeight - launcher.offsetHeight - margin)));
+      launcher.style.left = `${x}px`;
+      launcher.style.top = `${y}px`;
+      launcher.style.bottom = "auto";
+      return { x, y };
+    }
+    try {
+      const saved = JSON.parse(localStorage.getItem(LAUNCHER_POSITION_KEY) ?? "null");
+      if (saved && Number.isFinite(saved.x) && Number.isFinite(saved.y)) {
+        desiredPosition = saved;
+        placeLauncher(saved);
+      }
+    } catch {
+    }
+    function onResize() {
+      const rect = launcher.getBoundingClientRect();
+      placeLauncher(desiredPosition ?? { x: rect.left, y: rect.top });
+    }
+    window.addEventListener("resize", onResize);
+    launcher.addEventListener("pointerdown", (event) => {
+      if (event.button !== 0 || !event.isPrimary) return;
+      const rect = launcher.getBoundingClientRect();
+      drag = {
+        pointerId: event.pointerId,
+        startX: event.clientX,
+        startY: event.clientY,
+        origin: { x: rect.left, y: rect.top },
+        moved: false
+      };
+      launcher.setPointerCapture(event.pointerId);
+    });
+    launcher.addEventListener("pointermove", (event) => {
+      if (!drag || event.pointerId !== drag.pointerId) return;
+      const dx = event.clientX - drag.startX;
+      const dy = event.clientY - drag.startY;
+      if (!drag.moved && Math.hypot(dx, dy) < 5) return;
+      drag.moved = true;
+      launcher.classList.add("dragging");
+      placeLauncher({ x: drag.origin.x + dx, y: drag.origin.y + dy });
+      event.preventDefault();
+    });
+    function finishDrag(event) {
+      if (!drag || event.pointerId !== drag.pointerId) return;
+      if (drag.moved) {
+        const rect = launcher.getBoundingClientRect();
+        desiredPosition = { x: rect.left, y: rect.top };
+        try {
+          localStorage.setItem(LAUNCHER_POSITION_KEY, JSON.stringify(desiredPosition));
+        } catch {
+        }
+        suppressLauncherClick = true;
+        setTimeout(() => {
+          suppressLauncherClick = false;
+        }, 0);
+      }
+      launcher.classList.remove("dragging");
+      drag = null;
+    }
+    launcher.addEventListener("pointerup", finishDrag);
+    launcher.addEventListener("pointercancel", finishDrag);
     let owned = loadLedger();
     let current = /* @__PURE__ */ new Set();
     let category = null;
@@ -6136,6 +6207,7 @@ button:disabled { opacity:.5; cursor:default; }
     }
     void syncClub();
     return { open, destroy() {
+      window.removeEventListener("resize", onResize);
       host.remove();
     } };
   }
