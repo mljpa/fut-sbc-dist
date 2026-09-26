@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         FUT SBC Solver v2
 // @namespace    https://github.com/mljpa/fut-sbc-solver-v2
-// @version      0.2.10
+// @version      0.2.11
 // @description  Userscript to solve EA SPORTS FC 26 SBCs with your own club
 // @match        https://www.ea.com/*/ea-sports-fc/ultimate-team/web-app*
 // @match        https://www.ea.com/ea-sports-fc/ultimate-team/web-app*
@@ -4971,7 +4971,7 @@ Consume las cartas que use. Esto NO se puede deshacer.
   // src/gallery/catalog-snapshot.json
   var catalog_snapshot_default = {
     source: "https://www.fut.gg/fut-gallery",
-    updatedAt: "2026-09-26T16:30:28.231Z",
+    updatedAt: "2026-09-26T16:47:53.854Z",
     sets: [
       {
         id: 30,
@@ -5138,7 +5138,27 @@ Consume las cartas que use. Esto NO se puede deshacer.
               price: 1900
             }
           ]
-        }
+        },
+        candidateClubEaIds: [
+          1,
+          116009
+        ],
+        costTiers: [
+          {
+            grade: "D",
+            tokens: 0,
+            cost: 13950,
+            status: "optimal",
+            totalScore: 8618
+          },
+          {
+            grade: "C",
+            tokens: 0,
+            cost: 353150,
+            status: "feasible",
+            totalScore: 110185
+          }
+        ]
       },
       {
         id: 61,
@@ -5275,7 +5295,20 @@ Consume las cartas que use. Esto NO se puede deshacer.
               price: 1700
             }
           ]
-        }
+        },
+        candidateClubEaIds: [
+          2,
+          116015
+        ],
+        costTiers: [
+          {
+            grade: "D",
+            tokens: 0,
+            cost: 8350,
+            status: "optimal",
+            totalScore: 2444
+          }
+        ]
       },
       {
         id: 76,
@@ -5412,7 +5445,48 @@ Consume las cartas que use. Esto NO se puede deshacer.
               price: 1800
             }
           ]
-        }
+        },
+        candidateClubEaIds: [
+          88,
+          116019
+        ],
+        costTiers: [
+          {
+            grade: "D",
+            tokens: 0,
+            cost: 23700,
+            status: "optimal",
+            totalScore: 900
+          },
+          {
+            grade: "C",
+            tokens: 0,
+            cost: 23700,
+            status: "optimal",
+            totalScore: 900
+          },
+          {
+            grade: "B",
+            tokens: 5,
+            cost: 23700,
+            status: "optimal",
+            totalScore: 900
+          },
+          {
+            grade: "A",
+            tokens: 13,
+            cost: 23700,
+            status: "optimal",
+            totalScore: 900
+          },
+          {
+            grade: "S",
+            tokens: 28,
+            cost: 31050,
+            status: "optimal",
+            totalScore: 1022
+          }
+        ]
       },
       {
         id: 22,
@@ -5549,7 +5623,26 @@ Consume las cartas que use. Esto NO se puede deshacer.
               price: 650
             }
           ]
-        }
+        },
+        candidateClubEaIds: [
+          1943
+        ],
+        costTiers: [
+          {
+            grade: "D",
+            tokens: 0,
+            cost: 10950,
+            status: "optimal",
+            totalScore: 2211
+          },
+          {
+            grade: "C",
+            tokens: 0,
+            cost: 10950,
+            status: "optimal",
+            totalScore: 2211
+          }
+        ]
       },
       {
         id: 17,
@@ -5686,7 +5779,33 @@ Consume las cartas que use. Esto NO se puede deshacer.
               price: 2e3
             }
           ]
-        }
+        },
+        candidateClubEaIds: [
+          1925
+        ],
+        costTiers: [
+          {
+            grade: "D",
+            tokens: 0,
+            cost: 10350,
+            status: "optimal",
+            totalScore: 2197
+          },
+          {
+            grade: "C",
+            tokens: 0,
+            cost: 10350,
+            status: "optimal",
+            totalScore: 2197
+          },
+          {
+            grade: "B",
+            tokens: 8,
+            cost: 12050,
+            status: "optimal",
+            totalScore: 2705
+          }
+        ]
       },
       {
         id: 26,
@@ -5823,7 +5942,27 @@ Consume las cartas que use. Esto NO se puede deshacer.
               price: 1e3
             }
           ]
-        }
+        },
+        candidateClubEaIds: [
+          1808,
+          116013
+        ],
+        costTiers: [
+          {
+            grade: "D",
+            tokens: 0,
+            cost: 6350,
+            status: "optimal",
+            totalScore: 1721
+          },
+          {
+            grade: "C",
+            tokens: 0,
+            cost: 7900,
+            status: "optimal",
+            totalScore: 4014
+          }
+        ]
       },
       {
         id: 14,
@@ -5960,7 +6099,41 @@ Consume las cartas que use. Esto NO se puede deshacer.
               price: 1100
             }
           ]
-        }
+        },
+        candidateClubEaIds: [
+          89,
+          132867
+        ],
+        costTiers: [
+          {
+            grade: "D",
+            tokens: 0,
+            cost: 9050,
+            status: "optimal",
+            totalScore: 521
+          },
+          {
+            grade: "C",
+            tokens: 0,
+            cost: 9050,
+            status: "optimal",
+            totalScore: 521
+          },
+          {
+            grade: "B",
+            tokens: 5,
+            cost: 9050,
+            status: "optimal",
+            totalScore: 521
+          },
+          {
+            grade: "A",
+            tokens: 13,
+            cost: 14250,
+            status: "optimal",
+            totalScore: 718
+          }
+        ]
       },
       {
         id: 94,
@@ -6127,7 +6300,27 @@ Consume las cartas que use. Esto NO se puede deshacer.
               price: 750
             }
           ]
-        }
+        },
+        candidateClubEaIds: [
+          5,
+          116010
+        ],
+        costTiers: [
+          {
+            grade: "D",
+            tokens: 0,
+            cost: 13600,
+            status: "optimal",
+            totalScore: 4681
+          },
+          {
+            grade: "C",
+            tokens: 0,
+            cost: 93100,
+            status: "feasible",
+            totalScore: 50697
+          }
+        ]
       },
       {
         id: 71,
@@ -6264,7 +6457,33 @@ Consume las cartas que use. Esto NO se puede deshacer.
               price: 800
             }
           ]
-        }
+        },
+        candidateClubEaIds: [
+          1800
+        ],
+        costTiers: [
+          {
+            grade: "D",
+            tokens: 0,
+            cost: 11950,
+            status: "optimal",
+            totalScore: 1042
+          },
+          {
+            grade: "C",
+            tokens: 0,
+            cost: 11950,
+            status: "optimal",
+            totalScore: 1042
+          },
+          {
+            grade: "B",
+            tokens: 8,
+            cost: 15250,
+            status: "optimal",
+            totalScore: 1113
+          }
+        ]
       },
       {
         id: 85,
@@ -6401,7 +6620,26 @@ Consume las cartas que use. Esto NO se puede deshacer.
               price: 1400
             }
           ]
-        }
+        },
+        candidateClubEaIds: [
+          1799
+        ],
+        costTiers: [
+          {
+            grade: "D",
+            tokens: 0,
+            cost: 10850,
+            status: "optimal",
+            totalScore: 2680
+          },
+          {
+            grade: "C",
+            tokens: 0,
+            cost: 11300,
+            status: "optimal",
+            totalScore: 3032
+          }
+        ]
       },
       {
         id: 56,
@@ -6451,7 +6689,7 @@ Consume las cartas que use. Esto NO se puede deshacer.
               definitionId: 204935,
               score: 2100,
               clubEaId: 7,
-              price: 8900
+              price: 9100
             },
             {
               definitionId: 243657,
@@ -6463,19 +6701,19 @@ Consume las cartas que use. Esto NO se puede deshacer.
               definitionId: 50538165,
               score: 340,
               clubEaId: 7,
-              price: 650
+              price: 700
             },
             {
               definitionId: 237386,
               score: 280,
               clubEaId: 7,
-              price: 650
+              price: 700
             },
             {
               definitionId: 202695,
               score: 180,
               clubEaId: 7,
-              price: 750
+              price: 800
             },
             {
               definitionId: 210697,
@@ -6487,25 +6725,25 @@ Consume las cartas que use. Esto NO se puede deshacer.
               definitionId: 247649,
               score: 160,
               clubEaId: 7,
-              price: 1e3
+              price: 950
             },
             {
               definitionId: 247797,
               score: 160,
               clubEaId: 116016,
-              price: 750
+              price: 850
             },
             {
               definitionId: 271739,
               score: 160,
               clubEaId: 116016,
-              price: 800
+              price: 750
             },
             {
               definitionId: 251421,
               score: 140,
               clubEaId: 7,
-              price: 700
+              price: 650
             },
             {
               definitionId: 272049,
@@ -6517,28 +6755,48 @@ Consume las cartas que use. Esto NO se puede deshacer.
               definitionId: 272056,
               score: 140,
               clubEaId: 116016,
-              price: 650
+              price: 700
             },
             {
               definitionId: 253054,
               score: 120,
               clubEaId: 7,
-              price: 2600
+              price: 2500
             },
             {
               definitionId: 50557430,
               score: 120,
               clubEaId: 7,
-              price: 2100
+              price: 1600
             },
             {
               definitionId: 207599,
               score: 100,
               clubEaId: 7,
-              price: 3400
+              price: 3300
             }
           ]
-        }
+        },
+        candidateClubEaIds: [
+          7,
+          116016
+        ],
+        costTiers: [
+          {
+            grade: "D",
+            tokens: 0,
+            cost: 8e3,
+            status: "optimal",
+            totalScore: 780
+          },
+          {
+            grade: "C",
+            tokens: 0,
+            cost: 13900,
+            status: "optimal",
+            totalScore: 3009
+          }
+        ]
       },
       {
         id: 54,
@@ -6594,13 +6852,13 @@ Consume las cartas que use. Esto NO se puede deshacer.
               definitionId: 229348,
               score: 180,
               clubEaId: 144,
-              price: 850
+              price: 900
             },
             {
               definitionId: 192563,
               score: 160,
               clubEaId: 144,
-              price: 900
+              price: 850
             },
             {
               definitionId: 224221,
@@ -6612,7 +6870,7 @@ Consume las cartas que use. Esto NO se puede deshacer.
               definitionId: 228092,
               score: 160,
               clubEaId: 144,
-              price: 700
+              price: 750
             },
             {
               definitionId: 216266,
@@ -6624,13 +6882,13 @@ Consume las cartas que use. Esto NO se puede deshacer.
               definitionId: 241436,
               score: 140,
               clubEaId: 144,
-              price: 1500
+              price: 950
             },
             {
               definitionId: 235883,
               score: 120,
               clubEaId: 144,
-              price: 1700
+              price: 1300
             },
             {
               definitionId: 240273,
@@ -6642,40 +6900,59 @@ Consume las cartas que use. Esto NO se puede deshacer.
               definitionId: 50600544,
               score: 120,
               clubEaId: 144,
-              price: 950
+              price: 900
             },
             {
               definitionId: 70571,
               score: 100,
               clubEaId: 144,
-              price: 650
+              price: 700
             },
             {
               definitionId: 264337,
               score: 100,
               clubEaId: 144,
-              price: 3100
+              price: 3300
             },
             {
               definitionId: 277295,
               score: 100,
               clubEaId: 144,
-              price: 750
+              price: 700
             },
             {
               definitionId: 50592912,
               score: 100,
               clubEaId: 144,
-              price: 1600
+              price: 1200
             },
             {
               definitionId: 222501,
               score: 90,
               clubEaId: 144,
-              price: 4800
+              price: 5e3
             }
           ]
-        }
+        },
+        candidateClubEaIds: [
+          144
+        ],
+        costTiers: [
+          {
+            grade: "D",
+            tokens: 0,
+            cost: 11350,
+            status: "optimal",
+            totalScore: 1542
+          },
+          {
+            grade: "C",
+            tokens: 0,
+            cost: 11350,
+            status: "optimal",
+            totalScore: 1542
+          }
+        ]
       },
       {
         id: 45,
@@ -6812,7 +7089,40 @@ Consume las cartas que use. Esto NO se puede deshacer.
               price: 900
             }
           ]
-        }
+        },
+        candidateClubEaIds: [
+          1952
+        ],
+        costTiers: [
+          {
+            grade: "D",
+            tokens: 0,
+            cost: 12500,
+            status: "optimal",
+            totalScore: 894
+          },
+          {
+            grade: "C",
+            tokens: 0,
+            cost: 12500,
+            status: "optimal",
+            totalScore: 894
+          },
+          {
+            grade: "B",
+            tokens: 8,
+            cost: 12500,
+            status: "optimal",
+            totalScore: 894
+          },
+          {
+            grade: "A",
+            tokens: 18,
+            cost: 13700,
+            status: "optimal",
+            totalScore: 1114
+          }
+        ]
       },
       {
         id: 6,
@@ -6949,7 +7259,33 @@ Consume las cartas que use. Esto NO se puede deshacer.
               price: 750
             }
           ]
-        }
+        },
+        candidateClubEaIds: [
+          94
+        ],
+        costTiers: [
+          {
+            grade: "D",
+            tokens: 0,
+            cost: 10800,
+            status: "optimal",
+            totalScore: 1542
+          },
+          {
+            grade: "C",
+            tokens: 0,
+            cost: 10800,
+            status: "optimal",
+            totalScore: 1542
+          },
+          {
+            grade: "B",
+            tokens: 8,
+            cost: 10800,
+            status: "optimal",
+            totalScore: 1542
+          }
+        ]
       },
       {
         id: 20,
@@ -7086,7 +7422,33 @@ Consume las cartas que use. Esto NO se puede deshacer.
               price: 750
             }
           ]
-        }
+        },
+        candidateClubEaIds: [
+          8
+        ],
+        costTiers: [
+          {
+            grade: "D",
+            tokens: 0,
+            cost: 8600,
+            status: "optimal",
+            totalScore: 1629
+          },
+          {
+            grade: "C",
+            tokens: 0,
+            cost: 8600,
+            status: "optimal",
+            totalScore: 1629
+          },
+          {
+            grade: "B",
+            tokens: 8,
+            cost: 15650,
+            status: "optimal",
+            totalScore: 2319
+          }
+        ]
       },
       {
         id: 46,
@@ -7253,7 +7615,20 @@ Consume las cartas que use. Esto NO se puede deshacer.
               price: 2300
             }
           ]
-        }
+        },
+        candidateClubEaIds: [
+          9,
+          116343
+        ],
+        costTiers: [
+          {
+            grade: "D",
+            tokens: 0,
+            cost: 10150,
+            status: "optimal",
+            totalScore: 1463
+          }
+        ]
       },
       {
         id: 25,
@@ -7390,7 +7765,47 @@ Consume las cartas que use. Esto NO se puede deshacer.
               price: 2e3
             }
           ]
-        }
+        },
+        candidateClubEaIds: [
+          132176
+        ],
+        costTiers: [
+          {
+            grade: "D",
+            tokens: 0,
+            cost: 10250,
+            status: "optimal",
+            totalScore: 1894
+          },
+          {
+            grade: "C",
+            tokens: 0,
+            cost: 17800,
+            status: "optimal",
+            totalScore: 5e3
+          },
+          {
+            grade: "B",
+            tokens: 15,
+            cost: 1026850,
+            status: "optimal",
+            totalScore: 25452
+          },
+          {
+            grade: "A",
+            tokens: 40,
+            cost: 1032050,
+            status: "optimal",
+            totalScore: 32333
+          },
+          {
+            grade: "S",
+            tokens: 80,
+            cost: 1101400,
+            status: "optimal",
+            totalScore: 44011
+          }
+        ]
       },
       {
         id: 49,
@@ -7557,7 +7972,27 @@ Consume las cartas que use. Esto NO se puede deshacer.
               price: 900
             }
           ]
-        }
+        },
+        candidateClubEaIds: [
+          10,
+          116017
+        ],
+        costTiers: [
+          {
+            grade: "D",
+            tokens: 0,
+            cost: 12700,
+            status: "optimal",
+            totalScore: 5402
+          },
+          {
+            grade: "C",
+            tokens: 0,
+            cost: 65300,
+            status: "feasible",
+            totalScore: 60059
+          }
+        ]
       },
       {
         id: 44,
@@ -7724,7 +8159,27 @@ Consume las cartas que use. Esto NO se puede deshacer.
               price: 650
             }
           ]
-        }
+        },
+        candidateClubEaIds: [
+          11,
+          116012
+        ],
+        costTiers: [
+          {
+            grade: "D",
+            tokens: 0,
+            cost: 9850,
+            status: "optimal",
+            totalScore: 3165
+          },
+          {
+            grade: "C",
+            tokens: 0,
+            cost: 35550,
+            status: "optimal",
+            totalScore: 20033
+          }
+        ]
       },
       {
         id: 92,
@@ -7861,7 +8316,19 @@ Consume las cartas que use. Esto NO se puede deshacer.
               price: 700
             }
           ]
-        }
+        },
+        candidateClubEaIds: [
+          13
+        ],
+        costTiers: [
+          {
+            grade: "D",
+            tokens: 0,
+            cost: 9850,
+            status: "optimal",
+            totalScore: 3125
+          }
+        ]
       },
       {
         id: 48,
@@ -7998,7 +8465,26 @@ Consume las cartas que use. Esto NO se puede deshacer.
               price: 700
             }
           ]
-        }
+        },
+        candidateClubEaIds: [
+          14
+        ],
+        costTiers: [
+          {
+            grade: "D",
+            tokens: 0,
+            cost: 10800,
+            status: "optimal",
+            totalScore: 3013
+          },
+          {
+            grade: "C",
+            tokens: 0,
+            cost: 10800,
+            status: "optimal",
+            totalScore: 3013
+          }
+        ]
       },
       {
         id: 86,
@@ -8135,7 +8621,26 @@ Consume las cartas que use. Esto NO se puede deshacer.
               price: 700
             }
           ]
-        }
+        },
+        candidateClubEaIds: [
+          106
+        ],
+        costTiers: [
+          {
+            grade: "D",
+            tokens: 0,
+            cost: 9750,
+            status: "optimal",
+            totalScore: 2225
+          },
+          {
+            grade: "C",
+            tokens: 0,
+            cost: 10050,
+            status: "optimal",
+            totalScore: 2505
+          }
+        ]
       },
       {
         id: 8,
@@ -8272,7 +8777,20 @@ Consume las cartas que use. Esto NO se puede deshacer.
               price: 950
             }
           ]
-        }
+        },
+        candidateClubEaIds: [
+          18,
+          116011
+        ],
+        costTiers: [
+          {
+            grade: "D",
+            tokens: 0,
+            cost: 9150,
+            status: "optimal",
+            totalScore: 2322
+          }
+        ]
       },
       {
         id: 9,
@@ -8409,7 +8927,34 @@ Consume las cartas que use. Esto NO se puede deshacer.
               price: 700
             }
           ]
-        }
+        },
+        candidateClubEaIds: [
+          19,
+          116014
+        ],
+        costTiers: [
+          {
+            grade: "D",
+            tokens: 0,
+            cost: 9500,
+            status: "optimal",
+            totalScore: 1677
+          },
+          {
+            grade: "C",
+            tokens: 0,
+            cost: 9500,
+            status: "optimal",
+            totalScore: 1677
+          },
+          {
+            grade: "B",
+            tokens: 5,
+            cost: 14500,
+            status: "optimal",
+            totalScore: 2002
+          }
+        ]
       },
       {
         id: 16,
@@ -8546,7 +9091,27 @@ Consume las cartas que use. Esto NO se puede deshacer.
               price: 700
             }
           ]
-        }
+        },
+        candidateClubEaIds: [
+          448,
+          116328
+        ],
+        costTiers: [
+          {
+            grade: "D",
+            tokens: 0,
+            cost: 6150,
+            status: "optimal",
+            totalScore: 537
+          },
+          {
+            grade: "C",
+            tokens: 0,
+            cost: 158850,
+            status: "feasible",
+            totalScore: 7019
+          }
+        ]
       },
       {
         id: 53,
@@ -8713,7 +9278,27 @@ Consume las cartas que use. Esto NO se puede deshacer.
               price: 1700
             }
           ]
-        }
+        },
+        candidateClubEaIds: [
+          240,
+          116327
+        ],
+        costTiers: [
+          {
+            grade: "D",
+            tokens: 0,
+            cost: 11100,
+            status: "optimal",
+            totalScore: 4769
+          },
+          {
+            grade: "C",
+            tokens: 0,
+            cost: 62900,
+            status: "feasible",
+            totalScore: 20046
+          }
+        ]
       },
       {
         id: 12,
@@ -8850,7 +9435,33 @@ Consume las cartas que use. Esto NO se puede deshacer.
               price: 2100
             }
           ]
-        }
+        },
+        candidateClubEaIds: [
+          479
+        ],
+        costTiers: [
+          {
+            grade: "D",
+            tokens: 0,
+            cost: 9100,
+            status: "optimal",
+            totalScore: 1498
+          },
+          {
+            grade: "C",
+            tokens: 0,
+            cost: 9100,
+            status: "optimal",
+            totalScore: 1498
+          },
+          {
+            grade: "B",
+            tokens: 5,
+            cost: 10250,
+            status: "optimal",
+            totalScore: 1803
+          }
+        ]
       },
       {
         id: 81,
@@ -8987,7 +9598,26 @@ Consume las cartas que use. Esto NO se puede deshacer.
               price: 1800
             }
           ]
-        }
+        },
+        candidateClubEaIds: [
+          450
+        ],
+        costTiers: [
+          {
+            grade: "D",
+            tokens: 0,
+            cost: 10250,
+            status: "optimal",
+            totalScore: 1445
+          },
+          {
+            grade: "C",
+            tokens: 0,
+            cost: 10250,
+            status: "optimal",
+            totalScore: 1445
+          }
+        ]
       },
       {
         id: 89,
@@ -9124,7 +9754,47 @@ Consume las cartas que use. Esto NO se puede deshacer.
               price: 1300
             }
           ]
-        }
+        },
+        candidateClubEaIds: [
+          116332
+        ],
+        costTiers: [
+          {
+            grade: "D",
+            tokens: 0,
+            cost: 19250,
+            status: "optimal",
+            totalScore: 1126
+          },
+          {
+            grade: "C",
+            tokens: 0,
+            cost: 19250,
+            status: "optimal",
+            totalScore: 1126
+          },
+          {
+            grade: "B",
+            tokens: 5,
+            cost: 19250,
+            status: "optimal",
+            totalScore: 1126
+          },
+          {
+            grade: "A",
+            tokens: 13,
+            cost: 19250,
+            status: "optimal",
+            totalScore: 1126
+          },
+          {
+            grade: "S",
+            tokens: 28,
+            cost: 19250,
+            status: "optimal",
+            totalScore: 1126
+          }
+        ]
       },
       {
         id: 62,
@@ -9261,7 +9931,40 @@ Consume las cartas que use. Esto NO se puede deshacer.
               price: 800
             }
           ]
-        }
+        },
+        candidateClubEaIds: [
+          463
+        ],
+        costTiers: [
+          {
+            grade: "D",
+            tokens: 0,
+            cost: 8200,
+            status: "optimal",
+            totalScore: 668
+          },
+          {
+            grade: "C",
+            tokens: 0,
+            cost: 8200,
+            status: "optimal",
+            totalScore: 668
+          },
+          {
+            grade: "B",
+            tokens: 5,
+            cost: 9200,
+            status: "optimal",
+            totalScore: 736
+          },
+          {
+            grade: "A",
+            tokens: 13,
+            cost: 13200,
+            status: "optimal",
+            totalScore: 1100
+          }
+        ]
       },
       {
         id: 80,
@@ -9398,7 +10101,26 @@ Consume las cartas que use. Esto NO se puede deshacer.
               price: 700
             }
           ]
-        }
+        },
+        candidateClubEaIds: [
+          468
+        ],
+        costTiers: [
+          {
+            grade: "D",
+            tokens: 0,
+            cost: 8500,
+            status: "optimal",
+            totalScore: 756
+          },
+          {
+            grade: "C",
+            tokens: 0,
+            cost: 8500,
+            status: "optimal",
+            totalScore: 756
+          }
+        ]
       },
       {
         id: 40,
@@ -9535,7 +10257,40 @@ Consume las cartas que use. Esto NO se puede deshacer.
               price: 900
             }
           ]
-        }
+        },
+        candidateClubEaIds: [
+          131125
+        ],
+        costTiers: [
+          {
+            grade: "D",
+            tokens: 0,
+            cost: 11650,
+            status: "optimal",
+            totalScore: 1287
+          },
+          {
+            grade: "C",
+            tokens: 0,
+            cost: 11650,
+            status: "optimal",
+            totalScore: 1287
+          },
+          {
+            grade: "B",
+            tokens: 5,
+            cost: 11650,
+            status: "optimal",
+            totalScore: 1287
+          },
+          {
+            grade: "A",
+            tokens: 13,
+            cost: 11650,
+            status: "optimal",
+            totalScore: 1287
+          }
+        ]
       },
       {
         id: 68,
@@ -9702,7 +10457,27 @@ Consume las cartas que use. Esto NO se puede deshacer.
               price: 86500
             }
           ]
-        }
+        },
+        candidateClubEaIds: [
+          241,
+          116325
+        ],
+        costTiers: [
+          {
+            grade: "D",
+            tokens: 0,
+            cost: 14200,
+            status: "optimal",
+            totalScore: 4114
+          },
+          {
+            grade: "C",
+            tokens: 0,
+            cost: 5103350,
+            status: "feasible",
+            totalScore: 170245
+          }
+        ]
       },
       {
         id: 13,
@@ -9839,7 +10614,33 @@ Consume las cartas que use. Esto NO se puede deshacer.
               price: 650
             }
           ]
-        }
+        },
+        candidateClubEaIds: [
+          1860
+        ],
+        costTiers: [
+          {
+            grade: "D",
+            tokens: 0,
+            cost: 8050,
+            status: "optimal",
+            totalScore: 624
+          },
+          {
+            grade: "C",
+            tokens: 0,
+            cost: 8900,
+            status: "optimal",
+            totalScore: 903
+          },
+          {
+            grade: "B",
+            tokens: 5,
+            cost: 12600,
+            status: "optimal",
+            totalScore: 1300
+          }
+        ]
       },
       {
         id: 11,
@@ -9878,7 +10679,11 @@ Consume las cartas que use. Esto NO se puede deshacer.
             threshold: 1400,
             tokens: 15
           }
-        ]
+        ],
+        candidateClubEaIds: [
+          110832
+        ],
+        costTiers: []
       },
       {
         id: 24,
@@ -10015,7 +10820,33 @@ Consume las cartas que use. Esto NO se puede deshacer.
               price: 700
             }
           ]
-        }
+        },
+        candidateClubEaIds: [
+          1853
+        ],
+        costTiers: [
+          {
+            grade: "D",
+            tokens: 0,
+            cost: 8850,
+            status: "optimal",
+            totalScore: 978
+          },
+          {
+            grade: "C",
+            tokens: 0,
+            cost: 8850,
+            status: "optimal",
+            totalScore: 978
+          },
+          {
+            grade: "B",
+            tokens: 5,
+            cost: 8850,
+            status: "optimal",
+            totalScore: 978
+          }
+        ]
       },
       {
         id: 97,
@@ -10152,7 +10983,40 @@ Consume las cartas que use. Esto NO se puede deshacer.
               price: 400
             }
           ]
-        }
+        },
+        candidateClubEaIds: [
+          132629
+        ],
+        costTiers: [
+          {
+            grade: "D",
+            tokens: 0,
+            cost: 7500,
+            status: "optimal",
+            totalScore: 649
+          },
+          {
+            grade: "C",
+            tokens: 0,
+            cost: 7500,
+            status: "optimal",
+            totalScore: 649
+          },
+          {
+            grade: "B",
+            tokens: 5,
+            cost: 7500,
+            status: "optimal",
+            totalScore: 649
+          },
+          {
+            grade: "A",
+            tokens: 13,
+            cost: 9750,
+            status: "optimal",
+            totalScore: 710
+          }
+        ]
       },
       {
         id: 35,
@@ -10191,7 +11055,11 @@ Consume las cartas que use. Esto NO se puede deshacer.
             threshold: 5100,
             tokens: 20
           }
-        ]
+        ],
+        candidateClubEaIds: [
+          116334
+        ],
+        costTiers: []
       },
       {
         id: 90,
@@ -10328,7 +11196,47 @@ Consume las cartas que use. Esto NO se puede deshacer.
               price: 950
             }
           ]
-        }
+        },
+        candidateClubEaIds: [
+          573
+        ],
+        costTiers: [
+          {
+            grade: "D",
+            tokens: 0,
+            cost: 12200,
+            status: "optimal",
+            totalScore: 714
+          },
+          {
+            grade: "C",
+            tokens: 0,
+            cost: 12200,
+            status: "optimal",
+            totalScore: 714
+          },
+          {
+            grade: "B",
+            tokens: 5,
+            cost: 12200,
+            status: "optimal",
+            totalScore: 714
+          },
+          {
+            grade: "A",
+            tokens: 13,
+            cost: 12200,
+            status: "optimal",
+            totalScore: 714
+          },
+          {
+            grade: "S",
+            tokens: 28,
+            cost: 17150,
+            status: "optimal",
+            totalScore: 908
+          }
+        ]
       },
       {
         id: 79,
@@ -10465,7 +11373,40 @@ Consume las cartas que use. Esto NO se puede deshacer.
               price: 700
             }
           ]
-        }
+        },
+        candidateClubEaIds: [
+          456
+        ],
+        costTiers: [
+          {
+            grade: "D",
+            tokens: 0,
+            cost: 9350,
+            status: "optimal",
+            totalScore: 872
+          },
+          {
+            grade: "C",
+            tokens: 0,
+            cost: 9350,
+            status: "optimal",
+            totalScore: 872
+          },
+          {
+            grade: "B",
+            tokens: 5,
+            cost: 9350,
+            status: "optimal",
+            totalScore: 872
+          },
+          {
+            grade: "A",
+            tokens: 13,
+            cost: 10950,
+            status: "optimal",
+            totalScore: 1007
+          }
+        ]
       },
       {
         id: 91,
@@ -10602,7 +11543,47 @@ Consume las cartas que use. Esto NO se puede deshacer.
               price: 850
             }
           ]
-        }
+        },
+        candidateClubEaIds: [
+          480
+        ],
+        costTiers: [
+          {
+            grade: "D",
+            tokens: 0,
+            cost: 9500,
+            status: "optimal",
+            totalScore: 1728
+          },
+          {
+            grade: "C",
+            tokens: 0,
+            cost: 9500,
+            status: "optimal",
+            totalScore: 1728
+          },
+          {
+            grade: "B",
+            tokens: 8,
+            cost: 15100,
+            status: "optimal",
+            totalScore: 2203
+          },
+          {
+            grade: "A",
+            tokens: 18,
+            cost: 179650,
+            status: "optimal",
+            totalScore: 4709
+          },
+          {
+            grade: "S",
+            tokens: 38,
+            cost: 179650,
+            status: "optimal",
+            totalScore: 4819
+          }
+        ]
       },
       {
         id: 41,
@@ -10739,7 +11720,47 @@ Consume las cartas que use. Esto NO se puede deshacer.
               price: 1100
             }
           ]
-        }
+        },
+        candidateClubEaIds: [
+          242
+        ],
+        costTiers: [
+          {
+            grade: "D",
+            tokens: 0,
+            cost: 8900,
+            status: "optimal",
+            totalScore: 1283
+          },
+          {
+            grade: "C",
+            tokens: 0,
+            cost: 8900,
+            status: "optimal",
+            totalScore: 1283
+          },
+          {
+            grade: "B",
+            tokens: 8,
+            cost: 172950,
+            status: "optimal",
+            totalScore: 7318
+          },
+          {
+            grade: "A",
+            tokens: 18,
+            cost: 172950,
+            status: "optimal",
+            totalScore: 7318
+          },
+          {
+            grade: "S",
+            tokens: 38,
+            cost: 189500,
+            status: "optimal",
+            totalScore: 7814
+          }
+        ]
       },
       {
         id: 2,
@@ -10876,7 +11897,34 @@ Consume las cartas que use. Esto NO se puede deshacer.
               price: 2900
             }
           ]
-        }
+        },
+        candidateClubEaIds: [
+          452,
+          131733
+        ],
+        costTiers: [
+          {
+            grade: "D",
+            tokens: 0,
+            cost: 6900,
+            status: "optimal",
+            totalScore: 663
+          },
+          {
+            grade: "C",
+            tokens: 0,
+            cost: 7100,
+            status: "optimal",
+            totalScore: 827
+          },
+          {
+            grade: "B",
+            tokens: 8,
+            cost: 13700,
+            status: "feasible",
+            totalScore: 1500
+          }
+        ]
       },
       {
         id: 96,
@@ -11013,7 +12061,26 @@ Consume las cartas que use. Esto NO se puede deshacer.
               price: 1900
             }
           ]
-        }
+        },
+        candidateClubEaIds: [
+          449
+        ],
+        costTiers: [
+          {
+            grade: "D",
+            tokens: 0,
+            cost: 10250,
+            status: "optimal",
+            totalScore: 2782
+          },
+          {
+            grade: "C",
+            tokens: 0,
+            cost: 10250,
+            status: "optimal",
+            totalScore: 2782
+          }
+        ]
       },
       {
         id: 74,
@@ -11180,7 +12247,27 @@ Consume las cartas que use. Esto NO se puede deshacer.
               price: 300
             }
           ]
-        }
+        },
+        candidateClubEaIds: [
+          243,
+          116326
+        ],
+        costTiers: [
+          {
+            grade: "D",
+            tokens: 0,
+            cost: 9050,
+            status: "optimal",
+            totalScore: 3552
+          },
+          {
+            grade: "C",
+            tokens: 0,
+            cost: 1698600,
+            status: "feasible",
+            totalScore: 70119
+          }
+        ]
       },
       {
         id: 42,
@@ -11317,7 +12404,27 @@ Consume las cartas que use. Esto NO se puede deshacer.
               price: 1e3
             }
           ]
-        }
+        },
+        candidateClubEaIds: [
+          457,
+          116336
+        ],
+        costTiers: [
+          {
+            grade: "D",
+            tokens: 0,
+            cost: 8850,
+            status: "optimal",
+            totalScore: 1804
+          },
+          {
+            grade: "C",
+            tokens: 0,
+            cost: 9500,
+            status: "optimal",
+            totalScore: 3538
+          }
+        ]
       },
       {
         id: 84,
@@ -11356,7 +12463,11 @@ Consume las cartas que use. Esto NO se puede deshacer.
             threshold: 1e3,
             tokens: 15
           }
-        ]
+        ],
+        candidateClubEaIds: [
+          116331
+        ],
+        costTiers: []
       },
       {
         id: 32,
@@ -11493,7 +12604,27 @@ Consume las cartas que use. Esto NO se puede deshacer.
               price: 700
             }
           ]
-        }
+        },
+        candidateClubEaIds: [
+          481,
+          116337
+        ],
+        costTiers: [
+          {
+            grade: "D",
+            tokens: 0,
+            cost: 7200,
+            status: "optimal",
+            totalScore: 985
+          },
+          {
+            grade: "C",
+            tokens: 0,
+            cost: 8550,
+            status: "optimal",
+            totalScore: 1500
+          }
+        ]
       },
       {
         id: 69,
@@ -11630,7 +12761,33 @@ Consume las cartas que use. Esto NO se puede deshacer.
               price: 950
             }
           ]
-        }
+        },
+        candidateClubEaIds: [
+          461
+        ],
+        costTiers: [
+          {
+            grade: "D",
+            tokens: 0,
+            cost: 9e3,
+            status: "optimal",
+            totalScore: 1160
+          },
+          {
+            grade: "C",
+            tokens: 0,
+            cost: 9600,
+            status: "optimal",
+            totalScore: 1302
+          },
+          {
+            grade: "B",
+            tokens: 5,
+            cost: 15700,
+            status: "optimal",
+            totalScore: 1812
+          }
+        ]
       },
       {
         id: 5,
@@ -11686,7 +12843,7 @@ Consume las cartas que use. Esto NO se puede deshacer.
               definitionId: 50596036,
               score: 1038,
               clubEaId: 483,
-              price: 57e3
+              price: 52e3
             },
             {
               definitionId: 185122,
@@ -11698,13 +12855,13 @@ Consume las cartas que use. Esto NO se puede deshacer.
               definitionId: 264388,
               score: 340,
               clubEaId: 483,
-              price: 1200
+              price: 1400
             },
             {
               definitionId: 208093,
               score: 280,
               clubEaId: 483,
-              price: 650
+              price: 700
             },
             {
               definitionId: 226110,
@@ -11722,7 +12879,7 @@ Consume las cartas que use. Esto NO se puede deshacer.
               definitionId: 241707,
               score: 180,
               clubEaId: 483,
-              price: 750
+              price: 700
             },
             {
               definitionId: 270728,
@@ -11734,19 +12891,19 @@ Consume las cartas que use. Esto NO se puede deshacer.
               definitionId: 235781,
               score: 160,
               clubEaId: 483,
-              price: 900
+              price: 950
             },
             {
               definitionId: 237221,
               score: 160,
               clubEaId: 483,
-              price: 800
+              price: 700
             },
             {
               definitionId: 254551,
               score: 160,
               clubEaId: 483,
-              price: 700
+              price: 650
             },
             {
               definitionId: 262402,
@@ -11758,7 +12915,7 @@ Consume las cartas que use. Esto NO se puede deshacer.
               definitionId: 273906,
               score: 140,
               clubEaId: 483,
-              price: 650
+              price: 700
             },
             {
               definitionId: 276493,
@@ -11767,7 +12924,40 @@ Consume las cartas que use. Esto NO se puede deshacer.
               price: 900
             }
           ]
-        }
+        },
+        candidateClubEaIds: [
+          483
+        ],
+        costTiers: [
+          {
+            grade: "D",
+            tokens: 0,
+            cost: 9900,
+            status: "optimal",
+            totalScore: 2624
+          },
+          {
+            grade: "C",
+            tokens: 0,
+            cost: 9900,
+            status: "optimal",
+            totalScore: 2624
+          },
+          {
+            grade: "B",
+            tokens: 8,
+            cost: 61e3,
+            status: "optimal",
+            totalScore: 3723
+          },
+          {
+            grade: "A",
+            tokens: 18,
+            cost: 129200,
+            status: "optimal",
+            totalScore: 5734
+          }
+        ]
       },
       {
         id: 65,
@@ -11817,25 +13007,25 @@ Consume las cartas que use. Esto NO se puede deshacer.
               definitionId: 228813,
               score: 830,
               clubEaId: 32,
-              price: 750
+              price: 900
             },
             {
               definitionId: 67370729,
               score: 638,
               clubEaId: 32,
-              price: 14500
+              price: 15e3
             },
             {
               definitionId: 50593513,
               score: 425,
               clubEaId: 32,
-              price: 11e3
+              price: 11250
             },
             {
               definitionId: 234236,
               score: 410,
               clubEaId: 32,
-              price: 750
+              price: 700
             },
             {
               definitionId: 265377,
@@ -11847,7 +13037,7 @@ Consume las cartas que use. Esto NO se puede deshacer.
               definitionId: 239344,
               score: 340,
               clubEaId: 115996,
-              price: 700
+              price: 650
             },
             {
               definitionId: 247263,
@@ -11865,7 +13055,7 @@ Consume las cartas que use. Esto NO se puede deshacer.
               definitionId: 50573500,
               score: 340,
               clubEaId: 32,
-              price: 800
+              price: 750
             },
             {
               definitionId: 261865,
@@ -11883,13 +13073,13 @@ Consume las cartas que use. Esto NO se puede deshacer.
               definitionId: 236804,
               score: 160,
               clubEaId: 32,
-              price: 650
+              price: 700
             },
             {
               definitionId: 256853,
               score: 160,
               clubEaId: 32,
-              price: 650
+              price: 750
             },
             {
               definitionId: 276901,
@@ -11901,10 +13091,23 @@ Consume las cartas que use. Esto NO se puede deshacer.
               definitionId: 50606856,
               score: 140,
               clubEaId: 32,
-              price: 700
+              price: 750
             }
           ]
-        }
+        },
+        candidateClubEaIds: [
+          32,
+          115996
+        ],
+        costTiers: [
+          {
+            grade: "D",
+            tokens: 0,
+            cost: 7050,
+            status: "optimal",
+            totalScore: 1281
+          }
+        ]
       },
       {
         id: 4,
@@ -12041,7 +13244,26 @@ Consume las cartas que use. Esto NO se puede deshacer.
               price: null
             }
           ]
-        }
+        },
+        candidateClubEaIds: [
+          22
+        ],
+        costTiers: [
+          {
+            grade: "D",
+            tokens: 0,
+            cost: 9050,
+            status: "optimal",
+            totalScore: 2716
+          },
+          {
+            grade: "C",
+            tokens: 0,
+            cost: 36950,
+            status: "optimal",
+            totalScore: 14341
+          }
+        ]
       },
       {
         id: 31,
@@ -12178,7 +13400,26 @@ Consume las cartas que use. Esto NO se puede deshacer.
               price: 600
             }
           ]
-        }
+        },
+        candidateClubEaIds: [
+          23
+        ],
+        costTiers: [
+          {
+            grade: "D",
+            tokens: 0,
+            cost: 7100,
+            status: "optimal",
+            totalScore: 1033
+          },
+          {
+            grade: "C",
+            tokens: 0,
+            cost: 7150,
+            status: "optimal",
+            totalScore: 1102
+          }
+        ]
       },
       {
         id: 59,
@@ -12315,7 +13556,20 @@ Consume las cartas que use. Esto NO se puede deshacer.
               price: 750
             }
           ]
-        }
+        },
+        candidateClubEaIds: [
+          1824,
+          115997
+        ],
+        costTiers: [
+          {
+            grade: "D",
+            tokens: 0,
+            cost: 3850,
+            status: "optimal",
+            totalScore: 462
+          }
+        ]
       },
       {
         id: 10,
@@ -12371,25 +13625,25 @@ Consume las cartas que use. Esto NO se puede deshacer.
               definitionId: 258432,
               score: 120,
               clubEaId: 100409,
-              price: 650
+              price: 700
             },
             {
               definitionId: 199439,
               score: 100,
               clubEaId: 100409,
-              price: 1500
+              price: 1300
             },
             {
               definitionId: 202201,
               score: 100,
               clubEaId: 100409,
-              price: 1500
+              price: 1300
             },
             {
               definitionId: 242818,
               score: 100,
               clubEaId: 100409,
-              price: 700
+              price: 750
             },
             {
               definitionId: 246594,
@@ -12401,43 +13655,43 @@ Consume las cartas que use. Esto NO se puede deshacer.
               definitionId: 259306,
               score: 100,
               clubEaId: 100409,
-              price: 1e3
+              price: 950
             },
             {
               definitionId: 266433,
               score: 100,
               clubEaId: 100409,
-              price: 700
+              price: 850
             },
             {
               definitionId: 257889,
               score: 90,
               clubEaId: 100409,
-              price: 9500
+              price: null
             },
             {
               definitionId: 269305,
               score: 90,
               clubEaId: 100409,
-              price: 1200
+              price: 1100
             },
             {
               definitionId: 50597884,
               score: 90,
               clubEaId: 100409,
-              price: 650
+              price: 750
             },
             {
               definitionId: 80729,
               score: 35,
               clubEaId: 100409,
-              price: 600
+              price: 650
             },
             {
               definitionId: 224425,
               score: 35,
               clubEaId: 100409,
-              price: 650
+              price: 700
             },
             {
               definitionId: 268837,
@@ -12452,7 +13706,26 @@ Consume las cartas que use. Esto NO se puede deshacer.
               price: 650
             }
           ]
-        }
+        },
+        candidateClubEaIds: [
+          100409
+        ],
+        costTiers: [
+          {
+            grade: "D",
+            tokens: 0,
+            cost: 7650,
+            status: "optimal",
+            totalScore: 717
+          },
+          {
+            grade: "C",
+            tokens: 0,
+            cost: 8150,
+            status: "optimal",
+            totalScore: 812
+          }
+        ]
       },
       {
         id: 52,
@@ -12508,43 +13781,43 @@ Consume las cartas que use. Esto NO se puede deshacer.
               definitionId: 50579475,
               score: 23750,
               clubEaId: 21,
-              price: 1375e3
+              price: 1299e3
             },
             {
               definitionId: 67368151,
               score: 15563,
               clubEaId: 115995,
-              price: 44e4
+              price: 444e3
             },
             {
               definitionId: 202126,
               score: 14e3,
               clubEaId: 21,
-              price: 26500
+              price: 26250
             },
             {
               definitionId: 247827,
               score: 14e3,
               clubEaId: 21,
-              price: 365e3
+              price: 362e3
             },
             {
               definitionId: 50590935,
               score: 10375,
               clubEaId: 115995,
-              price: 166e3
+              price: 174e3
             },
             {
               definitionId: 212622,
               score: 8300,
               clubEaId: 21,
-              price: 8500
+              price: 8900
             },
             {
               definitionId: 241084,
               score: 8300,
               clubEaId: 21,
-              price: 1e4
+              price: 9900
             },
             {
               definitionId: 248822,
@@ -12562,7 +13835,7 @@ Consume las cartas que use. Esto NO se puede deshacer.
               definitionId: 229558,
               score: 5500,
               clubEaId: 21,
-              price: 39e3
+              price: 38500
             },
             {
               definitionId: 256790,
@@ -12574,19 +13847,19 @@ Consume las cartas que use. Esto NO se puede deshacer.
               definitionId: 259287,
               score: 5500,
               clubEaId: 115995,
-              price: 5800
+              price: 5700
             },
             {
               definitionId: 225375,
               score: 2100,
               clubEaId: 21,
-              price: 6300
+              price: 6100
             },
             {
               definitionId: 239345,
               score: 830,
               clubEaId: 115995,
-              price: 800
+              price: 700
             },
             {
               definitionId: 264886,
@@ -12598,19 +13871,19 @@ Consume las cartas que use. Esto NO se puede deshacer.
               definitionId: 206113,
               score: 410,
               clubEaId: 21,
-              price: 750
+              price: 800
             },
             {
               definitionId: 259480,
               score: 410,
               clubEaId: 21,
-              price: 750
+              price: 650
             },
             {
               definitionId: 277452,
               score: 410,
               clubEaId: 115995,
-              price: 650
+              price: 700
             },
             {
               definitionId: 264890,
@@ -12619,7 +13892,27 @@ Consume las cartas que use. Esto NO se puede deshacer.
               price: 650
             }
           ]
-        }
+        },
+        candidateClubEaIds: [
+          115995,
+          21
+        ],
+        costTiers: [
+          {
+            grade: "D",
+            tokens: 0,
+            cost: 11400,
+            status: "optimal",
+            totalScore: 4581
+          },
+          {
+            grade: "C",
+            tokens: 0,
+            cost: 68250,
+            status: "feasible",
+            totalScore: 60015
+          }
+        ]
       },
       {
         id: 15,
@@ -12669,7 +13962,7 @@ Consume las cartas que use. Esto NO se puede deshacer.
               definitionId: 226375,
               score: 160,
               clubEaId: 116003,
-              price: 750
+              price: 650
             },
             {
               definitionId: 71178,
@@ -12693,13 +13986,13 @@ Consume las cartas que use. Esto NO se puede deshacer.
               definitionId: 264940,
               score: 120,
               clubEaId: 116003,
-              price: 800
+              price: 750
             },
             {
               definitionId: 225126,
               score: 100,
               clubEaId: 31,
-              price: 1700
+              price: 1600
             },
             {
               definitionId: 235360,
@@ -12711,52 +14004,72 @@ Consume las cartas que use. Esto NO se puede deshacer.
               definitionId: 279523,
               score: 100,
               clubEaId: 116003,
-              price: 850
+              price: 900
             },
             {
               definitionId: 226355,
               score: 90,
               clubEaId: 116003,
-              price: 1300
+              price: 1400
             },
             {
               definitionId: 252021,
               score: 90,
               clubEaId: 31,
-              price: 3500
+              price: 3300
             },
             {
               definitionId: 265102,
               score: 90,
               clubEaId: 116003,
-              price: 800
+              price: 850
             },
             {
               definitionId: 271952,
               score: 90,
               clubEaId: 116003,
-              price: 1700
+              price: 1800
             },
             {
               definitionId: 265033,
               score: 35,
               clubEaId: 116003,
-              price: 500
+              price: 800
             },
             {
-              definitionId: 265091,
+              definitionId: 265046,
               score: 35,
               clubEaId: 116003,
-              price: 600
+              price: 500
             },
             {
               definitionId: 276480,
               score: 35,
               clubEaId: 116003,
-              price: 1400
+              price: 600
             }
           ]
-        }
+        },
+        candidateClubEaIds: [
+          31,
+          116003
+        ],
+        costTiers: [
+          {
+            grade: "D",
+            tokens: 0,
+            cost: 3850,
+            status: "optimal",
+            totalScore: 457
+          },
+          {
+            grade: "C",
+            tokens: 0,
+            cost: 7350,
+            status: "feasible",
+            totalScore: 1014
+          }
+        ]
       },
       {
         id: 73,
@@ -12893,7 +14206,34 @@ Consume las cartas que use. Esto NO se puede deshacer.
               price: 550
             }
           ]
-        }
+        },
+        candidateClubEaIds: [
+          171,
+          131386
+        ],
+        costTiers: [
+          {
+            grade: "D",
+            tokens: 0,
+            cost: 6150,
+            status: "optimal",
+            totalScore: 613
+          },
+          {
+            grade: "C",
+            tokens: 0,
+            cost: 6150,
+            status: "optimal",
+            totalScore: 613
+          },
+          {
+            grade: "B",
+            tokens: 5,
+            cost: 6150,
+            status: "optimal",
+            totalScore: 613
+          }
+        ]
       },
       {
         id: 64,
@@ -12943,7 +14283,7 @@ Consume las cartas que use. Esto NO se puede deshacer.
               definitionId: 264925,
               score: 180,
               clubEaId: 132589,
-              price: 650
+              price: 700
             },
             {
               definitionId: 201269,
@@ -12955,13 +14295,13 @@ Consume las cartas que use. Esto NO se puede deshacer.
               definitionId: 264954,
               score: 140,
               clubEaId: 132589,
-              price: 650
+              price: 700
             },
             {
               definitionId: 265576,
               score: 120,
               clubEaId: 1831,
-              price: 900
+              price: 850
             },
             {
               definitionId: 268451,
@@ -12973,7 +14313,7 @@ Consume las cartas que use. Esto NO se puede deshacer.
               definitionId: 211999,
               score: 100,
               clubEaId: 1831,
-              price: 950
+              price: 750
             },
             {
               definitionId: 265079,
@@ -12985,13 +14325,13 @@ Consume las cartas que use. Esto NO se puede deshacer.
               definitionId: 78602,
               score: 90,
               clubEaId: 132589,
-              price: 1300
+              price: 1500
             },
             {
               definitionId: 193254,
               score: 90,
               clubEaId: 1831,
-              price: 2e3
+              price: 1800
             },
             {
               definitionId: 250941,
@@ -13009,13 +14349,13 @@ Consume las cartas que use. Esto NO se puede deshacer.
               definitionId: 265026,
               score: 90,
               clubEaId: 132589,
-              price: 650
+              price: 700
             },
             {
               definitionId: 277799,
               score: 90,
               clubEaId: 1831,
-              price: 1700
+              price: 1800
             },
             {
               definitionId: 279693,
@@ -13027,10 +14367,37 @@ Consume las cartas que use. Esto NO se puede deshacer.
               definitionId: 275534,
               score: 35,
               clubEaId: 132589,
-              price: 550
+              price: 500
             }
           ]
-        }
+        },
+        candidateClubEaIds: [
+          1831,
+          132589
+        ],
+        costTiers: [
+          {
+            grade: "D",
+            tokens: 0,
+            cost: 5350,
+            status: "optimal",
+            totalScore: 519
+          },
+          {
+            grade: "C",
+            tokens: 0,
+            cost: 5900,
+            status: "optimal",
+            totalScore: 903
+          },
+          {
+            grade: "B",
+            tokens: 5,
+            cost: 8550,
+            status: "feasible",
+            totalScore: 1309
+          }
+        ]
       },
       {
         id: 33,
@@ -13080,7 +14447,7 @@ Consume las cartas que use. Esto NO se puede deshacer.
               definitionId: 73078,
               score: 280,
               clubEaId: 169,
-              price: 900
+              price: 650
             },
             {
               definitionId: 225309,
@@ -13092,7 +14459,7 @@ Consume las cartas que use. Esto NO se puede deshacer.
               definitionId: 223671,
               score: 120,
               clubEaId: 169,
-              price: 1200
+              price: 1100
             },
             {
               definitionId: 224251,
@@ -13104,7 +14471,7 @@ Consume las cartas que use. Esto NO se puede deshacer.
               definitionId: 236636,
               score: 120,
               clubEaId: 169,
-              price: 1400
+              price: 1300
             },
             {
               definitionId: 257075,
@@ -13116,13 +14483,13 @@ Consume las cartas que use. Esto NO se puede deshacer.
               definitionId: 221671,
               score: 100,
               clubEaId: 169,
-              price: 800
+              price: 950
             },
             {
               definitionId: 256942,
               score: 100,
               clubEaId: 169,
-              price: 1700
+              price: 1e3
             },
             {
               definitionId: 202429,
@@ -13134,25 +14501,25 @@ Consume las cartas que use. Esto NO se puede deshacer.
               definitionId: 212212,
               score: 90,
               clubEaId: 169,
-              price: 2600
+              price: 2500
             },
             {
               definitionId: 216275,
               score: 90,
               clubEaId: 169,
-              price: 2200
+              price: 2e3
             },
             {
               definitionId: 233216,
               score: 90,
               clubEaId: 169,
-              price: 1200
+              price: 1600
             },
             {
               definitionId: 258715,
               score: 90,
               clubEaId: 169,
-              price: 700
+              price: 750
             },
             {
               definitionId: 86949,
@@ -13167,7 +14534,27 @@ Consume las cartas que use. Esto NO se puede deshacer.
               price: 500
             }
           ]
-        }
+        },
+        candidateClubEaIds: [
+          169,
+          132866
+        ],
+        costTiers: [
+          {
+            grade: "D",
+            tokens: 0,
+            cost: 5500,
+            status: "optimal",
+            totalScore: 517
+          },
+          {
+            grade: "C",
+            tokens: 0,
+            cost: 5950,
+            status: "optimal",
+            totalScore: 1050
+          }
+        ]
       },
       {
         id: 67,
@@ -13304,7 +14691,34 @@ Consume las cartas que use. Esto NO se puede deshacer.
               price: 1400
             }
           ]
-        }
+        },
+        candidateClubEaIds: [
+          28,
+          132533
+        ],
+        costTiers: [
+          {
+            grade: "D",
+            tokens: 0,
+            cost: 6100,
+            status: "optimal",
+            totalScore: 610
+          },
+          {
+            grade: "C",
+            tokens: 0,
+            cost: 6100,
+            status: "optimal",
+            totalScore: 610
+          },
+          {
+            grade: "B",
+            tokens: 8,
+            cost: 8400,
+            status: "feasible",
+            totalScore: 1006
+          }
+        ]
       },
       {
         id: 28,
@@ -13441,7 +14855,20 @@ Consume las cartas que use. Esto NO se puede deshacer.
               price: 1200
             }
           ]
-        }
+        },
+        candidateClubEaIds: [
+          112172,
+          116021
+        ],
+        costTiers: [
+          {
+            grade: "D",
+            tokens: 0,
+            cost: 6250,
+            status: "optimal",
+            totalScore: 630
+          }
+        ]
       },
       {
         id: 21,
@@ -13578,7 +15005,27 @@ Consume las cartas que use. Esto NO se puede deshacer.
               price: 1600
             }
           ]
-        }
+        },
+        candidateClubEaIds: [
+          25,
+          116002
+        ],
+        costTiers: [
+          {
+            grade: "D",
+            tokens: 0,
+            cost: 4750,
+            status: "optimal",
+            totalScore: 485
+          },
+          {
+            grade: "C",
+            tokens: 0,
+            cost: 9750,
+            status: "feasible",
+            totalScore: 2e3
+          }
+        ]
       },
       {
         id: 47,
@@ -13715,7 +15162,33 @@ Consume las cartas que use. Esto NO se puede deshacer.
               price: 700
             }
           ]
-        }
+        },
+        candidateClubEaIds: [
+          10030
+        ],
+        costTiers: [
+          {
+            grade: "D",
+            tokens: 0,
+            cost: 7300,
+            status: "optimal",
+            totalScore: 638
+          },
+          {
+            grade: "C",
+            tokens: 0,
+            cost: 7300,
+            status: "optimal",
+            totalScore: 638
+          },
+          {
+            grade: "B",
+            tokens: 5,
+            cost: 7300,
+            status: "optimal",
+            totalScore: 638
+          }
+        ]
       },
       {
         id: 57,
@@ -13852,7 +15325,33 @@ Consume las cartas que use. Esto NO se puede deshacer.
               price: 750
             }
           ]
-        }
+        },
+        candidateClubEaIds: [
+          34
+        ],
+        costTiers: [
+          {
+            grade: "D",
+            tokens: 0,
+            cost: 7350,
+            status: "optimal",
+            totalScore: 611
+          },
+          {
+            grade: "C",
+            tokens: 0,
+            cost: 7350,
+            status: "optimal",
+            totalScore: 611
+          },
+          {
+            grade: "B",
+            tokens: 5,
+            cost: 7350,
+            status: "optimal",
+            totalScore: 611
+          }
+        ]
       },
       {
         id: 38,
@@ -13989,7 +15488,33 @@ Consume las cartas que use. Esto NO se puede deshacer.
               price: 650
             }
           ]
-        }
+        },
+        candidateClubEaIds: [
+          580
+        ],
+        costTiers: [
+          {
+            grade: "D",
+            tokens: 0,
+            cost: 6800,
+            status: "optimal",
+            totalScore: 613
+          },
+          {
+            grade: "C",
+            tokens: 0,
+            cost: 6800,
+            status: "optimal",
+            totalScore: 613
+          },
+          {
+            grade: "B",
+            tokens: 5,
+            cost: 6800,
+            status: "optimal",
+            totalScore: 613
+          }
+        ]
       },
       {
         id: 19,
@@ -14045,7 +15570,7 @@ Consume las cartas que use. Esto NO se puede deshacer.
               definitionId: 67382431,
               score: 338,
               clubEaId: 115999,
-              price: 12750
+              price: 12500
             },
             {
               definitionId: 216354,
@@ -14057,7 +15582,7 @@ Consume las cartas que use. Esto NO se puede deshacer.
               definitionId: 50605215,
               score: 225,
               clubEaId: 115999,
-              price: 10250
+              price: 1e4
             },
             {
               definitionId: 244470,
@@ -14069,13 +15594,13 @@ Consume las cartas que use. Esto NO se puede deshacer.
               definitionId: 264995,
               score: 180,
               clubEaId: 115999,
-              price: 750
+              price: 700
             },
             {
               definitionId: 265577,
               score: 160,
               clubEaId: 10029,
-              price: 650
+              price: 700
             },
             {
               definitionId: 276969,
@@ -14087,7 +15612,7 @@ Consume las cartas que use. Esto NO se puede deshacer.
               definitionId: 239890,
               score: 140,
               clubEaId: 10029,
-              price: 750
+              price: 850
             },
             {
               definitionId: 244050,
@@ -14117,16 +15642,36 @@ Consume las cartas que use. Esto NO se puede deshacer.
               definitionId: 246618,
               score: 100,
               clubEaId: 10029,
-              price: 1e3
+              price: 700
             },
             {
               definitionId: 263041,
               score: 100,
               clubEaId: 10029,
-              price: 1900
+              price: 1700
             }
           ]
-        }
+        },
+        candidateClubEaIds: [
+          10029,
+          115999
+        ],
+        costTiers: [
+          {
+            grade: "D",
+            tokens: 0,
+            cost: 4650,
+            status: "optimal",
+            totalScore: 486
+          },
+          {
+            grade: "C",
+            tokens: 0,
+            cost: 11200,
+            status: "feasible",
+            totalScore: 3005
+          }
+        ]
       },
       {
         id: 37,
@@ -14176,7 +15721,7 @@ Consume las cartas que use. Esto NO se puede deshacer.
               definitionId: 67353040,
               score: 10313,
               clubEaId: 36,
-              price: 132e3
+              price: 26e4
             },
             {
               definitionId: 50575824,
@@ -14188,25 +15733,25 @@ Consume las cartas que use. Esto NO se puede deshacer.
               definitionId: 244176,
               score: 2100,
               clubEaId: 36,
-              price: 2300
+              price: 2500
             },
             {
               definitionId: 227647,
               score: 410,
               clubEaId: 36,
-              price: 700
+              price: 650
             },
             {
               definitionId: 250959,
               score: 410,
               clubEaId: 36,
-              price: 700
+              price: 750
             },
             {
               definitionId: 241925,
               score: 140,
               clubEaId: 36,
-              price: 750
+              price: 700
             },
             {
               definitionId: 252448,
@@ -14218,25 +15763,25 @@ Consume las cartas que use. Esto NO se puede deshacer.
               definitionId: 257504,
               score: 140,
               clubEaId: 36,
-              price: 700
+              price: 650
             },
             {
               definitionId: 228595,
               score: 120,
               clubEaId: 36,
-              price: 2600
+              price: 2400
             },
             {
               definitionId: 251829,
               score: 100,
               clubEaId: 36,
-              price: 800
+              price: 750
             },
             {
               definitionId: 257073,
               score: 100,
               clubEaId: 36,
-              price: 750
+              price: 850
             },
             {
               definitionId: 264901,
@@ -14248,22 +15793,63 @@ Consume las cartas que use. Esto NO se puede deshacer.
               definitionId: 273667,
               score: 35,
               clubEaId: 36,
-              price: 850
+              price: 700
             },
             {
               definitionId: 277482,
               score: 35,
               clubEaId: 36,
-              price: 700
+              price: 800
             },
             {
               definitionId: 277742,
               score: 35,
               clubEaId: 36,
-              price: 7e3
+              price: 7700
             }
           ]
-        }
+        },
+        candidateClubEaIds: [
+          36,
+          132865
+        ],
+        costTiers: [
+          {
+            grade: "D",
+            tokens: 0,
+            cost: 9050,
+            status: "optimal",
+            totalScore: 1704
+          },
+          {
+            grade: "C",
+            tokens: 0,
+            cost: 9050,
+            status: "optimal",
+            totalScore: 1704
+          },
+          {
+            grade: "B",
+            tokens: 8,
+            cost: 11250,
+            status: "optimal",
+            totalScore: 4782
+          },
+          {
+            grade: "A",
+            tokens: 18,
+            cost: 102350,
+            status: "optimal",
+            totalScore: 9245
+          },
+          {
+            grade: "S",
+            tokens: 38,
+            cost: 102500,
+            status: "optimal",
+            totalScore: 9939
+          }
+        ]
       },
       {
         id: 88,
@@ -14400,7 +15986,26 @@ Consume las cartas que use. Esto NO se puede deshacer.
               price: 1700
             }
           ]
-        }
+        },
+        candidateClubEaIds: [
+          115998
+        ],
+        costTiers: [
+          {
+            grade: "D",
+            tokens: 0,
+            cost: 6850,
+            status: "optimal",
+            totalScore: 1841
+          },
+          {
+            grade: "C",
+            tokens: 0,
+            cost: 11700,
+            status: "optimal",
+            totalScore: 4008
+          }
+        ]
       },
       {
         id: 34,
@@ -14537,7 +16142,20 @@ Consume las cartas que use. Esto NO se puede deshacer.
               price: 600
             }
           ]
-        }
+        },
+        candidateClubEaIds: [
+          38,
+          116004
+        ],
+        costTiers: [
+          {
+            grade: "D",
+            tokens: 0,
+            cost: 5650,
+            status: "optimal",
+            totalScore: 535
+          }
+        ]
       },
       {
         id: 75,
@@ -14674,7 +16292,33 @@ Consume las cartas que use. Esto NO se puede deshacer.
               price: 550
             }
           ]
-        }
+        },
+        candidateClubEaIds: [
+          57
+        ],
+        costTiers: [
+          {
+            grade: "D",
+            tokens: 0,
+            cost: 3850,
+            status: "optimal",
+            totalScore: 463
+          },
+          {
+            grade: "C",
+            tokens: 0,
+            cost: 4450,
+            status: "optimal",
+            totalScore: 507
+          },
+          {
+            grade: "B",
+            tokens: 5,
+            cost: 7350,
+            status: "optimal",
+            totalScore: 708
+          }
+        ]
       },
       {
         id: 87,
@@ -14811,7 +16455,33 @@ Consume las cartas que use. Esto NO se puede deshacer.
               price: 500
             }
           ]
-        }
+        },
+        candidateClubEaIds: [
+          1530
+        ],
+        costTiers: [
+          {
+            grade: "D",
+            tokens: 0,
+            cost: 6700,
+            status: "optimal",
+            totalScore: 669
+          },
+          {
+            grade: "C",
+            tokens: 0,
+            cost: 6700,
+            status: "optimal",
+            totalScore: 669
+          },
+          {
+            grade: "B",
+            tokens: 5,
+            cost: 7050,
+            status: "optimal",
+            totalScore: 702
+          }
+        ]
       },
       {
         id: 98,
@@ -14948,7 +16618,26 @@ Consume las cartas que use. Esto NO se puede deshacer.
               price: 800
             }
           ]
-        }
+        },
+        candidateClubEaIds: [
+          69
+        ],
+        costTiers: [
+          {
+            grade: "D",
+            tokens: 0,
+            cost: 7150,
+            status: "optimal",
+            totalScore: 1486
+          },
+          {
+            grade: "C",
+            tokens: 0,
+            cost: 8150,
+            status: "optimal",
+            totalScore: 1709
+          }
+        ]
       },
       {
         id: 78,
@@ -14998,13 +16687,13 @@ Consume las cartas que use. Esto NO se puede deshacer.
               definitionId: 72138,
               score: 35,
               clubEaId: 294,
-              price: 450
+              price: 500
             },
             {
               definitionId: 73085,
               score: 35,
               clubEaId: 294,
-              price: 500
+              price: 550
             },
             {
               definitionId: 76509,
@@ -15022,13 +16711,13 @@ Consume las cartas que use. Esto NO se puede deshacer.
               definitionId: 215708,
               score: 35,
               clubEaId: 294,
-              price: 500
+              price: 550
             },
             {
               definitionId: 247758,
               score: 35,
               clubEaId: 294,
-              price: 500
+              price: 550
             },
             {
               definitionId: 248408,
@@ -15040,7 +16729,7 @@ Consume las cartas que use. Esto NO se puede deshacer.
               definitionId: 256788,
               score: 35,
               clubEaId: 294,
-              price: 500
+              price: 450
             },
             {
               definitionId: 264079,
@@ -15064,7 +16753,7 @@ Consume las cartas que use. Esto NO se puede deshacer.
               definitionId: 277356,
               score: 35,
               clubEaId: 294,
-              price: 450
+              price: 500
             },
             {
               definitionId: 278282,
@@ -15082,10 +16771,36 @@ Consume las cartas que use. Esto NO se puede deshacer.
               definitionId: 50588759,
               score: 35,
               clubEaId: 294,
-              price: 600
+              price: 550
             }
           ]
-        }
+        },
+        candidateClubEaIds: [
+          294
+        ],
+        costTiers: [
+          {
+            grade: "D",
+            tokens: 0,
+            cost: 5350,
+            status: "optimal",
+            totalScore: 523
+          },
+          {
+            grade: "C",
+            tokens: 0,
+            cost: 5350,
+            status: "optimal",
+            totalScore: 523
+          },
+          {
+            grade: "B",
+            tokens: 5,
+            cost: 5950,
+            status: "optimal",
+            totalScore: 630
+          }
+        ]
       },
       {
         id: 77,
@@ -15141,7 +16856,7 @@ Consume las cartas que use. Esto NO se puede deshacer.
               definitionId: 74083,
               score: 120,
               clubEaId: 116036,
-              price: 650
+              price: 750
             },
             {
               definitionId: 265833,
@@ -15183,31 +16898,31 @@ Consume las cartas que use. Esto NO se puede deshacer.
               definitionId: 265840,
               score: 90,
               clubEaId: 116036,
-              price: 1e3
+              price: 1100
             },
             {
               definitionId: 270966,
               score: 90,
               clubEaId: 116036,
-              price: 1100
+              price: 1300
             },
             {
               definitionId: 79542,
               score: 35,
               clubEaId: 116036,
-              price: 600
+              price: 650
             },
             {
               definitionId: 79717,
               score: 35,
               clubEaId: 116036,
-              price: 600
+              price: 650
             },
             {
               definitionId: 83542,
               score: 35,
               clubEaId: 116036,
-              price: 650
+              price: 700
             },
             {
               definitionId: 265002,
@@ -15222,7 +16937,26 @@ Consume las cartas que use. Esto NO se puede deshacer.
               price: 650
             }
           ]
-        }
+        },
+        candidateClubEaIds: [
+          116036
+        ],
+        costTiers: [
+          {
+            grade: "D",
+            tokens: 0,
+            cost: 8350,
+            status: "optimal",
+            totalScore: 1019
+          },
+          {
+            grade: "C",
+            tokens: 0,
+            cost: 9250,
+            status: "optimal",
+            totalScore: 1300
+          }
+        ]
       },
       {
         id: 60,
@@ -15359,7 +17093,33 @@ Consume las cartas que use. Esto NO se puede deshacer.
               price: 550
             }
           ]
-        }
+        },
+        candidateClubEaIds: [
+          217
+        ],
+        costTiers: [
+          {
+            grade: "D",
+            tokens: 0,
+            cost: 6850,
+            status: "optimal",
+            totalScore: 677
+          },
+          {
+            grade: "C",
+            tokens: 0,
+            cost: 6850,
+            status: "optimal",
+            totalScore: 677
+          },
+          {
+            grade: "B",
+            tokens: 5,
+            cost: 7200,
+            status: "optimal",
+            totalScore: 706
+          }
+        ]
       },
       {
         id: 23,
@@ -15496,7 +17256,33 @@ Consume las cartas que use. Esto NO se puede deshacer.
               price: 200
             }
           ]
-        }
+        },
+        candidateClubEaIds: [
+          116417
+        ],
+        costTiers: [
+          {
+            grade: "D",
+            tokens: 0,
+            cost: 7950,
+            status: "optimal",
+            totalScore: 645
+          },
+          {
+            grade: "C",
+            tokens: 0,
+            cost: 7950,
+            status: "optimal",
+            totalScore: 645
+          },
+          {
+            grade: "B",
+            tokens: 5,
+            cost: 8350,
+            status: "optimal",
+            totalScore: 704
+          }
+        ]
       },
       {
         id: 7,
@@ -15633,7 +17419,34 @@ Consume las cartas que use. Esto NO se puede deshacer.
               price: 600
             }
           ]
-        }
+        },
+        candidateClubEaIds: [
+          1738,
+          116416
+        ],
+        costTiers: [
+          {
+            grade: "D",
+            tokens: 0,
+            cost: 4700,
+            status: "optimal",
+            totalScore: 466
+          },
+          {
+            grade: "C",
+            tokens: 0,
+            cost: 4850,
+            status: "optimal",
+            totalScore: 503
+          },
+          {
+            grade: "B",
+            tokens: 5,
+            cost: 7250,
+            status: "optimal",
+            totalScore: 706
+          }
+        ]
       },
       {
         id: 82,
@@ -15770,7 +17583,40 @@ Consume las cartas que use. Esto NO se puede deshacer.
               price: 850
             }
           ]
-        }
+        },
+        candidateClubEaIds: [
+          1739
+        ],
+        costTiers: [
+          {
+            grade: "D",
+            tokens: 0,
+            cost: 7900,
+            status: "optimal",
+            totalScore: 541
+          },
+          {
+            grade: "C",
+            tokens: 0,
+            cost: 7900,
+            status: "optimal",
+            totalScore: 541
+          },
+          {
+            grade: "B",
+            tokens: 5,
+            cost: 7900,
+            status: "optimal",
+            totalScore: 541
+          },
+          {
+            grade: "A",
+            tokens: 13,
+            cost: 10900,
+            status: "optimal",
+            totalScore: 702
+          }
+        ]
       },
       {
         id: 43,
@@ -15907,7 +17753,33 @@ Consume las cartas que use. Esto NO se puede deshacer.
               price: 650
             }
           ]
-        }
+        },
+        candidateClubEaIds: [
+          65
+        ],
+        costTiers: [
+          {
+            grade: "D",
+            tokens: 0,
+            cost: 8250,
+            status: "optimal",
+            totalScore: 1170
+          },
+          {
+            grade: "C",
+            tokens: 0,
+            cost: 8500,
+            status: "optimal",
+            totalScore: 1308
+          },
+          {
+            grade: "B",
+            tokens: 8,
+            cost: 36850,
+            status: "optimal",
+            totalScore: 2543
+          }
+        ]
       },
       {
         id: 55,
@@ -16044,7 +17916,40 @@ Consume las cartas que use. Esto NO se puede deshacer.
               price: 550
             }
           ]
-        }
+        },
+        candidateClubEaIds: [
+          116037
+        ],
+        costTiers: [
+          {
+            grade: "D",
+            tokens: 0,
+            cost: 10700,
+            status: "optimal",
+            totalScore: 676
+          },
+          {
+            grade: "C",
+            tokens: 0,
+            cost: 10700,
+            status: "optimal",
+            totalScore: 676
+          },
+          {
+            grade: "B",
+            tokens: 5,
+            cost: 10700,
+            status: "optimal",
+            totalScore: 676
+          },
+          {
+            grade: "A",
+            tokens: 13,
+            cost: 11250,
+            status: "optimal",
+            totalScore: 700
+          }
+        ]
       },
       {
         id: 1,
@@ -16181,7 +18086,26 @@ Consume las cartas que use. Esto NO se puede deshacer.
               price: 500
             }
           ]
-        }
+        },
+        candidateClubEaIds: [
+          72
+        ],
+        costTiers: [
+          {
+            grade: "D",
+            tokens: 0,
+            cost: 5450,
+            status: "optimal",
+            totalScore: 661
+          },
+          {
+            grade: "C",
+            tokens: 0,
+            cost: 8650,
+            status: "optimal",
+            totalScore: 1216
+          }
+        ]
       },
       {
         id: 18,
@@ -16318,7 +18242,20 @@ Consume las cartas que use. Esto NO se puede deshacer.
               price: 3700
             }
           ]
-        }
+        },
+        candidateClubEaIds: [
+          219,
+          132370
+        ],
+        costTiers: [
+          {
+            grade: "D",
+            tokens: 0,
+            cost: 6300,
+            status: "optimal",
+            totalScore: 513
+          }
+        ]
       },
       {
         id: 36,
@@ -16455,7 +18392,27 @@ Consume las cartas que use. Esto NO se puede deshacer.
               price: 650
             }
           ]
-        }
+        },
+        candidateClubEaIds: [
+          66,
+          116033
+        ],
+        costTiers: [
+          {
+            grade: "D",
+            tokens: 0,
+            cost: 5850,
+            status: "optimal",
+            totalScore: 547
+          },
+          {
+            grade: "C",
+            tokens: 0,
+            cost: 2719750,
+            status: "optimal",
+            totalScore: 58152
+          }
+        ]
       },
       {
         id: 3,
@@ -16592,7 +18549,20 @@ Consume las cartas que use. Esto NO se puede deshacer.
               price: 750
             }
           ]
-        }
+        },
+        candidateClubEaIds: [
+          111817,
+          116035
+        ],
+        costTiers: [
+          {
+            grade: "D",
+            tokens: 0,
+            cost: 5800,
+            status: "optimal",
+            totalScore: 493
+          }
+        ]
       },
       {
         id: 95,
@@ -16759,7 +18729,27 @@ Consume las cartas que use. Esto NO se puede deshacer.
               price: 650
             }
           ]
-        }
+        },
+        candidateClubEaIds: [
+          73,
+          116034
+        ],
+        costTiers: [
+          {
+            grade: "D",
+            tokens: 0,
+            cost: 11450,
+            status: "optimal",
+            totalScore: 4059
+          },
+          {
+            grade: "C",
+            tokens: 0,
+            cost: 618050,
+            status: "optimal",
+            totalScore: 80018
+          }
+        ]
       },
       {
         id: 51,
@@ -16896,7 +18886,27 @@ Consume las cartas que use. Esto NO se puede deshacer.
               price: 650
             }
           ]
-        }
+        },
+        candidateClubEaIds: [
+          131724,
+          76
+        ],
+        costTiers: [
+          {
+            grade: "D",
+            tokens: 0,
+            cost: 5650,
+            status: "optimal",
+            totalScore: 608
+          },
+          {
+            grade: "C",
+            tokens: 0,
+            cost: 8200,
+            status: "optimal",
+            totalScore: 1509
+          }
+        ]
       },
       {
         id: 66,
@@ -16946,19 +18956,19 @@ Consume las cartas que use. Esto NO se puede deshacer.
               definitionId: 67355552,
               score: 3938,
               clubEaId: 64,
-              price: 63e3
+              price: 58500
             },
             {
               definitionId: 50578336,
               score: 2625,
               clubEaId: 64,
-              price: 52e3
+              price: 47e3
             },
             {
               definitionId: 204970,
               score: 340,
               clubEaId: 64,
-              price: 700
+              price: 650
             },
             {
               definitionId: 50406968,
@@ -16982,58 +18992,77 @@ Consume las cartas que use. Esto NO se puede deshacer.
               definitionId: 270997,
               score: 140,
               clubEaId: 64,
-              price: 650
+              price: 750
             },
             {
               definitionId: 75320,
               score: 120,
               clubEaId: 64,
-              price: 1800
+              price: 1500
             },
             {
               definitionId: 221284,
               score: 120,
               clubEaId: 64,
-              price: 1800
+              price: 1700
             },
             {
               definitionId: 223597,
               score: 120,
               clubEaId: 64,
-              price: 1900
+              price: 1800
             },
             {
               definitionId: 246688,
               score: 120,
               clubEaId: 64,
-              price: 2600
+              price: 2700
             },
             {
               definitionId: 203486,
               score: 90,
               clubEaId: 64,
-              price: 650
+              price: 700
             },
             {
               definitionId: 238463,
               score: 90,
               clubEaId: 64,
-              price: 2900
+              price: 2800
             },
             {
               definitionId: 259027,
               score: 35,
               clubEaId: 64,
-              price: 500
+              price: 450
             },
             {
-              definitionId: 259816,
+              definitionId: 50588731,
               score: 35,
               clubEaId: 64,
-              price: 500
+              price: 550
             }
           ]
-        }
+        },
+        candidateClubEaIds: [
+          64
+        ],
+        costTiers: [
+          {
+            grade: "D",
+            tokens: 0,
+            cost: 6950,
+            status: "optimal",
+            totalScore: 702
+          },
+          {
+            grade: "C",
+            tokens: 0,
+            cost: 7050,
+            status: "optimal",
+            totalScore: 1032
+          }
+        ]
       },
       {
         id: 58,
@@ -17083,37 +19112,37 @@ Consume las cartas que use. Esto NO se puede deshacer.
               definitionId: 219733,
               score: 120,
               clubEaId: 378,
-              price: 700
+              price: 750
             },
             {
               definitionId: 215410,
               score: 100,
               clubEaId: 378,
-              price: 1700
+              price: 1400
             },
             {
               definitionId: 244480,
               score: 100,
               clubEaId: 378,
-              price: 850
+              price: 900
             },
             {
               definitionId: 204105,
               score: 90,
               clubEaId: 378,
-              price: 1900
+              price: 2e3
             },
             {
               definitionId: 222286,
               score: 90,
               clubEaId: 378,
-              price: 1700
+              price: 1600
             },
             {
               definitionId: 263908,
               score: 90,
               clubEaId: 378,
-              price: 1700
+              price: 1500
             },
             {
               definitionId: 267702,
@@ -17125,13 +19154,13 @@ Consume las cartas que use. Esto NO se puede deshacer.
               definitionId: 76730,
               score: 35,
               clubEaId: 378,
-              price: 550
+              price: 500
             },
             {
               definitionId: 227234,
               score: 35,
               clubEaId: 378,
-              price: 550
+              price: 500
             },
             {
               definitionId: 237960,
@@ -17161,16 +19190,42 @@ Consume las cartas que use. Esto NO se puede deshacer.
               definitionId: 50411272,
               score: 35,
               clubEaId: 378,
-              price: 700
+              price: 550
             },
             {
               definitionId: 50609855,
               score: 35,
               clubEaId: 378,
-              price: 550
+              price: 450
             }
           ]
-        }
+        },
+        candidateClubEaIds: [
+          378
+        ],
+        costTiers: [
+          {
+            grade: "D",
+            tokens: 0,
+            cost: 6200,
+            status: "optimal",
+            totalScore: 618
+          },
+          {
+            grade: "C",
+            tokens: 0,
+            cost: 6450,
+            status: "optimal",
+            totalScore: 704
+          },
+          {
+            grade: "B",
+            tokens: 5,
+            cost: 1e4,
+            status: "optimal",
+            totalScore: 1e3
+          }
+        ]
       },
       {
         id: 27,
@@ -17307,7 +19362,26 @@ Consume las cartas que use. Esto NO se puede deshacer.
               price: 500
             }
           ]
-        }
+        },
+        candidateClubEaIds: [
+          74
+        ],
+        costTiers: [
+          {
+            grade: "D",
+            tokens: 0,
+            cost: 8200,
+            status: "optimal",
+            totalScore: 1790
+          },
+          {
+            grade: "C",
+            tokens: 0,
+            cost: 8200,
+            status: "optimal",
+            totalScore: 1790
+          }
+        ]
       },
       {
         id: 72,
@@ -17444,7 +19518,41 @@ Consume las cartas que use. Esto NO se puede deshacer.
               price: 600
             }
           ]
-        }
+        },
+        candidateClubEaIds: [
+          1809,
+          132831
+        ],
+        costTiers: [
+          {
+            grade: "D",
+            tokens: 0,
+            cost: 4500,
+            status: "optimal",
+            totalScore: 474
+          },
+          {
+            grade: "C",
+            tokens: 0,
+            cost: 4850,
+            status: "optimal",
+            totalScore: 520
+          },
+          {
+            grade: "B",
+            tokens: 5,
+            cost: 7900,
+            status: "optimal",
+            totalScore: 712
+          },
+          {
+            grade: "A",
+            tokens: 13,
+            cost: 11750,
+            status: "feasible",
+            totalScore: 1103
+          }
+        ]
       },
       {
         id: 50,
@@ -17483,7 +19591,11 @@ Consume las cartas que use. Esto NO se puede deshacer.
             threshold: 1e3,
             tokens: 15
           }
-        ]
+        ],
+        candidateClubEaIds: [
+          132861
+        ],
+        costTiers: []
       },
       {
         id: 83,
@@ -17620,7 +19732,40 @@ Consume las cartas que use. Esto NO se puede deshacer.
               price: 800
             }
           ]
-        }
+        },
+        candidateClubEaIds: [
+          115845
+        ],
+        costTiers: [
+          {
+            grade: "D",
+            tokens: 0,
+            cost: 12200,
+            status: "optimal",
+            totalScore: 2375
+          },
+          {
+            grade: "C",
+            tokens: 0,
+            cost: 12200,
+            status: "optimal",
+            totalScore: 2375
+          },
+          {
+            grade: "B",
+            tokens: 8,
+            cost: 15300,
+            status: "optimal",
+            totalScore: 6657
+          },
+          {
+            grade: "A",
+            tokens: 18,
+            cost: 15300,
+            status: "optimal",
+            totalScore: 6666
+          }
+        ]
       },
       {
         id: 93,
@@ -17757,7 +19902,26 @@ Consume las cartas que use. Esto NO se puede deshacer.
               price: 550
             }
           ]
-        }
+        },
+        candidateClubEaIds: [
+          189
+        ],
+        costTiers: [
+          {
+            grade: "D",
+            tokens: 0,
+            cost: 8650,
+            status: "optimal",
+            totalScore: 1354
+          },
+          {
+            grade: "C",
+            tokens: 0,
+            cost: 8650,
+            status: "optimal",
+            totalScore: 1354
+          }
+        ]
       },
       {
         id: 39,
@@ -17894,7 +20058,33 @@ Consume las cartas que use. Esto NO se puede deshacer.
               price: 500
             }
           ]
-        }
+        },
+        candidateClubEaIds: [
+          1842
+        ],
+        costTiers: [
+          {
+            grade: "D",
+            tokens: 0,
+            cost: 7450,
+            status: "optimal",
+            totalScore: 701
+          },
+          {
+            grade: "C",
+            tokens: 0,
+            cost: 7450,
+            status: "optimal",
+            totalScore: 701
+          },
+          {
+            grade: "B",
+            tokens: 5,
+            cost: 12450,
+            status: "optimal",
+            totalScore: 1e3
+          }
+        ]
       },
       {
         id: 63,
@@ -18031,7 +20221,26 @@ Consume las cartas que use. Esto NO se puede deshacer.
               price: 700
             }
           ]
-        }
+        },
+        candidateClubEaIds: [
+          1745
+        ],
+        costTiers: [
+          {
+            grade: "D",
+            tokens: 0,
+            cost: 9450,
+            status: "optimal",
+            totalScore: 2476
+          },
+          {
+            grade: "C",
+            tokens: 0,
+            cost: 9450,
+            status: "optimal",
+            totalScore: 2476
+          }
+        ]
       },
       {
         id: 70,
@@ -18168,7 +20377,26 @@ Consume las cartas que use. Esto NO se puede deshacer.
               price: 600
             }
           ]
-        }
+        },
+        candidateClubEaIds: [
+          110374
+        ],
+        costTiers: [
+          {
+            grade: "D",
+            tokens: 0,
+            cost: 8900,
+            status: "optimal",
+            totalScore: 1342
+          },
+          {
+            grade: "C",
+            tokens: 0,
+            cost: 11200,
+            status: "optimal",
+            totalScore: 1938
+          }
+        ]
       },
       {
         id: 123,
@@ -18305,7 +20533,47 @@ Consume las cartas que use. Esto NO se puede deshacer.
               price: 1600
             }
           ]
-        }
+        },
+        candidateClubEaIds: [
+          111657
+        ],
+        costTiers: [
+          {
+            grade: "D",
+            tokens: 0,
+            cost: 15e3,
+            status: "optimal",
+            totalScore: 697
+          },
+          {
+            grade: "C",
+            tokens: 0,
+            cost: 15e3,
+            status: "optimal",
+            totalScore: 697
+          },
+          {
+            grade: "B",
+            tokens: 5,
+            cost: 15e3,
+            status: "optimal",
+            totalScore: 697
+          },
+          {
+            grade: "A",
+            tokens: 13,
+            cost: 15e3,
+            status: "optimal",
+            totalScore: 697
+          },
+          {
+            grade: "S",
+            tokens: 28,
+            cost: 15300,
+            status: "optimal",
+            totalScore: 735
+          }
+        ]
       },
       {
         id: 126,
@@ -18442,7 +20710,33 @@ Consume las cartas que use. Esto NO se puede deshacer.
               price: 2800
             }
           ]
-        }
+        },
+        candidateClubEaIds: [
+          110556
+        ],
+        costTiers: [
+          {
+            grade: "D",
+            tokens: 0,
+            cost: 8100,
+            status: "optimal",
+            totalScore: 678
+          },
+          {
+            grade: "C",
+            tokens: 0,
+            cost: 8100,
+            status: "optimal",
+            totalScore: 678
+          },
+          {
+            grade: "B",
+            tokens: 5,
+            cost: 10800,
+            status: "optimal",
+            totalScore: 907
+          }
+        ]
       },
       {
         id: 119,
@@ -18579,7 +20873,19 @@ Consume las cartas que use. Esto NO se puede deshacer.
               price: 750
             }
           ]
-        }
+        },
+        candidateClubEaIds: [
+          45
+        ],
+        costTiers: [
+          {
+            grade: "D",
+            tokens: 0,
+            cost: 10500,
+            status: "optimal",
+            totalScore: 3657
+          }
+        ]
       },
       {
         id: 110,
@@ -18716,7 +21022,26 @@ Consume las cartas que use. Esto NO se puede deshacer.
               price: 650
             }
           ]
-        }
+        },
+        candidateClubEaIds: [
+          115841
+        ],
+        costTiers: [
+          {
+            grade: "D",
+            tokens: 0,
+            cost: 8250,
+            status: "optimal",
+            totalScore: 1411
+          },
+          {
+            grade: "C",
+            tokens: 0,
+            cost: 9450,
+            status: "optimal",
+            totalScore: 2003
+          }
+        ]
       },
       {
         id: 124,
@@ -18853,7 +21178,40 @@ Consume las cartas que use. Esto NO se puede deshacer.
               price: 650
             }
           ]
-        }
+        },
+        candidateClubEaIds: [
+          347
+        ],
+        costTiers: [
+          {
+            grade: "D",
+            tokens: 0,
+            cost: 9850,
+            status: "optimal",
+            totalScore: 711
+          },
+          {
+            grade: "C",
+            tokens: 0,
+            cost: 9850,
+            status: "optimal",
+            totalScore: 711
+          },
+          {
+            grade: "B",
+            tokens: 5,
+            cost: 9900,
+            status: "optimal",
+            totalScore: 1544
+          },
+          {
+            grade: "A",
+            tokens: 13,
+            cost: 9900,
+            status: "optimal",
+            totalScore: 1542
+          }
+        ]
       },
       {
         id: 107,
@@ -18990,7 +21348,26 @@ Consume las cartas que use. Esto NO se puede deshacer.
               price: 650
             }
           ]
-        }
+        },
+        candidateClubEaIds: [
+          131682
+        ],
+        costTiers: [
+          {
+            grade: "D",
+            tokens: 0,
+            cost: 11850,
+            status: "optimal",
+            totalScore: 3515
+          },
+          {
+            grade: "C",
+            tokens: 0,
+            cost: 175200,
+            status: "optimal",
+            totalScore: 42145
+          }
+        ]
       },
       {
         id: 29,
@@ -19127,7 +21504,26 @@ Consume las cartas que use. Esto NO se puede deshacer.
               price: 2700
             }
           ]
-        }
+        },
+        candidateClubEaIds: [
+          131681
+        ],
+        costTiers: [
+          {
+            grade: "D",
+            tokens: 0,
+            cost: 10400,
+            status: "optimal",
+            totalScore: 1721
+          },
+          {
+            grade: "C",
+            tokens: 0,
+            cost: 25850,
+            status: "optimal",
+            totalScore: 10027
+          }
+        ]
       },
       {
         id: 105,
@@ -19264,7 +21660,33 @@ Consume las cartas que use. Esto NO se puede deshacer.
               price: 550
             }
           ]
-        }
+        },
+        candidateClubEaIds: [
+          111811
+        ],
+        costTiers: [
+          {
+            grade: "D",
+            tokens: 0,
+            cost: 7600,
+            status: "optimal",
+            totalScore: 672
+          },
+          {
+            grade: "C",
+            tokens: 0,
+            cost: 7600,
+            status: "optimal",
+            totalScore: 672
+          },
+          {
+            grade: "B",
+            tokens: 5,
+            cost: 7850,
+            status: "optimal",
+            totalScore: 711
+          }
+        ]
       },
       {
         id: 112,
@@ -19401,7 +21823,19 @@ Consume las cartas que use. Esto NO se puede deshacer.
               price: 2e3
             }
           ]
-        }
+        },
+        candidateClubEaIds: [
+          48
+        ],
+        costTiers: [
+          {
+            grade: "D",
+            tokens: 0,
+            cost: 10350,
+            status: "optimal",
+            totalScore: 3553
+          }
+        ]
       },
       {
         id: 125,
@@ -19538,7 +21972,33 @@ Consume las cartas que use. Esto NO se puede deshacer.
               price: 600
             }
           ]
-        }
+        },
+        candidateClubEaIds: [
+          50
+        ],
+        costTiers: [
+          {
+            grade: "D",
+            tokens: 0,
+            cost: 7700,
+            status: "optimal",
+            totalScore: 699
+          },
+          {
+            grade: "C",
+            tokens: 0,
+            cost: 7700,
+            status: "optimal",
+            totalScore: 699
+          },
+          {
+            grade: "B",
+            tokens: 5,
+            cost: 7750,
+            status: "optimal",
+            totalScore: 700
+          }
+        ]
       },
       {
         id: 104,
@@ -19675,7 +22135,19 @@ Consume las cartas que use. Esto NO se puede deshacer.
               price: 9600
             }
           ]
-        }
+        },
+        candidateClubEaIds: [
+          52
+        ],
+        costTiers: [
+          {
+            grade: "D",
+            tokens: 0,
+            cost: 10500,
+            status: "optimal",
+            totalScore: 3576
+          }
+        ]
       },
       {
         id: 118,
@@ -19812,7 +22284,26 @@ Consume las cartas que use. Esto NO se puede deshacer.
               price: 500
             }
           ]
-        }
+        },
+        candidateClubEaIds: [
+          111974
+        ],
+        costTiers: [
+          {
+            grade: "D",
+            tokens: 0,
+            cost: 7350,
+            status: "optimal",
+            totalScore: 708
+          },
+          {
+            grade: "C",
+            tokens: 0,
+            cost: 7350,
+            status: "optimal",
+            totalScore: 708
+          }
+        ]
       },
       {
         id: 117,
@@ -19949,7 +22440,26 @@ Consume las cartas que use. Esto NO se puede deshacer.
               price: 650
             }
           ]
-        }
+        },
+        candidateClubEaIds: [
+          54
+        ],
+        costTiers: [
+          {
+            grade: "D",
+            tokens: 0,
+            cost: 7850,
+            status: "optimal",
+            totalScore: 697
+          },
+          {
+            grade: "C",
+            tokens: 0,
+            cost: 8500,
+            status: "optimal",
+            totalScore: 1100
+          }
+        ]
       },
       {
         id: 106,
@@ -20086,7 +22596,33 @@ Consume las cartas que use. Esto NO se puede deshacer.
               price: 600
             }
           ]
-        }
+        },
+        candidateClubEaIds: [
+          55
+        ],
+        costTiers: [
+          {
+            grade: "D",
+            tokens: 0,
+            cost: 7400,
+            status: "optimal",
+            totalScore: 668
+          },
+          {
+            grade: "C",
+            tokens: 0,
+            cost: 7400,
+            status: "optimal",
+            totalScore: 668
+          },
+          {
+            grade: "B",
+            tokens: 5,
+            cost: 7750,
+            status: "optimal",
+            totalScore: 700
+          }
+        ]
       },
       {
         id: 101,
@@ -20223,7 +22759,40 @@ Consume las cartas que use. Esto NO se puede deshacer.
               price: 600
             }
           ]
-        }
+        },
+        candidateClubEaIds: [
+          205
+        ],
+        costTiers: [
+          {
+            grade: "D",
+            tokens: 0,
+            cost: 7450,
+            status: "optimal",
+            totalScore: 645
+          },
+          {
+            grade: "C",
+            tokens: 0,
+            cost: 7450,
+            status: "optimal",
+            totalScore: 645
+          },
+          {
+            grade: "B",
+            tokens: 5,
+            cost: 7450,
+            status: "optimal",
+            totalScore: 645
+          },
+          {
+            grade: "A",
+            tokens: 13,
+            cost: 15550,
+            status: "optimal",
+            totalScore: 1020
+          }
+        ]
       },
       {
         id: 108,
@@ -20450,7 +23019,39 @@ Consume las cartas que use. Esto NO se puede deshacer.
               price: 850
             }
           ]
-        }
+        },
+        candidateClubEaIds: [
+          114605,
+          1,
+          10,
+          5,
+          9,
+          132794,
+          1808,
+          144,
+          1943,
+          14,
+          94,
+          18,
+          7,
+          2,
+          1800,
+          1925,
+          8,
+          106,
+          11,
+          13,
+          1799
+        ],
+        costTiers: [
+          {
+            grade: "D",
+            tokens: 10,
+            cost: 13550,
+            status: "optimal",
+            totalScore: 3863
+          }
+        ]
       },
       {
         id: 100,
@@ -20677,7 +23278,31 @@ Consume las cartas que use. Esto NO se puede deshacer.
               price: 750
             }
           ]
-        }
+        },
+        candidateClubEaIds: [
+          132176,
+          116017,
+          116009,
+          116010,
+          114605,
+          116012,
+          116016,
+          116014,
+          131725,
+          116343,
+          116013,
+          116015,
+          132867
+        ],
+        costTiers: [
+          {
+            grade: "D",
+            tokens: 10,
+            cost: 6e3,
+            status: "optimal",
+            totalScore: 1180
+          }
+        ]
       },
       {
         id: 111,
@@ -20904,7 +23529,49 @@ Consume las cartas que use. Esto NO se puede deshacer.
               price: 800
             }
           ]
-        }
+        },
+        candidateClubEaIds: [
+          114605,
+          73,
+          64,
+          66,
+          65,
+          1530,
+          1738,
+          378,
+          294,
+          57,
+          69,
+          72,
+          1809,
+          1739,
+          74,
+          111817,
+          76
+        ],
+        costTiers: [
+          {
+            grade: "D",
+            tokens: 10,
+            cost: 6e3,
+            status: "optimal",
+            totalScore: 1202
+          },
+          {
+            grade: "C",
+            tokens: 45,
+            cost: 510750,
+            status: "feasible",
+            totalScore: 76349
+          },
+          {
+            grade: "B",
+            tokens: 95,
+            cost: 5504150,
+            status: "feasible",
+            totalScore: 276021
+          }
+        ]
       },
       {
         id: 115,
@@ -21131,7 +23798,37 @@ Consume las cartas que use. Esto NO se puede deshacer.
               price: 650
             }
           ]
-        }
+        },
+        candidateClubEaIds: [
+          116033,
+          114605,
+          116034,
+          116035,
+          131724,
+          132370,
+          132588,
+          116416,
+          116417,
+          116036,
+          132861,
+          132831
+        ],
+        costTiers: [
+          {
+            grade: "D",
+            tokens: 10,
+            cost: 8450,
+            status: "optimal",
+            totalScore: 1178
+          },
+          {
+            grade: "C",
+            tokens: 45,
+            cost: 616400,
+            status: "feasible",
+            totalScore: 76356
+          }
+        ]
       },
       {
         id: 109,
@@ -21358,7 +24055,43 @@ Consume las cartas que use. Esto NO se puede deshacer.
               price: 700
             }
           ]
-        }
+        },
+        candidateClubEaIds: [
+          241,
+          243,
+          114605,
+          240,
+          463,
+          479,
+          452,
+          1860,
+          449,
+          456,
+          483,
+          242,
+          1853,
+          448,
+          461,
+          468,
+          481,
+          573
+        ],
+        costTiers: [
+          {
+            grade: "D",
+            tokens: 10,
+            cost: 6750,
+            status: "optimal",
+            totalScore: 1189
+          },
+          {
+            grade: "C",
+            tokens: 45,
+            cost: 2789600,
+            status: "feasible",
+            totalScore: 283428
+          }
+        ]
       },
       {
         id: 121,
@@ -21585,7 +24318,39 @@ Consume las cartas que use. Esto NO se puede deshacer.
               price: 13e3
             }
           ]
-        }
+        },
+        candidateClubEaIds: [
+          116325,
+          116326,
+          116327,
+          131125,
+          116336,
+          132629,
+          131720,
+          131733,
+          116328,
+          116339,
+          116331,
+          116329,
+          131391,
+          116337
+        ],
+        costTiers: [
+          {
+            grade: "D",
+            tokens: 10,
+            cost: 6100,
+            status: "optimal",
+            totalScore: 1214
+          },
+          {
+            grade: "C",
+            tokens: 45,
+            cost: 5033400,
+            status: "feasible",
+            totalScore: 126139
+          }
+        ]
       },
       {
         id: 103,
@@ -21812,7 +24577,46 @@ Consume las cartas que use. Esto NO se puede deshacer.
               price: 650
             }
           ]
-        }
+        },
+        candidateClubEaIds: [
+          114605,
+          131682,
+          115845,
+          131681,
+          132794,
+          48,
+          52,
+          45,
+          1745,
+          189,
+          111811,
+          110556,
+          111974,
+          54,
+          1842,
+          110374,
+          205,
+          115841,
+          347,
+          50,
+          55
+        ],
+        costTiers: [
+          {
+            grade: "D",
+            tokens: 10,
+            cost: 10850,
+            status: "optimal",
+            totalScore: 1273
+          },
+          {
+            grade: "C",
+            tokens: 45,
+            cost: 381150,
+            status: "feasible",
+            totalScore: 101189
+          }
+        ]
       },
       {
         id: 122,
@@ -22039,7 +24843,49 @@ Consume las cartas que use. Esto NO se puede deshacer.
               price: 46e3
             }
           ]
-        }
+        },
+        candidateClubEaIds: [
+          21,
+          114605,
+          36,
+          22,
+          31,
+          28,
+          100409,
+          112172,
+          1824,
+          23,
+          38,
+          34,
+          1831,
+          10029,
+          10030,
+          32,
+          25
+        ],
+        costTiers: [
+          {
+            grade: "D",
+            tokens: 10,
+            cost: 6e3,
+            status: "optimal",
+            totalScore: 1204
+          },
+          {
+            grade: "C",
+            tokens: 45,
+            cost: 296600,
+            status: "feasible",
+            totalScore: 103581
+          },
+          {
+            grade: "B",
+            tokens: 95,
+            cost: 5428700,
+            status: "feasible",
+            totalScore: 404135
+          }
+        ]
       },
       {
         id: 120,
@@ -22266,7 +25112,46 @@ Consume las cartas que use. Esto NO se puede deshacer.
               price: 200
             }
           ]
-        }
+        },
+        candidateClubEaIds: [
+          114605,
+          115995,
+          115998,
+          115997,
+          115996,
+          115999,
+          116002,
+          116003,
+          116004,
+          131386,
+          132589,
+          132533,
+          116021,
+          132866
+        ],
+        costTiers: [
+          {
+            grade: "D",
+            tokens: 10,
+            cost: 6e3,
+            status: "optimal",
+            totalScore: 1182
+          },
+          {
+            grade: "C",
+            tokens: 45,
+            cost: 178700,
+            status: "feasible",
+            totalScore: 55209
+          },
+          {
+            grade: "B",
+            tokens: 95,
+            cost: 2032650,
+            status: "feasible",
+            totalScore: 202808
+          }
+        ]
       },
       {
         id: 99,
@@ -22433,7 +25318,73 @@ Consume las cartas que use. Esto NO se puede deshacer.
               price: 113e3
             }
           ]
-        }
+        },
+        candidateClubEaIds: [
+          241,
+          21,
+          1,
+          116033,
+          116302,
+          73,
+          436,
+          116010,
+          131682,
+          10,
+          116325,
+          326,
+          32,
+          111657,
+          1808,
+          116011,
+          246,
+          116326,
+          697,
+          236,
+          10032,
+          86,
+          113143,
+          1961,
+          115999,
+          896,
+          1878,
+          247,
+          112134,
+          110374,
+          115997,
+          66,
+          605,
+          22
+        ],
+        costTiers: [
+          {
+            grade: "D",
+            tokens: 5,
+            cost: 211750,
+            status: "optimal",
+            totalScore: 7340
+          },
+          {
+            grade: "C",
+            tokens: 20,
+            cost: 1381500,
+            status: "feasible",
+            totalScore: 125013
+          },
+          {
+            grade: "B",
+            tokens: 50,
+            cost: 2138e3,
+            status: "feasible",
+            totalScore: 175006
+          },
+          {
+            grade: "A",
+            tokens: 100,
+            cost: 6770250,
+            status: "feasible",
+            totalScore: 300053
+          }
+        ]
       },
       {
         id: 102,
@@ -22510,7 +25461,40 @@ Consume las cartas que use. Esto NO se puede deshacer.
               price: 314e3
             }
           ]
-        }
+        },
+        candidateClubEaIds: [
+          114605
+        ],
+        costTiers: [
+          {
+            grade: "D",
+            tokens: 5,
+            cost: 167500,
+            status: "optimal",
+            totalScore: 28604
+          },
+          {
+            grade: "C",
+            tokens: 20,
+            cost: 252250,
+            status: "optimal",
+            totalScore: 50384
+          },
+          {
+            grade: "B",
+            tokens: 50,
+            cost: 51e4,
+            status: "optimal",
+            totalScore: 75969
+          },
+          {
+            grade: "A",
+            tokens: 100,
+            cost: 798500,
+            status: "optimal",
+            totalScore: 100787
+          }
+        ]
       },
       {
         id: 113,
@@ -22587,7 +25571,55 @@ Consume las cartas que use. Esto NO se puede deshacer.
               price: null
             }
           ]
-        }
+        },
+        candidateClubEaIds: [
+          112658,
+          326,
+          116011,
+          1878,
+          112134,
+          1961,
+          116010,
+          64,
+          115997
+        ],
+        costTiers: [
+          {
+            grade: "D",
+            tokens: 5,
+            cost: 64250,
+            status: "optimal",
+            totalScore: 2837
+          },
+          {
+            grade: "C",
+            tokens: 20,
+            cost: 585750,
+            status: "feasible",
+            totalScore: 75779
+          },
+          {
+            grade: "B",
+            tokens: 50,
+            cost: 980500,
+            status: "optimal",
+            totalScore: 153020
+          },
+          {
+            grade: "A",
+            tokens: 100,
+            cost: 1239e3,
+            status: "optimal",
+            totalScore: 205625
+          },
+          {
+            grade: "S",
+            tokens: 175,
+            cost: 1633e3,
+            status: "optimal",
+            totalScore: 254473
+          }
+        ]
       },
       {
         id: 114,
@@ -22658,7 +25690,14 @@ Consume las cartas que use. Esto NO se puede deshacer.
               price: null
             }
           ]
-        }
+        },
+        candidateClubEaIds: [
+          1032,
+          634,
+          100646,
+          1824
+        ],
+        costTiers: []
       },
       {
         id: 116,
@@ -22735,7 +25774,71 @@ Consume las cartas que use. Esto NO se puede deshacer.
               price: 269e3
             }
           ]
-        }
+        },
+        candidateClubEaIds: [
+          132176,
+          243,
+          10,
+          73,
+          116325,
+          88,
+          1757,
+          111273,
+          110321,
+          1805,
+          1943,
+          113301,
+          1803,
+          112387,
+          242,
+          72,
+          116343,
+          112883,
+          32,
+          95,
+          696,
+          230,
+          347,
+          131720,
+          131491
+        ],
+        costTiers: [
+          {
+            grade: "D",
+            tokens: 0,
+            cost: 1e3,
+            status: "optimal",
+            totalScore: 116
+          },
+          {
+            grade: "C",
+            tokens: 0,
+            cost: 1400,
+            status: "optimal",
+            totalScore: 262
+          },
+          {
+            grade: "B",
+            tokens: 0,
+            cost: 1800,
+            status: "feasible",
+            totalScore: 565
+          },
+          {
+            grade: "A",
+            tokens: 0,
+            cost: 1750,
+            status: "feasible",
+            totalScore: 1010
+          },
+          {
+            grade: "S",
+            tokens: 5,
+            cost: 2300,
+            status: "feasible",
+            totalScore: 2080
+          }
+        ]
       }
     ]
   };
@@ -22918,7 +26021,7 @@ Consume las cartas que use. Esto NO se puede deshacer.
     return catalog_snapshot_default.sets.filter((raw) => raw.category === slug).map((raw) => {
       const recommended = "recommended" in raw ? raw.recommended : void 0;
       const recommendedIds = new Set(recommended?.items.map((item) => item.definitionId) ?? []);
-      const clubIds = /* @__PURE__ */ new Set([raw.clubEaId, ...recommended?.items.map((item) => item.clubEaId) ?? []]);
+      const clubIds = new Set(raw.candidateClubEaIds);
       const leagueId = LEAGUE_SET_IDS[raw.name];
       const rarityId = RARITY_SET_IDS[raw.name];
       const eligible = cards.filter((card) => recommendedIds.has(card.definitionId) || (category.leagueSets ? card.leagueId === leagueId : category.rarities ? card.rarityId === rarityId : clubIds.has(card.teamId)));
@@ -22930,7 +26033,8 @@ Consume las cartas que use. Esto NO se puede deshacer.
         requiredCards: raw.requiredCards,
         grades: raw.grades,
         totalTokens: raw.totalTokens,
-        recommended
+        recommended,
+        costTiers: raw.costTiers
       };
     }).sort((a, b) => a.name.localeCompare(b.name, "es"));
   }
@@ -23803,7 +26907,11 @@ button:disabled { opacity:.5; cursor:default; }
       busy = true;
       setStatus("Leyendo tu club desde EA\u2026");
       try {
-        const { players } = await fetchClubPlayers();
+        let { players } = await fetchClubPlayers();
+        if (players.length === 0) {
+          await delay(1200);
+          ({ players } = await fetchClubPlayers());
+        }
         if (players.length === 0) throw new Error("EA no devolvi\xF3 cartas del club");
         current = new Set(players.map((p) => p.definitionId));
         for (const id of current) owned.add(id);
@@ -24311,7 +27419,7 @@ button:disabled { opacity:.5; cursor:default; }
         plan.append(el("strong", route.reachesGoal ? `Ruta orientativa: ${route.sets.length} sets \xB7 +${fmt(route.projectedTokens)} fichas \xB7 ${fmt(route.knownCost)} monedas de referencia${route.unpricedCards ? ` + ${route.unpricedCards} cartas sin precio` : ""}` : `El cat\xE1logo de referencia solo proyecta +${fmt(route.projectedTokens)} fichas pendientes; no alcanza las 750 con este saldo.`));
         plan.append(el("small", "Primeros sets de la ruta, ordenados por monedas estimadas por ficha:", "metric"));
         for (const item of opportunities.slice(0, 5)) {
-          const row = el("p", `${item.name} \xB7 grado ${item.grade} \xB7 +${item.tokens} fichas pendientes \xB7 ${item.missingCards} cartas de la alineaci\xF3n \xB7 ${fmt(item.knownCost)} monedas${item.unpricedCards ? ` + ${item.unpricedCards} sin precio` : ""}`, "note");
+          const row = el("p", `${item.name} \xB7 grado ${item.grade} \xB7 +${item.tokens} fichas pendientes \xB7 ${item.missingCards} carta${item.missingCards === 1 ? "" : "s"} de la alineaci\xF3n \xB7 ${fmt(item.knownCost)} monedas${item.unpricedCards ? ` + ${item.unpricedCards} sin precio` : ""}`, "note");
           plan.append(row);
         }
         if (!opportunities.length) plan.append(el("p", "No quedan alineaciones con fichas pendientes en este cat\xE1logo de referencia.", "note"));
@@ -24322,7 +27430,7 @@ button:disabled { opacity:.5; cursor:default; }
         for (const c of CATEGORIES) {
           const card = el("div", void 0, "card");
           card.append(el("strong", c.name));
-          card.append(el("span", c.rarities ? `${c.rarities.length} colecciones` : `${c.leagues?.length ?? 0} ligas`, "metric"));
+          card.append(el("span", c.rarities ? `${c.rarities.length} colecciones` : `${c.leagues?.length ?? 0} liga${c.leagues?.length === 1 ? "" : "s"}`, "metric"));
           card.append(button("Ver colecciones", () => {
             void loadCategory(c);
           }));
