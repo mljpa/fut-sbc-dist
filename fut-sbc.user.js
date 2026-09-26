@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         FUT SBC Solver v2
 // @namespace    https://github.com/mljpa/fut-sbc-solver-v2
-// @version      0.2.6
+// @version      0.2.7
 // @description  Userscript to solve EA SPORTS FC 26 SBCs with your own club
 // @match        https://www.ea.com/*/ea-sports-fc/ultimate-team/web-app*
 // @match        https://www.ea.com/ea-sports-fc/ultimate-team/web-app*
@@ -5225,6 +5225,11 @@ Consume las cartas que use. Esto NO se puede deshacer.
   function previousPrice(value, grid = FALLBACK_TIERS) {
     return floorPrice(value - 1, grid);
   }
+  function salePriceForPurchase(targetSalePrice, purchasePrice, grid = FALLBACK_TIERS) {
+    if (!Number.isSafeInteger(targetSalePrice) || targetSalePrice < 150 || !Number.isSafeInteger(purchasePrice) || purchasePrice < 150)
+      throw new Error("Precio de compra o venta inv\xE1lido");
+    return ceilPrice(Math.max(targetSalePrice, purchasePrice), grid);
+  }
   function planTrade(reference, settings, grid = FALLBACK_TIERS) {
     if (!Number.isSafeInteger(reference.price) || reference.price < 150) throw new Error("Precio de referencia inv\xE1lido");
     if (!Number.isSafeInteger(settings.retries) || settings.retries < 1 || settings.retries > 10 || settings.stepMode !== "percent" && settings.stepMode !== "coins" || !Number.isFinite(settings.firstPercent) || settings.firstPercent < 1 || settings.firstPercent > MAX_BUY_PERCENT || settings.stepMode === "percent" && (!Number.isFinite(settings.lastPercent) || settings.lastPercent < settings.firstPercent || settings.lastPercent > MAX_BUY_PERCENT) || !Number.isSafeInteger(settings.saleDiscountPercent) || settings.saleDiscountPercent < 0 || settings.saleDiscountPercent > 10 || !Number.isSafeInteger(settings.stepCoins) || settings.stepCoins < 0 || !Number.isSafeInteger(settings.maxPerCard) || settings.maxPerCard < 150 || !Number.isSafeInteger(settings.maxTotal) || settings.maxTotal < 150) throw new Error("Ajustes de compra inv\xE1lidos");
@@ -5241,7 +5246,8 @@ Consume las cartas que use. Esto NO se puede deshacer.
       throw new Error("Precio de venta manual inv\xE1lido");
     const salePrice = floorPrice(manualSale ?? reference.price * (100 - settings.saleDiscountPercent) / 100, grid);
     if (salePrice < 150) throw new Error("El precio de venta queda fuera del rango de EA");
-    return { reference, buyCaps, salePrice, worstNet: Math.floor(salePrice * 0.95) - highestBuy };
+    const saleAtBuyCap = salePriceForPurchase(salePrice, highestBuy, grid);
+    return { reference, buyCaps, salePrice, saleAtBuyCap, worstNet: Math.floor(saleAtBuyCap * 0.95) - highestBuy };
   }
   function lockTradeQuote(references, settings, grid = FALLBACK_TIERS) {
     if (!references.length) throw new Error("No hay cartas con precio de compra y venta");
@@ -5389,7 +5395,7 @@ Consume las cartas que use. Esto NO se puede deshacer.
       spent += bought.price;
       emit({ definitionId, state: "bought", buyPrice: bought.price, message: `Comprada por ${bought.price}; registrada en Gallery y pendiente de publicar` });
       try {
-        const sellPrice = plan.salePrice;
+        const sellPrice = salePriceForPurchase(plan.salePrice, bought.price, tiers());
         progress(`Comprada por ${bought.price}; moviendo al club\u2026`);
         await delay(1200);
         const moved = await toPromise(Item.move(bought.item, clubPile));
@@ -5610,6 +5616,7 @@ button:disabled { opacity:.5; cursor:default; }
   }
   var fmt = (n) => new Intl.NumberFormat("es-CL").format(n);
   var playerCount = (n) => `${n} ${n === 1 ? "jugador" : "jugadores"}`;
+  var saleRange = (plan) => plan.saleAtBuyCap > plan.salePrice ? `${fmt(plan.salePrice)}\u2013${fmt(plan.saleAtBuyCap)}` : fmt(plan.salePrice);
   function referenceTotal(cards, prices) {
     let amount = 0;
     let priced = 0;
@@ -5962,17 +5969,17 @@ button:disabled { opacity:.5; cursor:default; }
         const name = el("strong", selected?.cards.find((card) => card.definitionId === id)?.name ?? `Carta ${id}`);
         name.append(el("small", `${quote.settings.manualPriceById?.[id] !== void 0 ? "Referencia manual" : "Referencia Enhancer"}: ${fmt(plan.reference.price)}`));
         const buy = el("span", `Compra \u2264 ${fmt(quote.settings.buyCapById?.[id] ?? 0)}`);
-        const sale = el("span", `Venta ${fmt(plan.salePrice)}`);
+        const sale = el("span", `Venta ${saleRange(plan)}`);
         item.append(name, buy, sale);
-        const net = el("small", `Diferencia tras 5%: ${plan.worstNet >= 0 ? "+" : ""}${fmt(plan.worstNet)}`);
+        const net = el("small", `Peor diferencia tras 5%: ${plan.worstNet >= 0 ? "+" : ""}${fmt(plan.worstNet)}`);
         if (plan.worstNet < 0) net.classList.add("negative");
         item.append(net);
         list.append(item);
       }
       content.append(list);
       if (manualIds.length) content.append(el("p", `${manualIds.length} ${manualIds.length === 1 ? "carta usa" : "cartas usan"} precios manuales. Enhancer no inform\xF3 su mercado y podr\xEDan ser recompensas no disponibles para comprar.`, "confirm-warning"));
-      if ([...quote.plans.values()].some((plan) => plan.worstNet < 0)) content.append(el("p", "Algunas compras pueden costar m\xE1s que la venta despu\xE9s de la comisi\xF3n.", "confirm-warning"));
-      content.append(el("p", "EA cobra 5% si se vende. Publicar la carta no garantiza recuperar las monedas.", "confirm-note"));
+      if ([...quote.plans.values()].some((plan) => plan.worstNet < 0)) content.append(el("p", "La comisi\xF3n de EA puede causar p\xE9rdidas incluso al vender al precio de compra.", "confirm-warning"));
+      content.append(el("p", "Si pagas m\xE1s que la venta prevista, la publicaci\xF3n subir\xE1 hasta el precio real de compra. EA cobra 5% si se vende; la venta no est\xE1 garantizada.", "confirm-note"));
       const actions = el("div", void 0, "confirm-actions");
       const cancel = button("Cancelar", cancelTradeConfirmation);
       const accept = button(`Comprar ${playerCount(ids.length)}`, () => {
@@ -6156,8 +6163,8 @@ button:disabled { opacity:.5; cursor:default; }
         const metrics = el("div", void 0, "trade-card-metrics");
         for (const [label, value, negative] of [
           ["Compra m\xE1xima", plan ? fmt(plan.buyCaps.at(-1) ?? 0) : "\u2014", false],
-          ["Venta", plan ? fmt(plan.salePrice) : "\u2014", false],
-          ["Tras comisi\xF3n", plan ? `${plan.worstNet >= 0 ? "+" : ""}${fmt(plan.worstNet)}` : "\u2014", !!plan && plan.worstNet < 0]
+          ["Venta seg\xFAn compra", plan ? saleRange(plan) : "\u2014", false],
+          ["Peor neto tras 5%", plan ? `${plan.worstNet >= 0 ? "+" : ""}${fmt(plan.worstNet)}` : "\u2014", !!plan && plan.worstNet < 0]
         ]) {
           const metric = el("div");
           const amount = el("strong", value);
@@ -6186,7 +6193,7 @@ button:disabled { opacity:.5; cursor:default; }
         cards.append(row);
       }
       body.append(cards);
-      body.append(el("p", "EA cobra 5% al vender. Publicar no garantiza la venta.", "note"));
+      body.append(el("p", "La venta nunca baja del precio pagado; puede subir seg\xFAn la compra real. EA cobra 5% al vender y publicar no garantiza la venta.", "note"));
       const remaining = [...chosen].filter((id) => tradeReference(id) && !owned.has(id)).length;
       const submit = button(busy ? "Procesando\u2026" : `Revisar y confirmar ${playerCount(remaining)}`, requestTradeConfirmation);
       submit.disabled = busy || !quote || remaining === 0;
