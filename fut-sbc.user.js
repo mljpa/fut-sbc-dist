@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         FUT SBC Solver v2
 // @namespace    https://github.com/mljpa/fut-sbc-solver-v2
-// @version      0.2.9
+// @version      0.2.10
 // @description  Userscript to solve EA SPORTS FC 26 SBCs with your own club
 // @match        https://www.ea.com/*/ea-sports-fc/ultimate-team/web-app*
 // @match        https://www.ea.com/ea-sports-fc/ultimate-team/web-app*
@@ -4968,6 +4968,17778 @@ Consume las cartas que use. Esto NO se puede deshacer.
     };
   }
 
+  // src/gallery/catalog-snapshot.json
+  var catalog_snapshot_default = {
+    source: "https://www.fut.gg/fut-gallery",
+    updatedAt: "2026-09-26T16:30:28.231Z",
+    sets: [
+      {
+        id: 30,
+        categoryId: 5,
+        category: "premier-league",
+        name: "Arsenal",
+        slug: "arsenal",
+        description: "Requires 20 Arsenal Mens or Womens players to complete.",
+        requiredCards: 20,
+        priority: 1,
+        clubEaId: 1,
+        totalTokens: 220,
+        grades: [
+          {
+            name: "D",
+            threshold: 10,
+            tokens: 0
+          },
+          {
+            name: "C",
+            threshold: 11e4,
+            tokens: 0
+          },
+          {
+            name: "B",
+            threshold: 7e5,
+            tokens: 50
+          },
+          {
+            name: "A",
+            threshold: 13e5,
+            tokens: 70
+          },
+          {
+            name: "S",
+            threshold: 25e5,
+            tokens: 100
+          }
+        ],
+        recommended: {
+          grade: "C",
+          tokens: 0,
+          baseScore: 140188,
+          totalScore: 165910,
+          items: [
+            {
+              definitionId: 50552549,
+              score: 20625,
+              clubEaId: 1,
+              price: 515e3
+            },
+            {
+              definitionId: 67329765,
+              score: 13750,
+              clubEaId: 1,
+              price: 23e4
+            },
+            {
+              definitionId: 232580,
+              score: 11e3,
+              clubEaId: 1,
+              price: 16750
+            },
+            {
+              definitionId: 237288,
+              score: 11e3,
+              clubEaId: 116009,
+              price: 95500
+            },
+            {
+              definitionId: 220901,
+              score: 8300,
+              clubEaId: 1,
+              price: 38e3
+            },
+            {
+              definitionId: 234378,
+              score: 8300,
+              clubEaId: 1,
+              price: 8500
+            },
+            {
+              definitionId: 243715,
+              score: 8300,
+              clubEaId: 1,
+              price: 99500
+            },
+            {
+              definitionId: 258980,
+              score: 8300,
+              clubEaId: 116009,
+              price: 16e3
+            },
+            {
+              definitionId: 67336542,
+              score: 7688,
+              clubEaId: 1,
+              price: 231e3
+            },
+            {
+              definitionId: 246669,
+              score: 5500,
+              clubEaId: 1,
+              price: 5900
+            },
+            {
+              definitionId: 253436,
+              score: 5500,
+              clubEaId: 116009,
+              price: 5800
+            },
+            {
+              definitionId: 50559326,
+              score: 5125,
+              clubEaId: 1,
+              price: 157e3
+            },
+            {
+              definitionId: 222665,
+              score: 4100,
+              clubEaId: 1,
+              price: 4e3
+            },
+            {
+              definitionId: 241651,
+              score: 4100,
+              clubEaId: 1,
+              price: 9e3
+            },
+            {
+              definitionId: 243404,
+              score: 4100,
+              clubEaId: 116009,
+              price: 25500
+            },
+            {
+              definitionId: 247851,
+              score: 4100,
+              clubEaId: 1,
+              price: 3900
+            },
+            {
+              definitionId: 257001,
+              score: 4100,
+              clubEaId: 116009,
+              price: 16750
+            },
+            {
+              definitionId: 227110,
+              score: 2100,
+              clubEaId: 116009,
+              price: 2100
+            },
+            {
+              definitionId: 246426,
+              score: 2100,
+              clubEaId: 116009,
+              price: 1900
+            },
+            {
+              definitionId: 248343,
+              score: 2100,
+              clubEaId: 116009,
+              price: 1900
+            }
+          ]
+        }
+      },
+      {
+        id: 61,
+        categoryId: 5,
+        category: "premier-league",
+        name: "Aston Villa",
+        slug: "aston-villa",
+        description: "Requires 15 Aston Villa Mens or Womens players to complete.",
+        requiredCards: 15,
+        priority: 2,
+        clubEaId: 2,
+        totalTokens: 155,
+        grades: [
+          {
+            name: "D",
+            threshold: 10,
+            tokens: 0
+          },
+          {
+            name: "C",
+            threshold: 9e3,
+            tokens: 0
+          },
+          {
+            name: "B",
+            threshold: 4e4,
+            tokens: 30
+          },
+          {
+            name: "A",
+            threshold: 8e4,
+            tokens: 50
+          },
+          {
+            name: "S",
+            threshold: 15e4,
+            tokens: 75
+          }
+        ],
+        recommended: {
+          grade: "D",
+          tokens: 0,
+          baseScore: 4080,
+          totalScore: 4651,
+          items: [
+            {
+              definitionId: 236987,
+              score: 830,
+              clubEaId: 2,
+              price: 800
+            },
+            {
+              definitionId: 210881,
+              score: 410,
+              clubEaId: 2,
+              price: 650
+            },
+            {
+              definitionId: 50541306,
+              score: 340,
+              clubEaId: 2,
+              price: 650
+            },
+            {
+              definitionId: 50553308,
+              score: 340,
+              clubEaId: 2,
+              price: null
+            },
+            {
+              definitionId: 227174,
+              score: 280,
+              clubEaId: 2,
+              price: 650
+            },
+            {
+              definitionId: 241464,
+              score: 280,
+              clubEaId: 2,
+              price: 750
+            },
+            {
+              definitionId: 257057,
+              score: 280,
+              clubEaId: 2,
+              price: 700
+            },
+            {
+              definitionId: 226162,
+              score: 180,
+              clubEaId: 2,
+              price: 650
+            },
+            {
+              definitionId: 253417,
+              score: 180,
+              clubEaId: 116015,
+              price: 650
+            },
+            {
+              definitionId: 264969,
+              score: 180,
+              clubEaId: 116015,
+              price: 650
+            },
+            {
+              definitionId: 276694,
+              score: 180,
+              clubEaId: 2,
+              price: 650
+            },
+            {
+              definitionId: 235657,
+              score: 160,
+              clubEaId: 116015,
+              price: 650
+            },
+            {
+              definitionId: 248465,
+              score: 160,
+              clubEaId: 2,
+              price: 700
+            },
+            {
+              definitionId: 50590845,
+              score: 160,
+              clubEaId: 2,
+              price: 1300
+            },
+            {
+              definitionId: 221660,
+              score: 120,
+              clubEaId: 2,
+              price: 1700
+            }
+          ]
+        }
+      },
+      {
+        id: 76,
+        categoryId: 5,
+        category: "premier-league",
+        name: "Birmingham City",
+        slug: "birmingham-city",
+        description: "Requires 15 Birmingham City Women's players to complete.",
+        requiredCards: 15,
+        priority: 3,
+        clubEaId: 88,
+        totalTokens: 28,
+        grades: [
+          {
+            name: "D",
+            threshold: 10,
+            tokens: 0
+          },
+          {
+            name: "C",
+            threshold: 300,
+            tokens: 0
+          },
+          {
+            name: "B",
+            threshold: 500,
+            tokens: 5
+          },
+          {
+            name: "A",
+            threshold: 700,
+            tokens: 8
+          },
+          {
+            name: "S",
+            threshold: 1e3,
+            tokens: 15
+          }
+        ],
+        recommended: {
+          grade: "S",
+          tokens: 28,
+          baseScore: 835,
+          totalScore: 1047,
+          items: [
+            {
+              definitionId: 263012,
+              score: 280,
+              clubEaId: 116019,
+              price: 750
+            },
+            {
+              definitionId: 264807,
+              score: 100,
+              clubEaId: 116019,
+              price: 7e3
+            },
+            {
+              definitionId: 72348,
+              score: 35,
+              clubEaId: 116019,
+              price: 1900
+            },
+            {
+              definitionId: 86130,
+              score: 35,
+              clubEaId: 116019,
+              price: 2e3
+            },
+            {
+              definitionId: 87999,
+              score: 35,
+              clubEaId: 116019,
+              price: 1900
+            },
+            {
+              definitionId: 88e3,
+              score: 35,
+              clubEaId: 116019,
+              price: 1900
+            },
+            {
+              definitionId: 88004,
+              score: 35,
+              clubEaId: 116019,
+              price: 1900
+            },
+            {
+              definitionId: 246029,
+              score: 35,
+              clubEaId: 116019,
+              price: 1900
+            },
+            {
+              definitionId: 247800,
+              score: 35,
+              clubEaId: 116019,
+              price: 1900
+            },
+            {
+              definitionId: 265215,
+              score: 35,
+              clubEaId: 116019,
+              price: 1900
+            },
+            {
+              definitionId: 265217,
+              score: 35,
+              clubEaId: 116019,
+              price: 1900
+            },
+            {
+              definitionId: 268061,
+              score: 35,
+              clubEaId: 116019,
+              price: 1800
+            },
+            {
+              definitionId: 268475,
+              score: 35,
+              clubEaId: 116019,
+              price: 1900
+            },
+            {
+              definitionId: 273919,
+              score: 35,
+              clubEaId: 116019,
+              price: 1900
+            },
+            {
+              definitionId: 276812,
+              score: 35,
+              clubEaId: 116019,
+              price: 1800
+            }
+          ]
+        }
+      },
+      {
+        id: 22,
+        categoryId: 5,
+        category: "premier-league",
+        name: "Bournemouth",
+        slug: "bournemouth",
+        description: "Requires 15 Bournemouth Mens players to complete.",
+        requiredCards: 15,
+        priority: 4,
+        clubEaId: 1943,
+        totalTokens: 38,
+        grades: [
+          {
+            name: "D",
+            threshold: 10,
+            tokens: 0
+          },
+          {
+            name: "C",
+            threshold: 1600,
+            tokens: 0
+          },
+          {
+            name: "B",
+            threshold: 2800,
+            tokens: 8
+          },
+          {
+            name: "A",
+            threshold: 4200,
+            tokens: 10
+          },
+          {
+            name: "S",
+            threshold: 5900,
+            tokens: 20
+          }
+        ],
+        recommended: {
+          grade: "C",
+          tokens: 0,
+          baseScore: 2480,
+          totalScore: 2770,
+          items: [
+            {
+              definitionId: 261299,
+              score: 280,
+              clubEaId: 1943,
+              price: 700
+            },
+            {
+              definitionId: 256769,
+              score: 180,
+              clubEaId: 1943,
+              price: 650
+            },
+            {
+              definitionId: 277909,
+              score: 180,
+              clubEaId: 1943,
+              price: 700
+            },
+            {
+              definitionId: 50567488,
+              score: 180,
+              clubEaId: 1943,
+              price: 700
+            },
+            {
+              definitionId: 83494,
+              score: 160,
+              clubEaId: 1943,
+              price: 650
+            },
+            {
+              definitionId: 232999,
+              score: 160,
+              clubEaId: 1943,
+              price: 2900
+            },
+            {
+              definitionId: 236920,
+              score: 160,
+              clubEaId: 1943,
+              price: 650
+            },
+            {
+              definitionId: 237477,
+              score: 160,
+              clubEaId: 1943,
+              price: 900
+            },
+            {
+              definitionId: 246565,
+              score: 160,
+              clubEaId: 1943,
+              price: 1100
+            },
+            {
+              definitionId: 256612,
+              score: 160,
+              clubEaId: 1943,
+              price: 650
+            },
+            {
+              definitionId: 269626,
+              score: 160,
+              clubEaId: 1943,
+              price: 850
+            },
+            {
+              definitionId: 213884,
+              score: 140,
+              clubEaId: 1943,
+              price: 900
+            },
+            {
+              definitionId: 224294,
+              score: 140,
+              clubEaId: 1943,
+              price: 650
+            },
+            {
+              definitionId: 248492,
+              score: 140,
+              clubEaId: 1943,
+              price: 1300
+            },
+            {
+              definitionId: 255223,
+              score: 120,
+              clubEaId: 1943,
+              price: 650
+            }
+          ]
+        }
+      },
+      {
+        id: 17,
+        categoryId: 5,
+        category: "premier-league",
+        name: "Brentford",
+        slug: "brentford",
+        description: "Requires 15 Brentford Mens players to complete.",
+        requiredCards: 15,
+        priority: 5,
+        clubEaId: 1925,
+        totalTokens: 38,
+        grades: [
+          {
+            name: "D",
+            threshold: 10,
+            tokens: 0
+          },
+          {
+            name: "C",
+            threshold: 1400,
+            tokens: 0
+          },
+          {
+            name: "B",
+            threshold: 2700,
+            tokens: 8
+          },
+          {
+            name: "A",
+            threshold: 4e3,
+            tokens: 10
+          },
+          {
+            name: "S",
+            threshold: 5700,
+            tokens: 20
+          }
+        ],
+        recommended: {
+          grade: "B",
+          tokens: 8,
+          baseScore: 2880,
+          totalScore: 3315,
+          items: [
+            {
+              definitionId: 275771,
+              score: 340,
+              clubEaId: 1925,
+              price: 650
+            },
+            {
+              definitionId: 258601,
+              score: 280,
+              clubEaId: 1925,
+              price: 650
+            },
+            {
+              definitionId: 277869,
+              score: 280,
+              clubEaId: 1925,
+              price: 650
+            },
+            {
+              definitionId: 50575254,
+              score: 280,
+              clubEaId: 1925,
+              price: null
+            },
+            {
+              definitionId: 229723,
+              score: 180,
+              clubEaId: 1925,
+              price: 650
+            },
+            {
+              definitionId: 240913,
+              score: 180,
+              clubEaId: 1925,
+              price: 800
+            },
+            {
+              definitionId: 241508,
+              score: 180,
+              clubEaId: 1925,
+              price: 650
+            },
+            {
+              definitionId: 248484,
+              score: 160,
+              clubEaId: 1925,
+              price: 950
+            },
+            {
+              definitionId: 260926,
+              score: 160,
+              clubEaId: 1925,
+              price: 700
+            },
+            {
+              definitionId: 265552,
+              score: 160,
+              clubEaId: 1925,
+              price: 650
+            },
+            {
+              definitionId: 235167,
+              score: 140,
+              clubEaId: 1925,
+              price: 1700
+            },
+            {
+              definitionId: 242453,
+              score: 140,
+              clubEaId: 1925,
+              price: 1700
+            },
+            {
+              definitionId: 270608,
+              score: 140,
+              clubEaId: 1925,
+              price: 1e3
+            },
+            {
+              definitionId: 50606563,
+              score: 140,
+              clubEaId: 1925,
+              price: 900
+            },
+            {
+              definitionId: 243606,
+              score: 120,
+              clubEaId: 1925,
+              price: 2e3
+            }
+          ]
+        }
+      },
+      {
+        id: 26,
+        categoryId: 5,
+        category: "premier-league",
+        name: "Brighton & Hove Albion",
+        slug: "brighton-hove-albion",
+        description: "Requires 15 Brighton & Hove Albion Mens or Womens players to complete.",
+        requiredCards: 15,
+        priority: 6,
+        clubEaId: 1808,
+        totalTokens: 80,
+        grades: [
+          {
+            name: "D",
+            threshold: 10,
+            tokens: 0
+          },
+          {
+            name: "C",
+            threshold: 4e3,
+            tokens: 0
+          },
+          {
+            name: "B",
+            threshold: 13e3,
+            tokens: 15
+          },
+          {
+            name: "A",
+            threshold: 23500,
+            tokens: 25
+          },
+          {
+            name: "S",
+            threshold: 42500,
+            tokens: 40
+          }
+        ],
+        recommended: {
+          grade: "C",
+          tokens: 0,
+          baseScore: 6311,
+          totalScore: 7077,
+          items: [
+            {
+              definitionId: 246641,
+              score: 2100,
+              clubEaId: 116013,
+              price: 2100
+            },
+            {
+              definitionId: 67299629,
+              score: 525,
+              clubEaId: 1808,
+              price: 13750
+            },
+            {
+              definitionId: 50606840,
+              score: 513,
+              clubEaId: 1808,
+              price: null
+            },
+            {
+              definitionId: 50522413,
+              score: 350,
+              clubEaId: 1808,
+              price: 11e3
+            },
+            {
+              definitionId: 50405533,
+              score: 340,
+              clubEaId: 1808,
+              price: null
+            },
+            {
+              definitionId: 50531563,
+              score: 338,
+              clubEaId: 1808,
+              price: 13e3
+            },
+            {
+              definitionId: 227255,
+              score: 280,
+              clubEaId: 116013,
+              price: 650
+            },
+            {
+              definitionId: 255565,
+              score: 280,
+              clubEaId: 1808,
+              price: 3800
+            },
+            {
+              definitionId: 258498,
+              score: 280,
+              clubEaId: 1808,
+              price: 750
+            },
+            {
+              definitionId: 265240,
+              score: 280,
+              clubEaId: 116013,
+              price: 650
+            },
+            {
+              definitionId: 275192,
+              score: 280,
+              clubEaId: 1808,
+              price: 650
+            },
+            {
+              definitionId: 67308779,
+              score: 225,
+              clubEaId: 1808,
+              price: 10750
+            },
+            {
+              definitionId: 235152,
+              score: 180,
+              clubEaId: 1808,
+              price: 700
+            },
+            {
+              definitionId: 271800,
+              score: 180,
+              clubEaId: 1808,
+              price: 650
+            },
+            {
+              definitionId: 190765,
+              score: 160,
+              clubEaId: 1808,
+              price: 1e3
+            }
+          ]
+        }
+      },
+      {
+        id: 14,
+        categoryId: 5,
+        category: "premier-league",
+        name: "Charlton",
+        slug: "charlton",
+        description: "Requires 15 Charlton Women's players to complete.",
+        requiredCards: 15,
+        priority: 7,
+        clubEaId: 89,
+        totalTokens: 28,
+        grades: [
+          {
+            name: "D",
+            threshold: 10,
+            tokens: 0
+          },
+          {
+            name: "C",
+            threshold: 300,
+            tokens: 0
+          },
+          {
+            name: "B",
+            threshold: 500,
+            tokens: 5
+          },
+          {
+            name: "A",
+            threshold: 700,
+            tokens: 8
+          },
+          {
+            name: "S",
+            threshold: 1e3,
+            tokens: 15
+          }
+        ],
+        recommended: {
+          grade: "A",
+          tokens: 13,
+          baseScore: 700,
+          totalScore: 881,
+          items: [
+            {
+              definitionId: 227113,
+              score: 100,
+              clubEaId: 132867,
+              price: 3e3
+            },
+            {
+              definitionId: 86132,
+              score: 90,
+              clubEaId: 132867,
+              price: 2200
+            },
+            {
+              definitionId: 265252,
+              score: 90,
+              clubEaId: 132867,
+              price: 4200
+            },
+            {
+              definitionId: 72795,
+              score: 35,
+              clubEaId: 132867,
+              price: 950
+            },
+            {
+              definitionId: 74047,
+              score: 35,
+              clubEaId: 132867,
+              price: 1e3
+            },
+            {
+              definitionId: 86133,
+              score: 35,
+              clubEaId: 132867,
+              price: 850
+            },
+            {
+              definitionId: 86134,
+              score: 35,
+              clubEaId: 132867,
+              price: 1e3
+            },
+            {
+              definitionId: 86138,
+              score: 35,
+              clubEaId: 132867,
+              price: 900
+            },
+            {
+              definitionId: 86338,
+              score: 35,
+              clubEaId: 132867,
+              price: 950
+            },
+            {
+              definitionId: 87754,
+              score: 35,
+              clubEaId: 132867,
+              price: 950
+            },
+            {
+              definitionId: 87762,
+              score: 35,
+              clubEaId: 132867,
+              price: 1e3
+            },
+            {
+              definitionId: 265313,
+              score: 35,
+              clubEaId: 132867,
+              price: 1e3
+            },
+            {
+              definitionId: 266921,
+              score: 35,
+              clubEaId: 132867,
+              price: 1e3
+            },
+            {
+              definitionId: 273912,
+              score: 35,
+              clubEaId: 132867,
+              price: 950
+            },
+            {
+              definitionId: 275399,
+              score: 35,
+              clubEaId: 132867,
+              price: 1100
+            }
+          ]
+        }
+      },
+      {
+        id: 94,
+        categoryId: 5,
+        category: "premier-league",
+        name: "Chelsea",
+        slug: "chelsea",
+        description: "Requires 20 Chelsea Mens or Womens players to complete.",
+        requiredCards: 20,
+        priority: 8,
+        clubEaId: 5,
+        totalTokens: 220,
+        grades: [
+          {
+            name: "D",
+            threshold: 10,
+            tokens: 0
+          },
+          {
+            name: "C",
+            threshold: 5e4,
+            tokens: 0
+          },
+          {
+            name: "B",
+            threshold: 6e5,
+            tokens: 50
+          },
+          {
+            name: "A",
+            threshold: 9e5,
+            tokens: 70
+          },
+          {
+            name: "S",
+            threshold: 15e5,
+            tokens: 100
+          }
+        ],
+        recommended: {
+          grade: "C",
+          tokens: 0,
+          baseScore: 65081,
+          totalScore: 82978,
+          items: [
+            {
+              definitionId: 67369111,
+              score: 10313,
+              clubEaId: 5,
+              price: null
+            },
+            {
+              definitionId: 50558894,
+              score: 7688,
+              clubEaId: 116010,
+              price: 45e3
+            },
+            {
+              definitionId: 50591895,
+              score: 6875,
+              clubEaId: 5,
+              price: 551e3
+            },
+            {
+              definitionId: 263009,
+              score: 5500,
+              clubEaId: 116010,
+              price: 5800
+            },
+            {
+              definitionId: 67336110,
+              score: 5125,
+              clubEaId: 116010,
+              price: 19e3
+            },
+            {
+              definitionId: 256079,
+              score: 4100,
+              clubEaId: 5,
+              price: 11250
+            },
+            {
+              definitionId: 265239,
+              score: 4100,
+              clubEaId: 116010,
+              price: 3900
+            },
+            {
+              definitionId: 227246,
+              score: 2100,
+              clubEaId: 116010,
+              price: 2100
+            },
+            {
+              definitionId: 240030,
+              score: 2100,
+              clubEaId: 116010,
+              price: 1900
+            },
+            {
+              definitionId: 242830,
+              score: 2100,
+              clubEaId: 116010,
+              price: 2100
+            },
+            {
+              definitionId: 245882,
+              score: 2100,
+              clubEaId: 116010,
+              price: 2100
+            },
+            {
+              definitionId: 257534,
+              score: 2100,
+              clubEaId: 5,
+              price: 4600
+            },
+            {
+              definitionId: 261733,
+              score: 2100,
+              clubEaId: 116010,
+              price: 2500
+            },
+            {
+              definitionId: 265249,
+              score: 2100,
+              clubEaId: 116010,
+              price: 46500
+            },
+            {
+              definitionId: 273466,
+              score: 2100,
+              clubEaId: 116010,
+              price: 2500
+            },
+            {
+              definitionId: 50534459,
+              score: 2100,
+              clubEaId: 5,
+              price: 19500
+            },
+            {
+              definitionId: 258706,
+              score: 830,
+              clubEaId: 116010,
+              price: 1300
+            },
+            {
+              definitionId: 260247,
+              score: 830,
+              clubEaId: 5,
+              price: 1800
+            },
+            {
+              definitionId: 252042,
+              score: 410,
+              clubEaId: 5,
+              price: 850
+            },
+            {
+              definitionId: 277926,
+              score: 410,
+              clubEaId: 116010,
+              price: 750
+            }
+          ]
+        }
+      },
+      {
+        id: 71,
+        categoryId: 5,
+        category: "premier-league",
+        name: "Coventry City",
+        slug: "coventry-city",
+        description: "Requires 15 Coventry City Mens players to complete.",
+        requiredCards: 15,
+        priority: 9,
+        clubEaId: 1800,
+        totalTokens: 38,
+        grades: [
+          {
+            name: "D",
+            threshold: 10,
+            tokens: 0
+          },
+          {
+            name: "C",
+            threshold: 400,
+            tokens: 0
+          },
+          {
+            name: "B",
+            threshold: 1100,
+            tokens: 8
+          },
+          {
+            name: "A",
+            threshold: 1700,
+            tokens: 10
+          },
+          {
+            name: "S",
+            threshold: 2400,
+            tokens: 20
+          }
+        ],
+        recommended: {
+          grade: "B",
+          tokens: 8,
+          baseScore: 1070,
+          totalScore: 1236,
+          items: [
+            {
+              definitionId: 50584585,
+              score: 120,
+              clubEaId: 1800,
+              price: 700
+            },
+            {
+              definitionId: 212118,
+              score: 100,
+              clubEaId: 1800,
+              price: 750
+            },
+            {
+              definitionId: 263339,
+              score: 100,
+              clubEaId: 1800,
+              price: 1700
+            },
+            {
+              definitionId: 234741,
+              score: 90,
+              clubEaId: 1800,
+              price: 3300
+            },
+            {
+              definitionId: 236784,
+              score: 90,
+              clubEaId: 1800,
+              price: 750
+            },
+            {
+              definitionId: 239529,
+              score: 90,
+              clubEaId: 1800,
+              price: 3700
+            },
+            {
+              definitionId: 251626,
+              score: 90,
+              clubEaId: 1800,
+              price: 850
+            },
+            {
+              definitionId: 251690,
+              score: 90,
+              clubEaId: 1800,
+              price: 750
+            },
+            {
+              definitionId: 50570365,
+              score: 90,
+              clubEaId: 1800,
+              price: 3600
+            },
+            {
+              definitionId: 73638,
+              score: 35,
+              clubEaId: 1800,
+              price: 1400
+            },
+            {
+              definitionId: 232755,
+              score: 35,
+              clubEaId: 1800,
+              price: 750
+            },
+            {
+              definitionId: 238743,
+              score: 35,
+              clubEaId: 1800,
+              price: 850
+            },
+            {
+              definitionId: 241645,
+              score: 35,
+              clubEaId: 1800,
+              price: 800
+            },
+            {
+              definitionId: 254910,
+              score: 35,
+              clubEaId: 1800,
+              price: 850
+            },
+            {
+              definitionId: 261335,
+              score: 35,
+              clubEaId: 1800,
+              price: 800
+            }
+          ]
+        }
+      },
+      {
+        id: 85,
+        categoryId: 5,
+        category: "premier-league",
+        name: "Crystal Palace",
+        slug: "crystal-palace",
+        description: "Requires 15 Crystal Palace Mens players to complete.",
+        requiredCards: 15,
+        priority: 10,
+        clubEaId: 1799,
+        totalTokens: 80,
+        grades: [
+          {
+            name: "D",
+            threshold: 10,
+            tokens: 0
+          },
+          {
+            name: "C",
+            threshold: 3e3,
+            tokens: 0
+          },
+          {
+            name: "B",
+            threshold: 27500,
+            tokens: 15
+          },
+          {
+            name: "A",
+            threshold: 3e4,
+            tokens: 25
+          },
+          {
+            name: "S",
+            threshold: 35e3,
+            tokens: 40
+          }
+        ],
+        recommended: {
+          grade: "C",
+          tokens: 0,
+          baseScore: 2900,
+          totalScore: 3294,
+          items: [
+            {
+              definitionId: 233306,
+              score: 340,
+              clubEaId: 1799,
+              price: 1200
+            },
+            {
+              definitionId: 259240,
+              score: 340,
+              clubEaId: 1799,
+              price: 700
+            },
+            {
+              definitionId: 235353,
+              score: 280,
+              clubEaId: 1799,
+              price: 700
+            },
+            {
+              definitionId: 236461,
+              score: 280,
+              clubEaId: 1799,
+              price: 650
+            },
+            {
+              definitionId: 250954,
+              score: 180,
+              clubEaId: 1799,
+              price: 700
+            },
+            {
+              definitionId: 259694,
+              score: 180,
+              clubEaId: 1799,
+              price: 750
+            },
+            {
+              definitionId: 232730,
+              score: 160,
+              clubEaId: 1799,
+              price: 950
+            },
+            {
+              definitionId: 240947,
+              score: 160,
+              clubEaId: 1799,
+              price: 700
+            },
+            {
+              definitionId: 259377,
+              score: 160,
+              clubEaId: 1799,
+              price: 650
+            },
+            {
+              definitionId: 50583454,
+              score: 160,
+              clubEaId: 1799,
+              price: 900
+            },
+            {
+              definitionId: 70888,
+              score: 140,
+              clubEaId: 1799,
+              price: 650
+            },
+            {
+              definitionId: 215223,
+              score: 140,
+              clubEaId: 1799,
+              price: 800
+            },
+            {
+              definitionId: 258444,
+              score: 140,
+              clubEaId: 1799,
+              price: 750
+            },
+            {
+              definitionId: 206516,
+              score: 120,
+              clubEaId: 1799,
+              price: 1600
+            },
+            {
+              definitionId: 50561632,
+              score: 120,
+              clubEaId: 1799,
+              price: 1400
+            }
+          ]
+        }
+      },
+      {
+        id: 56,
+        categoryId: 5,
+        category: "premier-league",
+        name: "Everton",
+        slug: "everton",
+        description: "Requires 15 Everton Mens or Womens players to complete.",
+        requiredCards: 15,
+        priority: 11,
+        clubEaId: 7,
+        totalTokens: 80,
+        grades: [
+          {
+            name: "D",
+            threshold: 10,
+            tokens: 0
+          },
+          {
+            name: "C",
+            threshold: 3e3,
+            tokens: 0
+          },
+          {
+            name: "B",
+            threshold: 15e3,
+            tokens: 15
+          },
+          {
+            name: "A",
+            threshold: 22500,
+            tokens: 25
+          },
+          {
+            name: "S",
+            threshold: 36e3,
+            tokens: 40
+          }
+        ],
+        recommended: {
+          grade: "C",
+          tokens: 0,
+          baseScore: 4640,
+          totalScore: 5185,
+          items: [
+            {
+              definitionId: 204935,
+              score: 2100,
+              clubEaId: 7,
+              price: 8900
+            },
+            {
+              definitionId: 243657,
+              score: 340,
+              clubEaId: 7,
+              price: 750
+            },
+            {
+              definitionId: 50538165,
+              score: 340,
+              clubEaId: 7,
+              price: 650
+            },
+            {
+              definitionId: 237386,
+              score: 280,
+              clubEaId: 7,
+              price: 650
+            },
+            {
+              definitionId: 202695,
+              score: 180,
+              clubEaId: 7,
+              price: 750
+            },
+            {
+              definitionId: 210697,
+              score: 160,
+              clubEaId: 7,
+              price: 700
+            },
+            {
+              definitionId: 247649,
+              score: 160,
+              clubEaId: 7,
+              price: 1e3
+            },
+            {
+              definitionId: 247797,
+              score: 160,
+              clubEaId: 116016,
+              price: 750
+            },
+            {
+              definitionId: 271739,
+              score: 160,
+              clubEaId: 116016,
+              price: 800
+            },
+            {
+              definitionId: 251421,
+              score: 140,
+              clubEaId: 7,
+              price: 700
+            },
+            {
+              definitionId: 272049,
+              score: 140,
+              clubEaId: 116016,
+              price: 650
+            },
+            {
+              definitionId: 272056,
+              score: 140,
+              clubEaId: 116016,
+              price: 650
+            },
+            {
+              definitionId: 253054,
+              score: 120,
+              clubEaId: 7,
+              price: 2600
+            },
+            {
+              definitionId: 50557430,
+              score: 120,
+              clubEaId: 7,
+              price: 2100
+            },
+            {
+              definitionId: 207599,
+              score: 100,
+              clubEaId: 7,
+              price: 3400
+            }
+          ]
+        }
+      },
+      {
+        id: 54,
+        categoryId: 5,
+        category: "premier-league",
+        name: "Fulham",
+        slug: "fulham",
+        description: "Requires 15 Fulham Mens players to complete.",
+        requiredCards: 15,
+        priority: 12,
+        clubEaId: 144,
+        totalTokens: 38,
+        grades: [
+          {
+            name: "D",
+            threshold: 10,
+            tokens: 0
+          },
+          {
+            name: "C",
+            threshold: 1500,
+            tokens: 0
+          },
+          {
+            name: "B",
+            threshold: 2700,
+            tokens: 8
+          },
+          {
+            name: "A",
+            threshold: 4e3,
+            tokens: 10
+          },
+          {
+            name: "S",
+            threshold: 5700,
+            tokens: 20
+          }
+        ],
+        recommended: {
+          grade: "C",
+          tokens: 0,
+          baseScore: 1970,
+          totalScore: 2240,
+          items: [
+            {
+              definitionId: 213655,
+              score: 180,
+              clubEaId: 144,
+              price: 650
+            },
+            {
+              definitionId: 229348,
+              score: 180,
+              clubEaId: 144,
+              price: 850
+            },
+            {
+              definitionId: 192563,
+              score: 160,
+              clubEaId: 144,
+              price: 900
+            },
+            {
+              definitionId: 224221,
+              score: 160,
+              clubEaId: 144,
+              price: 750
+            },
+            {
+              definitionId: 228092,
+              score: 160,
+              clubEaId: 144,
+              price: 700
+            },
+            {
+              definitionId: 216266,
+              score: 140,
+              clubEaId: 144,
+              price: 850
+            },
+            {
+              definitionId: 241436,
+              score: 140,
+              clubEaId: 144,
+              price: 1500
+            },
+            {
+              definitionId: 235883,
+              score: 120,
+              clubEaId: 144,
+              price: 1700
+            },
+            {
+              definitionId: 240273,
+              score: 120,
+              clubEaId: 144,
+              price: 700
+            },
+            {
+              definitionId: 50600544,
+              score: 120,
+              clubEaId: 144,
+              price: 950
+            },
+            {
+              definitionId: 70571,
+              score: 100,
+              clubEaId: 144,
+              price: 650
+            },
+            {
+              definitionId: 264337,
+              score: 100,
+              clubEaId: 144,
+              price: 3100
+            },
+            {
+              definitionId: 277295,
+              score: 100,
+              clubEaId: 144,
+              price: 750
+            },
+            {
+              definitionId: 50592912,
+              score: 100,
+              clubEaId: 144,
+              price: 1600
+            },
+            {
+              definitionId: 222501,
+              score: 90,
+              clubEaId: 144,
+              price: 4800
+            }
+          ]
+        }
+      },
+      {
+        id: 45,
+        categoryId: 5,
+        category: "premier-league",
+        name: "Hull City",
+        slug: "hull-city",
+        description: "Requires 15 Hull City Mens players to complete.",
+        requiredCards: 15,
+        priority: 13,
+        clubEaId: 1952,
+        totalTokens: 38,
+        grades: [
+          {
+            name: "D",
+            threshold: 10,
+            tokens: 0
+          },
+          {
+            name: "C",
+            threshold: 400,
+            tokens: 0
+          },
+          {
+            name: "B",
+            threshold: 700,
+            tokens: 8
+          },
+          {
+            name: "A",
+            threshold: 1100,
+            tokens: 10
+          },
+          {
+            name: "S",
+            threshold: 1500,
+            tokens: 20
+          }
+        ],
+        recommended: {
+          grade: "A",
+          tokens: 18,
+          baseScore: 1095,
+          totalScore: 1265,
+          items: [
+            {
+              definitionId: 252552,
+              score: 160,
+              clubEaId: 1952,
+              price: 850
+            },
+            {
+              definitionId: 242087,
+              score: 140,
+              clubEaId: 1952,
+              price: 1800
+            },
+            {
+              definitionId: 50598257,
+              score: 100,
+              clubEaId: 1952,
+              price: 2400
+            },
+            {
+              definitionId: 203042,
+              score: 90,
+              clubEaId: 1952,
+              price: 1e3
+            },
+            {
+              definitionId: 220031,
+              score: 90,
+              clubEaId: 1952,
+              price: 3200
+            },
+            {
+              definitionId: 276633,
+              score: 90,
+              clubEaId: 1952,
+              price: 700
+            },
+            {
+              definitionId: 50592126,
+              score: 90,
+              clubEaId: 1952,
+              price: 1800
+            },
+            {
+              definitionId: 50592301,
+              score: 90,
+              clubEaId: 1952,
+              price: 950
+            },
+            {
+              definitionId: 218659,
+              score: 35,
+              clubEaId: 1952,
+              price: 850
+            },
+            {
+              definitionId: 220058,
+              score: 35,
+              clubEaId: 1952,
+              price: 850
+            },
+            {
+              definitionId: 225956,
+              score: 35,
+              clubEaId: 1952,
+              price: 8700
+            },
+            {
+              definitionId: 243608,
+              score: 35,
+              clubEaId: 1952,
+              price: 800
+            },
+            {
+              definitionId: 272712,
+              score: 35,
+              clubEaId: 1952,
+              price: 900
+            },
+            {
+              definitionId: 50588124,
+              score: 35,
+              clubEaId: 1952,
+              price: 850
+            },
+            {
+              definitionId: 50608020,
+              score: 35,
+              clubEaId: 1952,
+              price: 900
+            }
+          ]
+        }
+      },
+      {
+        id: 6,
+        categoryId: 5,
+        category: "premier-league",
+        name: "Ipswich Town",
+        slug: "ipswich-town",
+        description: "Requires 15 Ipswich Town Mens players to complete.",
+        requiredCards: 15,
+        priority: 14,
+        clubEaId: 94,
+        totalTokens: 38,
+        grades: [
+          {
+            name: "D",
+            threshold: 10,
+            tokens: 0
+          },
+          {
+            name: "C",
+            threshold: 600,
+            tokens: 0
+          },
+          {
+            name: "B",
+            threshold: 1400,
+            tokens: 8
+          },
+          {
+            name: "A",
+            threshold: 2100,
+            tokens: 10
+          },
+          {
+            name: "S",
+            threshold: 3e3,
+            tokens: 20
+          }
+        ],
+        recommended: {
+          grade: "B",
+          tokens: 8,
+          baseScore: 1825,
+          totalScore: 2067,
+          items: [
+            {
+              definitionId: 50563169,
+              score: 410,
+              clubEaId: 94,
+              price: 600
+            },
+            {
+              definitionId: 236699,
+              score: 140,
+              clubEaId: 94,
+              price: 750
+            },
+            {
+              definitionId: 246321,
+              score: 140,
+              clubEaId: 94,
+              price: 6800
+            },
+            {
+              definitionId: 255434,
+              score: 140,
+              clubEaId: 94,
+              price: 800
+            },
+            {
+              definitionId: 234569,
+              score: 120,
+              clubEaId: 94,
+              price: 2600
+            },
+            {
+              definitionId: 243675,
+              score: 100,
+              clubEaId: 94,
+              price: 750
+            },
+            {
+              definitionId: 261336,
+              score: 100,
+              clubEaId: 94,
+              price: 650
+            },
+            {
+              definitionId: 50571021,
+              score: 100,
+              clubEaId: 94,
+              price: 2900
+            },
+            {
+              definitionId: 231633,
+              score: 90,
+              clubEaId: 94,
+              price: 4e3
+            },
+            {
+              definitionId: 235405,
+              score: 90,
+              clubEaId: 94,
+              price: 3700
+            },
+            {
+              definitionId: 239356,
+              score: 90,
+              clubEaId: 94,
+              price: 3300
+            },
+            {
+              definitionId: 242908,
+              score: 90,
+              clubEaId: 94,
+              price: 650
+            },
+            {
+              definitionId: 246685,
+              score: 90,
+              clubEaId: 94,
+              price: 2100
+            },
+            {
+              definitionId: 267680,
+              score: 90,
+              clubEaId: 94,
+              price: 650
+            },
+            {
+              definitionId: 250816,
+              score: 35,
+              clubEaId: 94,
+              price: 750
+            }
+          ]
+        }
+      },
+      {
+        id: 20,
+        categoryId: 5,
+        category: "premier-league",
+        name: "Leeds United",
+        slug: "leeds-united",
+        description: "Requires 15 Leeds United Mens players to complete.",
+        requiredCards: 15,
+        priority: 15,
+        clubEaId: 8,
+        totalTokens: 38,
+        grades: [
+          {
+            name: "D",
+            threshold: 10,
+            tokens: 0
+          },
+          {
+            name: "C",
+            threshold: 1100,
+            tokens: 0
+          },
+          {
+            name: "B",
+            threshold: 2300,
+            tokens: 8
+          },
+          {
+            name: "A",
+            threshold: 3400,
+            tokens: 10
+          },
+          {
+            name: "S",
+            threshold: 4800,
+            tokens: 20
+          }
+        ],
+        recommended: {
+          grade: "B",
+          tokens: 8,
+          baseScore: 2100,
+          totalScore: 2369,
+          items: [
+            {
+              definitionId: 220710,
+              score: 280,
+              clubEaId: 8,
+              price: 650
+            },
+            {
+              definitionId: 235735,
+              score: 180,
+              clubEaId: 8,
+              price: 650
+            },
+            {
+              definitionId: 257191,
+              score: 180,
+              clubEaId: 8,
+              price: 650
+            },
+            {
+              definitionId: 221479,
+              score: 160,
+              clubEaId: 8,
+              price: 750
+            },
+            {
+              definitionId: 263063,
+              score: 160,
+              clubEaId: 8,
+              price: 950
+            },
+            {
+              definitionId: 221491,
+              score: 140,
+              clubEaId: 8,
+              price: 1200
+            },
+            {
+              definitionId: 236822,
+              score: 140,
+              clubEaId: 8,
+              price: 1100
+            },
+            {
+              definitionId: 229266,
+              score: 120,
+              clubEaId: 8,
+              price: 3300
+            },
+            {
+              definitionId: 242530,
+              score: 120,
+              clubEaId: 8,
+              price: 750
+            },
+            {
+              definitionId: 244238,
+              score: 120,
+              clubEaId: 8,
+              price: 3200
+            },
+            {
+              definitionId: 236764,
+              score: 100,
+              clubEaId: 8,
+              price: 3500
+            },
+            {
+              definitionId: 244591,
+              score: 100,
+              clubEaId: 8,
+              price: 3600
+            },
+            {
+              definitionId: 247361,
+              score: 100,
+              clubEaId: 8,
+              price: 2100
+            },
+            {
+              definitionId: 50586196,
+              score: 100,
+              clubEaId: 8,
+              price: 700
+            },
+            {
+              definitionId: 50601376,
+              score: 100,
+              clubEaId: 8,
+              price: 750
+            }
+          ]
+        }
+      },
+      {
+        id: 46,
+        categoryId: 5,
+        category: "premier-league",
+        name: "Liverpool",
+        slug: "liverpool",
+        description: "Requires 20 Liverpool Mens or Womens players to complete.",
+        requiredCards: 20,
+        priority: 16,
+        clubEaId: 9,
+        totalTokens: 220,
+        grades: [
+          {
+            name: "D",
+            threshold: 10,
+            tokens: 0
+          },
+          {
+            name: "C",
+            threshold: 6e4,
+            tokens: 0
+          },
+          {
+            name: "B",
+            threshold: 6e5,
+            tokens: 50
+          },
+          {
+            name: "A",
+            threshold: 11e5,
+            tokens: 70
+          },
+          {
+            name: "S",
+            threshold: 2e6,
+            tokens: 100
+          }
+        ],
+        recommended: {
+          grade: "C",
+          tokens: 0,
+          baseScore: 60898,
+          totalScore: 80435,
+          items: [
+            {
+              definitionId: 67342595,
+              score: 15563,
+              clubEaId: 9,
+              price: null
+            },
+            {
+              definitionId: 50565379,
+              score: 10375,
+              clubEaId: 9,
+              price: 834e3
+            },
+            {
+              definitionId: 203376,
+              score: 8300,
+              clubEaId: 9,
+              price: 43250
+            },
+            {
+              definitionId: 212831,
+              score: 5500,
+              clubEaId: 9,
+              price: 32e3
+            },
+            {
+              definitionId: 233731,
+              score: 4100,
+              clubEaId: 9,
+              price: 19750
+            },
+            {
+              definitionId: 236772,
+              score: 4100,
+              clubEaId: 9,
+              price: 31e3
+            },
+            {
+              definitionId: 256630,
+              score: 4100,
+              clubEaId: 9,
+              price: 12e3
+            },
+            {
+              definitionId: 246104,
+              score: 2100,
+              clubEaId: 9,
+              price: 27750
+            },
+            {
+              definitionId: 257289,
+              score: 2100,
+              clubEaId: 9,
+              price: 35e3
+            },
+            {
+              definitionId: 50596300,
+              score: 2100,
+              clubEaId: 9,
+              price: 82e3
+            },
+            {
+              definitionId: 239837,
+              score: 830,
+              clubEaId: 9,
+              price: 700
+            },
+            {
+              definitionId: 242516,
+              score: 340,
+              clubEaId: 9,
+              price: 650
+            },
+            {
+              definitionId: 253149,
+              score: 280,
+              clubEaId: 9,
+              price: 2800
+            },
+            {
+              definitionId: 260908,
+              score: 280,
+              clubEaId: 9,
+              price: 1100
+            },
+            {
+              definitionId: 235805,
+              score: 180,
+              clubEaId: 9,
+              price: 2900
+            },
+            {
+              definitionId: 76042,
+              score: 160,
+              clubEaId: 9,
+              price: 1e3
+            },
+            {
+              definitionId: 264298,
+              score: 160,
+              clubEaId: 9,
+              price: 800
+            },
+            {
+              definitionId: 232487,
+              score: 140,
+              clubEaId: 9,
+              price: 1400
+            },
+            {
+              definitionId: 232223,
+              score: 100,
+              clubEaId: 9,
+              price: 2800
+            },
+            {
+              definitionId: 80376,
+              score: 90,
+              clubEaId: 9,
+              price: 2300
+            }
+          ]
+        }
+      },
+      {
+        id: 25,
+        categoryId: 5,
+        category: "premier-league",
+        name: "London City Lionesses",
+        slug: "london-city-lionesses",
+        description: "Requires 15 London City Lionesses Women's players to complete.",
+        requiredCards: 15,
+        priority: 17,
+        clubEaId: 132176,
+        totalTokens: 80,
+        grades: [
+          {
+            name: "D",
+            threshold: 10,
+            tokens: 0
+          },
+          {
+            name: "C",
+            threshold: 5e3,
+            tokens: 0
+          },
+          {
+            name: "B",
+            threshold: 25e3,
+            tokens: 15
+          },
+          {
+            name: "A",
+            threshold: 31500,
+            tokens: 25
+          },
+          {
+            name: "S",
+            threshold: 44e3,
+            tokens: 40
+          }
+        ],
+        recommended: {
+          grade: "S",
+          tokens: 80,
+          baseScore: 39148,
+          totalScore: 46079,
+          items: [
+            {
+              definitionId: 227203,
+              score: 19e3,
+              clubEaId: 132176,
+              price: 1015e3
+            },
+            {
+              definitionId: 236479,
+              score: 8300,
+              clubEaId: 132176,
+              price: 8500
+            },
+            {
+              definitionId: 227361,
+              score: 5500,
+              clubEaId: 132176,
+              price: 59500
+            },
+            {
+              definitionId: 232202,
+              score: 2100,
+              clubEaId: 132176,
+              price: 3300
+            },
+            {
+              definitionId: 50596595,
+              score: 1038,
+              clubEaId: 132176,
+              price: null
+            },
+            {
+              definitionId: 237197,
+              score: 830,
+              clubEaId: 132176,
+              price: 23750
+            },
+            {
+              definitionId: 264947,
+              score: 830,
+              clubEaId: 132176,
+              price: 4e3
+            },
+            {
+              definitionId: 227069,
+              score: 340,
+              clubEaId: 132176,
+              price: 650
+            },
+            {
+              definitionId: 226997,
+              score: 280,
+              clubEaId: 132176,
+              price: 2100
+            },
+            {
+              definitionId: 233751,
+              score: 280,
+              clubEaId: 132176,
+              price: 750
+            },
+            {
+              definitionId: 235659,
+              score: 180,
+              clubEaId: 132176,
+              price: 650
+            },
+            {
+              definitionId: 227109,
+              score: 140,
+              clubEaId: 132176,
+              price: 1e3
+            },
+            {
+              definitionId: 268941,
+              score: 140,
+              clubEaId: 132176,
+              price: 1800
+            },
+            {
+              definitionId: 276771,
+              score: 100,
+              clubEaId: 132176,
+              price: 2100
+            },
+            {
+              definitionId: 74404,
+              score: 90,
+              clubEaId: 132176,
+              price: 2e3
+            }
+          ]
+        }
+      },
+      {
+        id: 49,
+        categoryId: 5,
+        category: "premier-league",
+        name: "Manchester City",
+        slug: "manchester-city",
+        description: "Requires 20 Manchester City Mens or Womens players to complete.",
+        requiredCards: 20,
+        priority: 18,
+        clubEaId: 10,
+        totalTokens: 220,
+        grades: [
+          {
+            name: "D",
+            threshold: 10,
+            tokens: 0
+          },
+          {
+            name: "C",
+            threshold: 6e4,
+            tokens: 0
+          },
+          {
+            name: "B",
+            threshold: 7e5,
+            tokens: 50
+          },
+          {
+            name: "A",
+            threshold: 13e5,
+            tokens: 70
+          },
+          {
+            name: "S",
+            threshold: 25e5,
+            tokens: 100
+          }
+        ],
+        recommended: {
+          grade: "C",
+          tokens: 0,
+          baseScore: 102571,
+          totalScore: 123633,
+          items: [
+            {
+              definitionId: 239085,
+              score: 19e3,
+              clubEaId: 10,
+              price: 155e3
+            },
+            {
+              definitionId: 246219,
+              score: 14e3,
+              clubEaId: 116017,
+              price: 23500
+            },
+            {
+              definitionId: 230621,
+              score: 11e3,
+              clubEaId: 10,
+              price: 41e3
+            },
+            {
+              definitionId: 245830,
+              score: 8300,
+              clubEaId: 116017,
+              price: 8400
+            },
+            {
+              definitionId: 67350100,
+              score: 7688,
+              clubEaId: 10,
+              price: 143e3
+            },
+            {
+              definitionId: 233746,
+              score: 5500,
+              clubEaId: 116017,
+              price: 6e3
+            },
+            {
+              definitionId: 239818,
+              score: 5500,
+              clubEaId: 10,
+              price: 5800
+            },
+            {
+              definitionId: 257008,
+              score: 5500,
+              clubEaId: 116017,
+              price: 6200
+            },
+            {
+              definitionId: 50572884,
+              score: 5125,
+              clubEaId: 10,
+              price: 87500
+            },
+            {
+              definitionId: 251570,
+              score: 4100,
+              clubEaId: 10,
+              price: 59e3
+            },
+            {
+              definitionId: 50578738,
+              score: 4100,
+              clubEaId: 10,
+              price: 3900
+            },
+            {
+              definitionId: 227254,
+              score: 2100,
+              clubEaId: 116017,
+              price: 2e3
+            },
+            {
+              definitionId: 241236,
+              score: 2100,
+              clubEaId: 10,
+              price: 9100
+            },
+            {
+              definitionId: 251517,
+              score: 2100,
+              clubEaId: 10,
+              price: 7300
+            },
+            {
+              definitionId: 264875,
+              score: 2100,
+              clubEaId: 116017,
+              price: 2200
+            },
+            {
+              definitionId: 50585891,
+              score: 1038,
+              clubEaId: 10,
+              price: null
+            },
+            {
+              definitionId: 237692,
+              score: 830,
+              clubEaId: 10,
+              price: 850
+            },
+            {
+              definitionId: 245802,
+              score: 830,
+              clubEaId: 116017,
+              price: 850
+            },
+            {
+              definitionId: 246420,
+              score: 830,
+              clubEaId: 10,
+              price: 68500
+            },
+            {
+              definitionId: 254243,
+              score: 830,
+              clubEaId: 10,
+              price: 900
+            }
+          ]
+        }
+      },
+      {
+        id: 44,
+        categoryId: 5,
+        category: "premier-league",
+        name: "Manchester United",
+        slug: "manchester-united",
+        description: "Requires 20 Manchester United Mens or Womens players to complete.",
+        requiredCards: 20,
+        priority: 19,
+        clubEaId: 11,
+        totalTokens: 220,
+        grades: [
+          {
+            name: "D",
+            threshold: 10,
+            tokens: 0
+          },
+          {
+            name: "C",
+            threshold: 2e4,
+            tokens: 0
+          },
+          {
+            name: "B",
+            threshold: 3e5,
+            tokens: 50
+          },
+          {
+            name: "A",
+            threshold: 7e5,
+            tokens: 70
+          },
+          {
+            name: "S",
+            threshold: 15e5,
+            tokens: 100
+          }
+        ],
+        recommended: {
+          grade: "C",
+          tokens: 0,
+          baseScore: 28255,
+          totalScore: 34189,
+          items: [
+            {
+              definitionId: 212198,
+              score: 11e3,
+              clubEaId: 11,
+              price: 23500
+            },
+            {
+              definitionId: 50548041,
+              score: 2625,
+              clubEaId: 11,
+              price: null
+            },
+            {
+              definitionId: 216393,
+              score: 2100,
+              clubEaId: 11,
+              price: 2500
+            },
+            {
+              definitionId: 244302,
+              score: 2100,
+              clubEaId: 116012,
+              price: 2200
+            },
+            {
+              definitionId: 265293,
+              score: 2100,
+              clubEaId: 116012,
+              price: 2200
+            },
+            {
+              definitionId: 265340,
+              score: 2100,
+              clubEaId: 116012,
+              price: 2200
+            },
+            {
+              definitionId: 227013,
+              score: 830,
+              clubEaId: 116012,
+              price: 1300
+            },
+            {
+              definitionId: 240243,
+              score: 830,
+              clubEaId: 11,
+              price: 1300
+            },
+            {
+              definitionId: 243014,
+              score: 830,
+              clubEaId: 11,
+              price: 23500
+            },
+            {
+              definitionId: 263011,
+              score: 830,
+              clubEaId: 116012,
+              price: 900
+            },
+            {
+              definitionId: 267212,
+              score: 410,
+              clubEaId: 116012,
+              price: 750
+            },
+            {
+              definitionId: 231677,
+              score: 340,
+              clubEaId: 11,
+              price: 71e3
+            },
+            {
+              definitionId: 239301,
+              score: 340,
+              clubEaId: 11,
+              price: 650
+            },
+            {
+              definitionId: 260592,
+              score: 340,
+              clubEaId: 11,
+              price: 900
+            },
+            {
+              definitionId: 266254,
+              score: 340,
+              clubEaId: 116012,
+              price: 650
+            },
+            {
+              definitionId: 272110,
+              score: 340,
+              clubEaId: 116012,
+              price: 650
+            },
+            {
+              definitionId: 269136,
+              score: 280,
+              clubEaId: 11,
+              price: 650
+            },
+            {
+              definitionId: 273227,
+              score: 180,
+              clubEaId: 116012,
+              price: 800
+            },
+            {
+              definitionId: 50604148,
+              score: 180,
+              clubEaId: 11,
+              price: 650
+            },
+            {
+              definitionId: 254088,
+              score: 160,
+              clubEaId: 11,
+              price: 650
+            }
+          ]
+        }
+      },
+      {
+        id: 92,
+        categoryId: 5,
+        category: "premier-league",
+        name: "Newcastle United",
+        slug: "newcastle-united",
+        description: "Requires 15 Newcastle United Mens players to complete.",
+        requiredCards: 15,
+        priority: 20,
+        clubEaId: 13,
+        totalTokens: 80,
+        grades: [
+          {
+            name: "D",
+            threshold: 10,
+            tokens: 0
+          },
+          {
+            name: "C",
+            threshold: 11500,
+            tokens: 0
+          },
+          {
+            name: "B",
+            threshold: 154e3,
+            tokens: 15
+          },
+          {
+            name: "A",
+            threshold: 187500,
+            tokens: 25
+          },
+          {
+            name: "S",
+            threshold: 25e4,
+            tokens: 40
+          }
+        ],
+        recommended: {
+          grade: "D",
+          tokens: 0,
+          baseScore: 3350,
+          totalScore: 3851,
+          items: [
+            {
+              definitionId: 266127,
+              score: 410,
+              clubEaId: 13,
+              price: 750
+            },
+            {
+              definitionId: 210047,
+              score: 280,
+              clubEaId: 13,
+              price: 700
+            },
+            {
+              definitionId: 251809,
+              score: 280,
+              clubEaId: 13,
+              price: 750
+            },
+            {
+              definitionId: 256261,
+              score: 280,
+              clubEaId: 13,
+              price: 700
+            },
+            {
+              definitionId: 262118,
+              score: 280,
+              clubEaId: 13,
+              price: 700
+            },
+            {
+              definitionId: 50586717,
+              score: 280,
+              clubEaId: 13,
+              price: 700
+            },
+            {
+              definitionId: 50605894,
+              score: 280,
+              clubEaId: 13,
+              price: null
+            },
+            {
+              definitionId: 223334,
+              score: 180,
+              clubEaId: 13,
+              price: 700
+            },
+            {
+              definitionId: 234742,
+              score: 180,
+              clubEaId: 13,
+              price: 700
+            },
+            {
+              definitionId: 234824,
+              score: 180,
+              clubEaId: 13,
+              price: 700
+            },
+            {
+              definitionId: 206085,
+              score: 160,
+              clubEaId: 13,
+              price: 650
+            },
+            {
+              definitionId: 257470,
+              score: 160,
+              clubEaId: 13,
+              price: 950
+            },
+            {
+              definitionId: 71418,
+              score: 140,
+              clubEaId: 13,
+              price: 650
+            },
+            {
+              definitionId: 50607696,
+              score: 140,
+              clubEaId: 13,
+              price: 700
+            },
+            {
+              definitionId: 274246,
+              score: 120,
+              clubEaId: 13,
+              price: 700
+            }
+          ]
+        }
+      },
+      {
+        id: 48,
+        categoryId: 5,
+        category: "premier-league",
+        name: "Nottingham Forest",
+        slug: "nottingham-forest",
+        description: "Requires 15 Nottingham Forest Mens players to complete.",
+        requiredCards: 15,
+        priority: 21,
+        clubEaId: 14,
+        totalTokens: 38,
+        grades: [
+          {
+            name: "D",
+            threshold: 10,
+            tokens: 0
+          },
+          {
+            name: "C",
+            threshold: 2100,
+            tokens: 0
+          },
+          {
+            name: "B",
+            threshold: 7200,
+            tokens: 8
+          },
+          {
+            name: "A",
+            threshold: 10700,
+            tokens: 10
+          },
+          {
+            name: "S",
+            threshold: 15200,
+            tokens: 20
+          }
+        ],
+        recommended: {
+          grade: "C",
+          tokens: 0,
+          baseScore: 3643,
+          totalScore: 4127,
+          items: [
+            {
+              definitionId: 50602179,
+              score: 513,
+              clubEaId: 14,
+              price: null
+            },
+            {
+              definitionId: 236015,
+              score: 410,
+              clubEaId: 14,
+              price: 700
+            },
+            {
+              definitionId: 278016,
+              score: 340,
+              clubEaId: 14,
+              price: 2100
+            },
+            {
+              definitionId: 50569294,
+              score: 340,
+              clubEaId: 14,
+              price: 650
+            },
+            {
+              definitionId: 192123,
+              score: 280,
+              clubEaId: 14,
+              price: 650
+            },
+            {
+              definitionId: 199641,
+              score: 280,
+              clubEaId: 14,
+              price: 750
+            },
+            {
+              definitionId: 270531,
+              score: 280,
+              clubEaId: 14,
+              price: 2300
+            },
+            {
+              definitionId: 238095,
+              score: 180,
+              clubEaId: 14,
+              price: 700
+            },
+            {
+              definitionId: 243057,
+              score: 180,
+              clubEaId: 14,
+              price: 700
+            },
+            {
+              definitionId: 224656,
+              score: 160,
+              clubEaId: 14,
+              price: 800
+            },
+            {
+              definitionId: 233195,
+              score: 140,
+              clubEaId: 14,
+              price: 750
+            },
+            {
+              definitionId: 237819,
+              score: 140,
+              clubEaId: 14,
+              price: 700
+            },
+            {
+              definitionId: 240740,
+              score: 140,
+              clubEaId: 14,
+              price: 700
+            },
+            {
+              definitionId: 253444,
+              score: 140,
+              clubEaId: 14,
+              price: 700
+            },
+            {
+              definitionId: 257980,
+              score: 120,
+              clubEaId: 14,
+              price: 700
+            }
+          ]
+        }
+      },
+      {
+        id: 86,
+        categoryId: 5,
+        category: "premier-league",
+        name: "Sunderland",
+        slug: "sunderland",
+        description: "Requires 15 Sunderland Mens players to complete.",
+        requiredCards: 15,
+        priority: 22,
+        clubEaId: 106,
+        totalTokens: 80,
+        grades: [
+          {
+            name: "D",
+            threshold: 10,
+            tokens: 0
+          },
+          {
+            name: "C",
+            threshold: 2500,
+            tokens: 0
+          },
+          {
+            name: "B",
+            threshold: 11e3,
+            tokens: 15
+          },
+          {
+            name: "A",
+            threshold: 15e3,
+            tokens: 25
+          },
+          {
+            name: "S",
+            threshold: 22500,
+            tokens: 40
+          }
+        ],
+        recommended: {
+          grade: "C",
+          tokens: 0,
+          baseScore: 4510,
+          totalScore: 5109,
+          items: [
+            {
+              definitionId: 199503,
+              score: 2100,
+              clubEaId: 106,
+              price: 2e3
+            },
+            {
+              definitionId: 226166,
+              score: 280,
+              clubEaId: 106,
+              price: 650
+            },
+            {
+              definitionId: 240359,
+              score: 280,
+              clubEaId: 106,
+              price: 750
+            },
+            {
+              definitionId: 263798,
+              score: 280,
+              clubEaId: 106,
+              price: 650
+            },
+            {
+              definitionId: 236045,
+              score: 180,
+              clubEaId: 106,
+              price: 700
+            },
+            {
+              definitionId: 246350,
+              score: 180,
+              clubEaId: 106,
+              price: 700
+            },
+            {
+              definitionId: 269230,
+              score: 180,
+              clubEaId: 106,
+              price: 700
+            },
+            {
+              definitionId: 50569633,
+              score: 160,
+              clubEaId: 106,
+              price: 750
+            },
+            {
+              definitionId: 202371,
+              score: 140,
+              clubEaId: 106,
+              price: 950
+            },
+            {
+              definitionId: 243908,
+              score: 140,
+              clubEaId: 106,
+              price: 1e3
+            },
+            {
+              definitionId: 266400,
+              score: 140,
+              clubEaId: 106,
+              price: 950
+            },
+            {
+              definitionId: 264293,
+              score: 120,
+              clubEaId: 106,
+              price: 1900
+            },
+            {
+              definitionId: 275048,
+              score: 120,
+              clubEaId: 106,
+              price: 650
+            },
+            {
+              definitionId: 50588068,
+              score: 120,
+              clubEaId: 106,
+              price: 650
+            },
+            {
+              definitionId: 74491,
+              score: 90,
+              clubEaId: 106,
+              price: 700
+            }
+          ]
+        }
+      },
+      {
+        id: 8,
+        categoryId: 5,
+        category: "premier-league",
+        name: "Tottenham Hotspur",
+        slug: "tottenham-hotspur",
+        description: "Requires 15 Tottenham Hotspur Mens or Womens players to complete.",
+        requiredCards: 15,
+        priority: 23,
+        clubEaId: 18,
+        totalTokens: 155,
+        grades: [
+          {
+            name: "D",
+            threshold: 10,
+            tokens: 0
+          },
+          {
+            name: "C",
+            threshold: 9e3,
+            tokens: 0
+          },
+          {
+            name: "B",
+            threshold: 4e4,
+            tokens: 30
+          },
+          {
+            name: "A",
+            threshold: 1e5,
+            tokens: 50
+          },
+          {
+            name: "S",
+            threshold: 2e5,
+            tokens: 75
+          }
+        ],
+        recommended: {
+          grade: "D",
+          tokens: 0,
+          baseScore: 6658,
+          totalScore: 7751,
+          items: [
+            {
+              definitionId: 241096,
+              score: 2100,
+              clubEaId: 18,
+              price: 9500
+            },
+            {
+              definitionId: 67382041,
+              score: 525,
+              clubEaId: 116011,
+              price: 13e3
+            },
+            {
+              definitionId: 50602057,
+              score: 513,
+              clubEaId: 18,
+              price: null
+            },
+            {
+              definitionId: 243576,
+              score: 410,
+              clubEaId: 18,
+              price: 700
+            },
+            {
+              definitionId: 50604825,
+              score: 350,
+              clubEaId: 116011,
+              price: 1e4
+            },
+            {
+              definitionId: 220697,
+              score: 340,
+              clubEaId: 18,
+              price: 650
+            },
+            {
+              definitionId: 236506,
+              score: 340,
+              clubEaId: 18,
+              price: 650
+            },
+            {
+              definitionId: 50588323,
+              score: 340,
+              clubEaId: 18,
+              price: 2400
+            },
+            {
+              definitionId: 245155,
+              score: 280,
+              clubEaId: 18,
+              price: 650
+            },
+            {
+              definitionId: 245367,
+              score: 280,
+              clubEaId: 18,
+              price: 800
+            },
+            {
+              definitionId: 247394,
+              score: 280,
+              clubEaId: 18,
+              price: 650
+            },
+            {
+              definitionId: 258908,
+              score: 280,
+              clubEaId: 18,
+              price: 750
+            },
+            {
+              definitionId: 264453,
+              score: 280,
+              clubEaId: 18,
+              price: 35e3
+            },
+            {
+              definitionId: 216267,
+              score: 180,
+              clubEaId: 18,
+              price: 700
+            },
+            {
+              definitionId: 273177,
+              score: 160,
+              clubEaId: 116011,
+              price: 950
+            }
+          ]
+        }
+      },
+      {
+        id: 9,
+        categoryId: 5,
+        category: "premier-league",
+        name: "West Ham",
+        slug: "west-ham",
+        description: "Requires 15 West Ham Women's players to complete.",
+        requiredCards: 15,
+        priority: 24,
+        clubEaId: 19,
+        totalTokens: 28,
+        grades: [
+          {
+            name: "D",
+            threshold: 10,
+            tokens: 0
+          },
+          {
+            name: "C",
+            threshold: 1400,
+            tokens: 0
+          },
+          {
+            name: "B",
+            threshold: 2e3,
+            tokens: 5
+          },
+          {
+            name: "A",
+            threshold: 3200,
+            tokens: 8
+          },
+          {
+            name: "S",
+            threshold: 4600,
+            tokens: 15
+          }
+        ],
+        recommended: {
+          grade: "B",
+          tokens: 5,
+          baseScore: 2030,
+          totalScore: 2287,
+          items: [
+            {
+              definitionId: 264895,
+              score: 410,
+              clubEaId: 116014,
+              price: 650
+            },
+            {
+              definitionId: 50558645,
+              score: 280,
+              clubEaId: 116014,
+              price: 750
+            },
+            {
+              definitionId: 227348,
+              score: 180,
+              clubEaId: 116014,
+              price: 650
+            },
+            {
+              definitionId: 265273,
+              score: 180,
+              clubEaId: 116014,
+              price: 650
+            },
+            {
+              definitionId: 267328,
+              score: 140,
+              clubEaId: 116014,
+              price: 750
+            },
+            {
+              definitionId: 248728,
+              score: 120,
+              clubEaId: 116014,
+              price: 7300
+            },
+            {
+              definitionId: 256094,
+              score: 100,
+              clubEaId: 116014,
+              price: 1800
+            },
+            {
+              definitionId: 265845,
+              score: 100,
+              clubEaId: 116014,
+              price: 2e3
+            },
+            {
+              definitionId: 72791,
+              score: 90,
+              clubEaId: 116014,
+              price: 3e3
+            },
+            {
+              definitionId: 80327,
+              score: 90,
+              clubEaId: 116014,
+              price: 4700
+            },
+            {
+              definitionId: 239756,
+              score: 90,
+              clubEaId: 116014,
+              price: 3200
+            },
+            {
+              definitionId: 265975,
+              score: 90,
+              clubEaId: 116014,
+              price: 1500
+            },
+            {
+              definitionId: 273405,
+              score: 90,
+              clubEaId: 116014,
+              price: 2200
+            },
+            {
+              definitionId: 72075,
+              score: 35,
+              clubEaId: 116014,
+              price: 650
+            },
+            {
+              definitionId: 273404,
+              score: 35,
+              clubEaId: 116014,
+              price: 700
+            }
+          ]
+        }
+      },
+      {
+        id: 16,
+        categoryId: 1,
+        category: "laliga",
+        name: "Athletic Club",
+        slug: "athletic-club",
+        description: "Requires 15 Athletic Club Mens or Womens players to complete.",
+        requiredCards: 15,
+        priority: 1,
+        clubEaId: 448,
+        totalTokens: 80,
+        grades: [
+          {
+            name: "D",
+            threshold: 10,
+            tokens: 0
+          },
+          {
+            name: "C",
+            threshold: 7e3,
+            tokens: 0
+          },
+          {
+            name: "B",
+            threshold: 52500,
+            tokens: 15
+          },
+          {
+            name: "A",
+            threshold: 79e3,
+            tokens: 25
+          },
+          {
+            name: "S",
+            threshold: 128e3,
+            tokens: 40
+          }
+        ],
+        recommended: {
+          grade: "C",
+          tokens: 0,
+          baseScore: 12323,
+          totalScore: 14918,
+          items: [
+            {
+              definitionId: 67388468,
+              score: 3938,
+              clubEaId: 448,
+              price: 159e3
+            },
+            {
+              definitionId: 50611252,
+              score: 2625,
+              clubEaId: 448,
+              price: 145e3
+            },
+            {
+              definitionId: 230869,
+              score: 2100,
+              clubEaId: 448,
+              price: 8500
+            },
+            {
+              definitionId: 212218,
+              score: 830,
+              clubEaId: 448,
+              price: 700
+            },
+            {
+              definitionId: 256516,
+              score: 830,
+              clubEaId: 448,
+              price: 54e3
+            },
+            {
+              definitionId: 244675,
+              score: 340,
+              clubEaId: 448,
+              price: 750
+            },
+            {
+              definitionId: 248550,
+              score: 340,
+              clubEaId: 448,
+              price: 650
+            },
+            {
+              definitionId: 216201,
+              score: 180,
+              clubEaId: 448,
+              price: 1700
+            },
+            {
+              definitionId: 227950,
+              score: 180,
+              clubEaId: 448,
+              price: 700
+            },
+            {
+              definitionId: 272212,
+              score: 180,
+              clubEaId: 116328,
+              price: 700
+            },
+            {
+              definitionId: 183512,
+              score: 160,
+              clubEaId: 448,
+              price: 700
+            },
+            {
+              definitionId: 205157,
+              score: 160,
+              clubEaId: 448,
+              price: 700
+            },
+            {
+              definitionId: 225201,
+              score: 160,
+              clubEaId: 448,
+              price: 650
+            },
+            {
+              definitionId: 279604,
+              score: 160,
+              clubEaId: 448,
+              price: 800
+            },
+            {
+              definitionId: 272125,
+              score: 140,
+              clubEaId: 116328,
+              price: 700
+            }
+          ]
+        }
+      },
+      {
+        id: 53,
+        categoryId: 1,
+        category: "laliga",
+        name: "Atl\xE9tico de Madrid",
+        slug: "atletico-de-madrid",
+        description: "Requires 20 Atl\xE9tico de Madrid Mens or Womens players to complete.",
+        requiredCards: 20,
+        priority: 2,
+        clubEaId: 240,
+        totalTokens: 220,
+        grades: [
+          {
+            name: "D",
+            threshold: 10,
+            tokens: 0
+          },
+          {
+            name: "C",
+            threshold: 2e4,
+            tokens: 0
+          },
+          {
+            name: "B",
+            threshold: 4e5,
+            tokens: 50
+          },
+          {
+            name: "A",
+            threshold: 7e5,
+            tokens: 70
+          },
+          {
+            name: "S",
+            threshold: 13e5,
+            tokens: 100
+          }
+        ],
+        recommended: {
+          grade: "C",
+          tokens: 0,
+          baseScore: 22476,
+          totalScore: 28002,
+          items: [
+            {
+              definitionId: 200389,
+              score: 8300,
+              clubEaId: 240,
+              price: 13e3
+            },
+            {
+              definitionId: 246191,
+              score: 4100,
+              clubEaId: 240,
+              price: 94500
+            },
+            {
+              definitionId: 210035,
+              score: 2100,
+              clubEaId: 240,
+              price: 2300
+            },
+            {
+              definitionId: 226161,
+              score: 2100,
+              clubEaId: 240,
+              price: 82e3
+            },
+            {
+              definitionId: 84129710,
+              score: 638,
+              clubEaId: 240,
+              price: 25250
+            },
+            {
+              definitionId: 50575428,
+              score: 513,
+              clubEaId: 240,
+              price: null
+            },
+            {
+              definitionId: 67352494,
+              score: 425,
+              clubEaId: 240,
+              price: 13500
+            },
+            {
+              definitionId: 216549,
+              score: 410,
+              clubEaId: 240,
+              price: 700
+            },
+            {
+              definitionId: 230899,
+              score: 410,
+              clubEaId: 240,
+              price: 8e3
+            },
+            {
+              definitionId: 244669,
+              score: 410,
+              clubEaId: 240,
+              price: 650
+            },
+            {
+              definitionId: 247103,
+              score: 410,
+              clubEaId: 240,
+              price: 900
+            },
+            {
+              definitionId: 257279,
+              score: 410,
+              clubEaId: 240,
+              price: 650
+            },
+            {
+              definitionId: 272449,
+              score: 410,
+              clubEaId: 240,
+              price: 700
+            },
+            {
+              definitionId: 214979,
+              score: 340,
+              clubEaId: 240,
+              price: 950
+            },
+            {
+              definitionId: 232488,
+              score: 340,
+              clubEaId: 240,
+              price: 650
+            },
+            {
+              definitionId: 253396,
+              score: 340,
+              clubEaId: 240,
+              price: 3200
+            },
+            {
+              definitionId: 266039,
+              score: 280,
+              clubEaId: 240,
+              price: 1e3
+            },
+            {
+              definitionId: 243780,
+              score: 180,
+              clubEaId: 240,
+              price: 650
+            },
+            {
+              definitionId: 259516,
+              score: 180,
+              clubEaId: 240,
+              price: 650
+            },
+            {
+              definitionId: 50575278,
+              score: 180,
+              clubEaId: 240,
+              price: 1700
+            }
+          ]
+        }
+      },
+      {
+        id: 12,
+        categoryId: 1,
+        category: "laliga",
+        name: "CA Osasuna",
+        slug: "ca-osasuna",
+        description: "Requires 15 CA Osasuna Mens players to complete.",
+        requiredCards: 15,
+        priority: 3,
+        clubEaId: 479,
+        totalTokens: 28,
+        grades: [
+          {
+            name: "D",
+            threshold: 10,
+            tokens: 0
+          },
+          {
+            name: "C",
+            threshold: 1300,
+            tokens: 0
+          },
+          {
+            name: "B",
+            threshold: 1800,
+            tokens: 5
+          },
+          {
+            name: "A",
+            threshold: 2800,
+            tokens: 8
+          },
+          {
+            name: "S",
+            threshold: 4100,
+            tokens: 15
+          }
+        ],
+        recommended: {
+          grade: "B",
+          tokens: 5,
+          baseScore: 2150,
+          totalScore: 2453,
+          items: [
+            {
+              definitionId: 188335,
+              score: 340,
+              clubEaId: 479,
+              price: 650
+            },
+            {
+              definitionId: 50538238,
+              score: 280,
+              clubEaId: 479,
+              price: null
+            },
+            {
+              definitionId: 224003,
+              score: 160,
+              clubEaId: 479,
+              price: 750
+            },
+            {
+              definitionId: 259066,
+              score: 160,
+              clubEaId: 479,
+              price: 650
+            },
+            {
+              definitionId: 234730,
+              score: 140,
+              clubEaId: 479,
+              price: 850
+            },
+            {
+              definitionId: 193314,
+              score: 120,
+              clubEaId: 479,
+              price: 950
+            },
+            {
+              definitionId: 211022,
+              score: 120,
+              clubEaId: 479,
+              price: 950
+            },
+            {
+              definitionId: 243976,
+              score: 120,
+              clubEaId: 479,
+              price: 1700
+            },
+            {
+              definitionId: 247495,
+              score: 120,
+              clubEaId: 479,
+              price: 650
+            },
+            {
+              definitionId: 206590,
+              score: 100,
+              clubEaId: 479,
+              price: 700
+            },
+            {
+              definitionId: 208137,
+              score: 100,
+              clubEaId: 479,
+              price: 1500
+            },
+            {
+              definitionId: 258937,
+              score: 100,
+              clubEaId: 479,
+              price: 1800
+            },
+            {
+              definitionId: 271145,
+              score: 100,
+              clubEaId: 479,
+              price: 1200
+            },
+            {
+              definitionId: 50563260,
+              score: 100,
+              clubEaId: 479,
+              price: 650
+            },
+            {
+              definitionId: 253416,
+              score: 90,
+              clubEaId: 479,
+              price: 2100
+            }
+          ]
+        }
+      },
+      {
+        id: 81,
+        categoryId: 1,
+        category: "laliga",
+        name: "Celta de Vigo",
+        slug: "celta-de-vigo",
+        description: "Requires 15 Celta de Vigo Mens players to complete.",
+        requiredCards: 15,
+        priority: 4,
+        clubEaId: 450,
+        totalTokens: 38,
+        grades: [
+          {
+            name: "D",
+            threshold: 10,
+            tokens: 0
+          },
+          {
+            name: "C",
+            threshold: 1300,
+            tokens: 0
+          },
+          {
+            name: "B",
+            threshold: 4600,
+            tokens: 8
+          },
+          {
+            name: "A",
+            threshold: 7e3,
+            tokens: 10
+          },
+          {
+            name: "S",
+            threshold: 9900,
+            tokens: 20
+          }
+        ],
+        recommended: {
+          grade: "C",
+          tokens: 0,
+          baseScore: 2240,
+          totalScore: 2582,
+          items: [
+            {
+              definitionId: 50552469,
+              score: 340,
+              clubEaId: 450,
+              price: null
+            },
+            {
+              definitionId: 192629,
+              score: 280,
+              clubEaId: 450,
+              price: 750
+            },
+            {
+              definitionId: 224179,
+              score: 180,
+              clubEaId: 450,
+              price: 700
+            },
+            {
+              definitionId: 192638,
+              score: 160,
+              clubEaId: 450,
+              price: 700
+            },
+            {
+              definitionId: 235522,
+              score: 160,
+              clubEaId: 450,
+              price: 650
+            },
+            {
+              definitionId: 220821,
+              score: 140,
+              clubEaId: 450,
+              price: 700
+            },
+            {
+              definitionId: 234102,
+              score: 140,
+              clubEaId: 450,
+              price: 700
+            },
+            {
+              definitionId: 259233,
+              score: 140,
+              clubEaId: 450,
+              price: 650
+            },
+            {
+              definitionId: 231591,
+              score: 120,
+              clubEaId: 450,
+              price: 1700
+            },
+            {
+              definitionId: 72426,
+              score: 100,
+              clubEaId: 450,
+              price: 750
+            },
+            {
+              definitionId: 252866,
+              score: 100,
+              clubEaId: 450,
+              price: 1800
+            },
+            {
+              definitionId: 263227,
+              score: 100,
+              clubEaId: 450,
+              price: 950
+            },
+            {
+              definitionId: 276745,
+              score: 100,
+              clubEaId: 450,
+              price: 1900
+            },
+            {
+              definitionId: 265800,
+              score: 90,
+              clubEaId: 450,
+              price: 700
+            },
+            {
+              definitionId: 266331,
+              score: 90,
+              clubEaId: 450,
+              price: 1800
+            }
+          ]
+        }
+      },
+      {
+        id: 89,
+        categoryId: 1,
+        category: "laliga",
+        name: "Costa Adeje Tenerife",
+        slug: "costa-adeje-tenerife",
+        description: "Requires 15 Costa Adeje Tenerife Women's players to complete.",
+        requiredCards: 15,
+        priority: 5,
+        clubEaId: 116332,
+        totalTokens: 28,
+        grades: [
+          {
+            name: "D",
+            threshold: 10,
+            tokens: 0
+          },
+          {
+            name: "C",
+            threshold: 300,
+            tokens: 0
+          },
+          {
+            name: "B",
+            threshold: 500,
+            tokens: 5
+          },
+          {
+            name: "A",
+            threshold: 700,
+            tokens: 8
+          },
+          {
+            name: "S",
+            threshold: 1e3,
+            tokens: 15
+          }
+        ],
+        recommended: {
+          grade: "S",
+          tokens: 28,
+          baseScore: 1125,
+          totalScore: 1308,
+          items: [
+            {
+              definitionId: 272235,
+              score: 180,
+              clubEaId: 116332,
+              price: 800
+            },
+            {
+              definitionId: 272257,
+              score: 180,
+              clubEaId: 116332,
+              price: 750
+            },
+            {
+              definitionId: 272236,
+              score: 140,
+              clubEaId: 116332,
+              price: 1400
+            },
+            {
+              definitionId: 272113,
+              score: 120,
+              clubEaId: 116332,
+              price: 2400
+            },
+            {
+              definitionId: 277048,
+              score: 100,
+              clubEaId: 116332,
+              price: 2800
+            },
+            {
+              definitionId: 269145,
+              score: 90,
+              clubEaId: 116332,
+              price: 3800
+            },
+            {
+              definitionId: 77683,
+              score: 35,
+              clubEaId: 116332,
+              price: 1400
+            },
+            {
+              definitionId: 79146,
+              score: 35,
+              clubEaId: 116332,
+              price: 1500
+            },
+            {
+              definitionId: 267287,
+              score: 35,
+              clubEaId: 116332,
+              price: 1500
+            },
+            {
+              definitionId: 272004,
+              score: 35,
+              clubEaId: 116332,
+              price: 1300
+            },
+            {
+              definitionId: 272183,
+              score: 35,
+              clubEaId: 116332,
+              price: 1300
+            },
+            {
+              definitionId: 272214,
+              score: 35,
+              clubEaId: 116332,
+              price: 1400
+            },
+            {
+              definitionId: 272228,
+              score: 35,
+              clubEaId: 116332,
+              price: 1400
+            },
+            {
+              definitionId: 277123,
+              score: 35,
+              clubEaId: 116332,
+              price: 1400
+            },
+            {
+              definitionId: 277278,
+              score: 35,
+              clubEaId: 116332,
+              price: 1300
+            }
+          ]
+        }
+      },
+      {
+        id: 62,
+        categoryId: 1,
+        category: "laliga",
+        name: "Deportivo Alav\xE9s",
+        slug: "deportivo-alaves",
+        description: "Requires 15 Deportivo Alav\xE9s Mens players to complete.",
+        requiredCards: 15,
+        priority: 6,
+        clubEaId: 463,
+        totalTokens: 28,
+        grades: [
+          {
+            name: "D",
+            threshold: 10,
+            tokens: 0
+          },
+          {
+            name: "C",
+            threshold: 500,
+            tokens: 0
+          },
+          {
+            name: "B",
+            threshold: 700,
+            tokens: 5
+          },
+          {
+            name: "A",
+            threshold: 1100,
+            tokens: 8
+          },
+          {
+            name: "S",
+            threshold: 1600,
+            tokens: 15
+          }
+        ],
+        recommended: {
+          grade: "A",
+          tokens: 13,
+          baseScore: 1055,
+          totalScore: 1231,
+          items: [
+            {
+              definitionId: 234826,
+              score: 140,
+              clubEaId: 463,
+              price: 1e3
+            },
+            {
+              definitionId: 261987,
+              score: 140,
+              clubEaId: 463,
+              price: 750
+            },
+            {
+              definitionId: 222041,
+              score: 120,
+              clubEaId: 463,
+              price: 1700
+            },
+            {
+              definitionId: 222464,
+              score: 120,
+              clubEaId: 463,
+              price: 1800
+            },
+            {
+              definitionId: 240953,
+              score: 120,
+              clubEaId: 463,
+              price: 2e3
+            },
+            {
+              definitionId: 210455,
+              score: 100,
+              clubEaId: 463,
+              price: 3500
+            },
+            {
+              definitionId: 76768,
+              score: 35,
+              clubEaId: 463,
+              price: 800
+            },
+            {
+              definitionId: 205192,
+              score: 35,
+              clubEaId: 463,
+              price: 850
+            },
+            {
+              definitionId: 233113,
+              score: 35,
+              clubEaId: 463,
+              price: 800
+            },
+            {
+              definitionId: 240458,
+              score: 35,
+              clubEaId: 463,
+              price: 800
+            },
+            {
+              definitionId: 244948,
+              score: 35,
+              clubEaId: 463,
+              price: 750
+            },
+            {
+              definitionId: 258730,
+              score: 35,
+              clubEaId: 463,
+              price: 700
+            },
+            {
+              definitionId: 264160,
+              score: 35,
+              clubEaId: 463,
+              price: 750
+            },
+            {
+              definitionId: 270834,
+              score: 35,
+              clubEaId: 463,
+              price: 750
+            },
+            {
+              definitionId: 278003,
+              score: 35,
+              clubEaId: 463,
+              price: 800
+            }
+          ]
+        }
+      },
+      {
+        id: 80,
+        categoryId: 1,
+        category: "laliga",
+        name: "Elche CF",
+        slug: "elche-cf",
+        description: "Requires 15 Elche CF Mens players to complete.",
+        requiredCards: 15,
+        priority: 7,
+        clubEaId: 468,
+        totalTokens: 38,
+        grades: [
+          {
+            name: "D",
+            threshold: 10,
+            tokens: 0
+          },
+          {
+            name: "C",
+            threshold: 500,
+            tokens: 0
+          },
+          {
+            name: "B",
+            threshold: 1400,
+            tokens: 8
+          },
+          {
+            name: "A",
+            threshold: 2e3,
+            tokens: 10
+          },
+          {
+            name: "S",
+            threshold: 2900,
+            tokens: 20
+          }
+        ],
+        recommended: {
+          grade: "C",
+          tokens: 0,
+          baseScore: 805,
+          totalScore: 1030,
+          items: [
+            {
+              definitionId: 50545213,
+              score: 120,
+              clubEaId: 468,
+              price: 650
+            },
+            {
+              definitionId: 206222,
+              score: 100,
+              clubEaId: 468,
+              price: 1900
+            },
+            {
+              definitionId: 207935,
+              score: 100,
+              clubEaId: 468,
+              price: 800
+            },
+            {
+              definitionId: 254860,
+              score: 100,
+              clubEaId: 468,
+              price: 700
+            },
+            {
+              definitionId: 71013,
+              score: 35,
+              clubEaId: 468,
+              price: 600
+            },
+            {
+              definitionId: 220715,
+              score: 35,
+              clubEaId: 468,
+              price: 650
+            },
+            {
+              definitionId: 229667,
+              score: 35,
+              clubEaId: 468,
+              price: 600
+            },
+            {
+              definitionId: 231436,
+              score: 35,
+              clubEaId: 468,
+              price: 650
+            },
+            {
+              definitionId: 239671,
+              score: 35,
+              clubEaId: 468,
+              price: 600
+            },
+            {
+              definitionId: 252590,
+              score: 35,
+              clubEaId: 468,
+              price: 650
+            },
+            {
+              definitionId: 268083,
+              score: 35,
+              clubEaId: 468,
+              price: 650
+            },
+            {
+              definitionId: 269250,
+              score: 35,
+              clubEaId: 468,
+              price: 600
+            },
+            {
+              definitionId: 269495,
+              score: 35,
+              clubEaId: 468,
+              price: 650
+            },
+            {
+              definitionId: 279200,
+              score: 35,
+              clubEaId: 468,
+              price: 700
+            },
+            {
+              definitionId: 50594127,
+              score: 35,
+              clubEaId: 468,
+              price: 700
+            }
+          ]
+        }
+      },
+      {
+        id: 40,
+        categoryId: 1,
+        category: "laliga",
+        name: "FC Badalona Women",
+        slug: "fc-badalona-women",
+        description: "Requires 15 FC Badalona Women Women's players to complete.",
+        requiredCards: 15,
+        priority: 8,
+        clubEaId: 131125,
+        totalTokens: 28,
+        grades: [
+          {
+            name: "D",
+            threshold: 10,
+            tokens: 0
+          },
+          {
+            name: "C",
+            threshold: 600,
+            tokens: 0
+          },
+          {
+            name: "B",
+            threshold: 800,
+            tokens: 5
+          },
+          {
+            name: "A",
+            threshold: 1200,
+            tokens: 8
+          },
+          {
+            name: "S",
+            threshold: 1800,
+            tokens: 15
+          }
+        ],
+        recommended: {
+          grade: "A",
+          tokens: 13,
+          baseScore: 1540,
+          totalScore: 1784,
+          items: [
+            {
+              definitionId: 272163,
+              score: 410,
+              clubEaId: 131125,
+              price: 850
+            },
+            {
+              definitionId: 227201,
+              score: 140,
+              clubEaId: 131125,
+              price: 1e3
+            },
+            {
+              definitionId: 272111,
+              score: 140,
+              clubEaId: 131125,
+              price: 1600
+            },
+            {
+              definitionId: 273142,
+              score: 140,
+              clubEaId: 131125,
+              price: 950
+            },
+            {
+              definitionId: 272064,
+              score: 100,
+              clubEaId: 131125,
+              price: 1900
+            },
+            {
+              definitionId: 272140,
+              score: 100,
+              clubEaId: 131125,
+              price: 2e3
+            },
+            {
+              definitionId: 272148,
+              score: 100,
+              clubEaId: 131125,
+              price: 700
+            },
+            {
+              definitionId: 272159,
+              score: 100,
+              clubEaId: 131125,
+              price: 700
+            },
+            {
+              definitionId: 275784,
+              score: 100,
+              clubEaId: 131125,
+              price: 1300
+            },
+            {
+              definitionId: 268994,
+              score: 35,
+              clubEaId: 131125,
+              price: 900
+            },
+            {
+              definitionId: 272046,
+              score: 35,
+              clubEaId: 131125,
+              price: 850
+            },
+            {
+              definitionId: 272188,
+              score: 35,
+              clubEaId: 131125,
+              price: 950
+            },
+            {
+              definitionId: 272199,
+              score: 35,
+              clubEaId: 131125,
+              price: 850
+            },
+            {
+              definitionId: 272205,
+              score: 35,
+              clubEaId: 131125,
+              price: 850
+            },
+            {
+              definitionId: 278313,
+              score: 35,
+              clubEaId: 131125,
+              price: 900
+            }
+          ]
+        }
+      },
+      {
+        id: 68,
+        categoryId: 1,
+        category: "laliga",
+        name: "FC Barcelona",
+        slug: "fc-barcelona",
+        description: "Requires 20 FC Barcelona Mens or Womens players to complete.",
+        requiredCards: 20,
+        priority: 9,
+        clubEaId: 241,
+        totalTokens: 220,
+        grades: [
+          {
+            name: "D",
+            threshold: 10,
+            tokens: 0
+          },
+          {
+            name: "C",
+            threshold: 17e4,
+            tokens: 0
+          },
+          {
+            name: "B",
+            threshold: 12e5,
+            tokens: 50
+          },
+          {
+            name: "A",
+            threshold: 18e5,
+            tokens: 70
+          },
+          {
+            name: "S",
+            threshold: 28e5,
+            tokens: 100
+          }
+        ],
+        recommended: {
+          grade: "C",
+          tokens: 0,
+          baseScore: 232426,
+          totalScore: 312792,
+          items: [
+            {
+              definitionId: 50609291,
+              score: 35625,
+              clubEaId: 241,
+              price: 379e4
+            },
+            {
+              definitionId: 67386507,
+              score: 23750,
+              clubEaId: 241,
+              price: 15e5
+            },
+            {
+              definitionId: 67342283,
+              score: 20625,
+              clubEaId: 241,
+              price: 21e5
+            },
+            {
+              definitionId: 231866,
+              score: 14e3,
+              clubEaId: 241,
+              price: 27e3
+            },
+            {
+              definitionId: 241667,
+              score: 14e3,
+              clubEaId: 116325,
+              price: 268e3
+            },
+            {
+              definitionId: 251854,
+              score: 14e3,
+              clubEaId: 241,
+              price: 217e3
+            },
+            {
+              definitionId: 277643,
+              score: 14e3,
+              clubEaId: 241,
+              price: 389e3
+            },
+            {
+              definitionId: 50565067,
+              score: 13750,
+              clubEaId: 241,
+              price: 174e4
+            },
+            {
+              definitionId: 227102,
+              score: 11e3,
+              clubEaId: 116325,
+              price: 424e3
+            },
+            {
+              definitionId: 241846,
+              score: 11e3,
+              clubEaId: 116325,
+              price: 153e3
+            },
+            {
+              definitionId: 262531,
+              score: 11e3,
+              clubEaId: 116325,
+              price: 121e4
+            },
+            {
+              definitionId: 233419,
+              score: 8300,
+              clubEaId: 241,
+              price: 712e3
+            },
+            {
+              definitionId: 237289,
+              score: 8300,
+              clubEaId: 116325,
+              price: 2e5
+            },
+            {
+              definitionId: 67370719,
+              score: 7688,
+              clubEaId: 116325,
+              price: 1318e3
+            },
+            {
+              definitionId: 227190,
+              score: 5500,
+              clubEaId: 116325,
+              price: 5900
+            },
+            {
+              definitionId: 50593503,
+              score: 5125,
+              clubEaId: 116325,
+              price: 12e5
+            },
+            {
+              definitionId: 228702,
+              score: 4100,
+              clubEaId: 241,
+              price: 106e3
+            },
+            {
+              definitionId: 278046,
+              score: 4100,
+              clubEaId: 241,
+              price: 11250
+            },
+            {
+              definitionId: 50599178,
+              score: 3938,
+              clubEaId: 116325,
+              price: 115e3
+            },
+            {
+              definitionId: 67376394,
+              score: 2625,
+              clubEaId: 116325,
+              price: 86500
+            }
+          ]
+        }
+      },
+      {
+        id: 13,
+        categoryId: 1,
+        category: "laliga",
+        name: "Getafe CF",
+        slug: "getafe-cf",
+        description: "Requires 15 Getafe CF Mens players to complete.",
+        requiredCards: 15,
+        priority: 10,
+        clubEaId: 1860,
+        totalTokens: 28,
+        grades: [
+          {
+            name: "D",
+            threshold: 10,
+            tokens: 0
+          },
+          {
+            name: "C",
+            threshold: 900,
+            tokens: 0
+          },
+          {
+            name: "B",
+            threshold: 1300,
+            tokens: 5
+          },
+          {
+            name: "A",
+            threshold: 2e3,
+            tokens: 8
+          },
+          {
+            name: "S",
+            threshold: 3e3,
+            tokens: 15
+          }
+        ],
+        recommended: {
+          grade: "B",
+          tokens: 5,
+          baseScore: 1220,
+          totalScore: 1411,
+          items: [
+            {
+              definitionId: 223952,
+              score: 180,
+              clubEaId: 1860,
+              price: 700
+            },
+            {
+              definitionId: 217940,
+              score: 120,
+              clubEaId: 1860,
+              price: 900
+            },
+            {
+              definitionId: 260404,
+              score: 120,
+              clubEaId: 1860,
+              price: 700
+            },
+            {
+              definitionId: 264325,
+              score: 120,
+              clubEaId: 1860,
+              price: 1200
+            },
+            {
+              definitionId: 214026,
+              score: 100,
+              clubEaId: 1860,
+              price: 1100
+            },
+            {
+              definitionId: 228635,
+              score: 100,
+              clubEaId: 1860,
+              price: 1800
+            },
+            {
+              definitionId: 73374,
+              score: 90,
+              clubEaId: 1860,
+              price: 1900
+            },
+            {
+              definitionId: 223197,
+              score: 90,
+              clubEaId: 1860,
+              price: 1900
+            },
+            {
+              definitionId: 234078,
+              score: 90,
+              clubEaId: 1860,
+              price: 950
+            },
+            {
+              definitionId: 189860,
+              score: 35,
+              clubEaId: 1860,
+              price: 700
+            },
+            {
+              definitionId: 197891,
+              score: 35,
+              clubEaId: 1860,
+              price: 650
+            },
+            {
+              definitionId: 256341,
+              score: 35,
+              clubEaId: 1860,
+              price: 650
+            },
+            {
+              definitionId: 259521,
+              score: 35,
+              clubEaId: 1860,
+              price: 650
+            },
+            {
+              definitionId: 274555,
+              score: 35,
+              clubEaId: 1860,
+              price: 650
+            },
+            {
+              definitionId: 50591071,
+              score: 35,
+              clubEaId: 1860,
+              price: 650
+            }
+          ]
+        }
+      },
+      {
+        id: 11,
+        categoryId: 1,
+        category: "laliga",
+        name: "Granada CF",
+        slug: "granada-cf",
+        description: "Requires 15 Granada CF Women's players to complete.",
+        requiredCards: 15,
+        priority: 11,
+        clubEaId: 110832,
+        totalTokens: 28,
+        grades: [
+          {
+            name: "D",
+            threshold: 10,
+            tokens: 0
+          },
+          {
+            name: "C",
+            threshold: 400,
+            tokens: 0
+          },
+          {
+            name: "B",
+            threshold: 600,
+            tokens: 5
+          },
+          {
+            name: "A",
+            threshold: 1e3,
+            tokens: 8
+          },
+          {
+            name: "S",
+            threshold: 1400,
+            tokens: 15
+          }
+        ]
+      },
+      {
+        id: 24,
+        categoryId: 1,
+        category: "laliga",
+        name: "Levante UD",
+        slug: "levante-ud",
+        description: "Requires 15 Levante UD Mens players to complete.",
+        requiredCards: 15,
+        priority: 12,
+        clubEaId: 1853,
+        totalTokens: 28,
+        grades: [
+          {
+            name: "D",
+            threshold: 10,
+            tokens: 0
+          },
+          {
+            name: "C",
+            threshold: 500,
+            tokens: 0
+          },
+          {
+            name: "B",
+            threshold: 700,
+            tokens: 5
+          },
+          {
+            name: "A",
+            threshold: 1200,
+            tokens: 8
+          },
+          {
+            name: "S",
+            threshold: 1700,
+            tokens: 15
+          }
+        ],
+        recommended: {
+          grade: "B",
+          tokens: 5,
+          baseScore: 950,
+          totalScore: 1162,
+          items: [
+            {
+              definitionId: 199005,
+              score: 160,
+              clubEaId: 1853,
+              price: 650
+            },
+            {
+              definitionId: 201143,
+              score: 160,
+              clubEaId: 1853,
+              price: 650
+            },
+            {
+              definitionId: 252327,
+              score: 100,
+              clubEaId: 1853,
+              price: 1400
+            },
+            {
+              definitionId: 264173,
+              score: 90,
+              clubEaId: 1853,
+              price: 700
+            },
+            {
+              definitionId: 271414,
+              score: 90,
+              clubEaId: 1853,
+              price: 750
+            },
+            {
+              definitionId: 71388,
+              score: 35,
+              clubEaId: 1853,
+              price: 650
+            },
+            {
+              definitionId: 72563,
+              score: 35,
+              clubEaId: 1853,
+              price: 600
+            },
+            {
+              definitionId: 80679,
+              score: 35,
+              clubEaId: 1853,
+              price: 700
+            },
+            {
+              definitionId: 214622,
+              score: 35,
+              clubEaId: 1853,
+              price: 650
+            },
+            {
+              definitionId: 242279,
+              score: 35,
+              clubEaId: 1853,
+              price: 650
+            },
+            {
+              definitionId: 245290,
+              score: 35,
+              clubEaId: 1853,
+              price: 700
+            },
+            {
+              definitionId: 246011,
+              score: 35,
+              clubEaId: 1853,
+              price: 700
+            },
+            {
+              definitionId: 262500,
+              score: 35,
+              clubEaId: 1853,
+              price: 650
+            },
+            {
+              definitionId: 277639,
+              score: 35,
+              clubEaId: 1853,
+              price: 3400
+            },
+            {
+              definitionId: 50407384,
+              score: 35,
+              clubEaId: 1853,
+              price: 700
+            }
+          ]
+        }
+      },
+      {
+        id: 97,
+        categoryId: 1,
+        category: "laliga",
+        name: "Logro\xF1o United",
+        slug: "logrono-united",
+        description: "Requires 15 Logro\xF1o United Women's players to complete.",
+        requiredCards: 15,
+        priority: 13,
+        clubEaId: 132629,
+        totalTokens: 28,
+        grades: [
+          {
+            name: "D",
+            threshold: 10,
+            tokens: 0
+          },
+          {
+            name: "C",
+            threshold: 300,
+            tokens: 0
+          },
+          {
+            name: "B",
+            threshold: 500,
+            tokens: 5
+          },
+          {
+            name: "A",
+            threshold: 700,
+            tokens: 8
+          },
+          {
+            name: "S",
+            threshold: 1e3,
+            tokens: 15
+          }
+        ],
+        recommended: {
+          grade: "A",
+          tokens: 13,
+          baseScore: 680,
+          totalScore: 823,
+          items: [
+            {
+              definitionId: 276887,
+              score: 180,
+              clubEaId: 132629,
+              price: 650
+            },
+            {
+              definitionId: 269678,
+              score: 120,
+              clubEaId: 132629,
+              price: 1600
+            },
+            {
+              definitionId: 72828,
+              score: 35,
+              clubEaId: 132629,
+              price: 1100
+            },
+            {
+              definitionId: 75042,
+              score: 35,
+              clubEaId: 132629,
+              price: 900
+            },
+            {
+              definitionId: 78897,
+              score: 35,
+              clubEaId: 132629,
+              price: 950
+            },
+            {
+              definitionId: 79975,
+              score: 35,
+              clubEaId: 132629,
+              price: 900
+            },
+            {
+              definitionId: 87395,
+              score: 35,
+              clubEaId: 132629,
+              price: 950
+            },
+            {
+              definitionId: 272047,
+              score: 35,
+              clubEaId: 132629,
+              price: 900
+            },
+            {
+              definitionId: 275576,
+              score: 35,
+              clubEaId: 132629,
+              price: 900
+            },
+            {
+              definitionId: 276468,
+              score: 35,
+              clubEaId: 132629,
+              price: 950
+            },
+            {
+              definitionId: 72810,
+              score: 20,
+              clubEaId: 132629,
+              price: 350
+            },
+            {
+              definitionId: 78884,
+              score: 20,
+              clubEaId: 132629,
+              price: 400
+            },
+            {
+              definitionId: 78900,
+              score: 20,
+              clubEaId: 132629,
+              price: 250
+            },
+            {
+              definitionId: 80059,
+              score: 20,
+              clubEaId: 132629,
+              price: 250
+            },
+            {
+              definitionId: 81679,
+              score: 20,
+              clubEaId: 132629,
+              price: 400
+            }
+          ]
+        }
+      },
+      {
+        id: 35,
+        categoryId: 1,
+        category: "laliga",
+        name: "Madrid CFF",
+        slug: "madrid-cff",
+        description: "Requires 15 Madrid CFF Women's players to complete.",
+        requiredCards: 15,
+        priority: 14,
+        clubEaId: 116334,
+        totalTokens: 38,
+        grades: [
+          {
+            name: "D",
+            threshold: 10,
+            tokens: 0
+          },
+          {
+            name: "C",
+            threshold: 600,
+            tokens: 0
+          },
+          {
+            name: "B",
+            threshold: 2400,
+            tokens: 8
+          },
+          {
+            name: "A",
+            threshold: 3600,
+            tokens: 10
+          },
+          {
+            name: "S",
+            threshold: 5100,
+            tokens: 20
+          }
+        ]
+      },
+      {
+        id: 90,
+        categoryId: 1,
+        category: "laliga",
+        name: "Malaga CF",
+        slug: "malaga-cf",
+        description: "Requires 15 Malaga CF Mens players to complete.",
+        requiredCards: 15,
+        priority: 15,
+        clubEaId: 573,
+        totalTokens: 28,
+        grades: [
+          {
+            name: "D",
+            threshold: 10,
+            tokens: 0
+          },
+          {
+            name: "C",
+            threshold: 300,
+            tokens: 0
+          },
+          {
+            name: "B",
+            threshold: 400,
+            tokens: 5
+          },
+          {
+            name: "A",
+            threshold: 700,
+            tokens: 8
+          },
+          {
+            name: "S",
+            threshold: 900,
+            tokens: 15
+          }
+        ],
+        recommended: {
+          grade: "S",
+          tokens: 28,
+          baseScore: 820,
+          totalScore: 1047,
+          items: [
+            {
+              definitionId: 74554,
+              score: 100,
+              clubEaId: 573,
+              price: 3400
+            },
+            {
+              definitionId: 243312,
+              score: 100,
+              clubEaId: 573,
+              price: 3300
+            },
+            {
+              definitionId: 235312,
+              score: 90,
+              clubEaId: 573,
+              price: 3300
+            },
+            {
+              definitionId: 240289,
+              score: 90,
+              clubEaId: 573,
+              price: 4e3
+            },
+            {
+              definitionId: 258494,
+              score: 90,
+              clubEaId: 573,
+              price: 950
+            },
+            {
+              definitionId: 73199,
+              score: 35,
+              clubEaId: 573,
+              price: 1e3
+            },
+            {
+              definitionId: 73452,
+              score: 35,
+              clubEaId: 573,
+              price: 1e3
+            },
+            {
+              definitionId: 77346,
+              score: 35,
+              clubEaId: 573,
+              price: 1e3
+            },
+            {
+              definitionId: 78193,
+              score: 35,
+              clubEaId: 573,
+              price: 1e3
+            },
+            {
+              definitionId: 243604,
+              score: 35,
+              clubEaId: 573,
+              price: 900
+            },
+            {
+              definitionId: 246276,
+              score: 35,
+              clubEaId: 573,
+              price: 1e3
+            },
+            {
+              definitionId: 255398,
+              score: 35,
+              clubEaId: 573,
+              price: 1100
+            },
+            {
+              definitionId: 258684,
+              score: 35,
+              clubEaId: 573,
+              price: 1e3
+            },
+            {
+              definitionId: 265812,
+              score: 35,
+              clubEaId: 573,
+              price: 1100
+            },
+            {
+              definitionId: 276949,
+              score: 35,
+              clubEaId: 573,
+              price: 950
+            }
+          ]
+        }
+      },
+      {
+        id: 79,
+        categoryId: 1,
+        category: "laliga",
+        name: "Real Racing Club",
+        slug: "real-racing-club",
+        description: "Requires 15 Real Racing Club Men's players to complete.",
+        requiredCards: 15,
+        priority: 16,
+        clubEaId: 456,
+        totalTokens: 28,
+        grades: [
+          {
+            name: "D",
+            threshold: 10,
+            tokens: 0
+          },
+          {
+            name: "C",
+            threshold: 500,
+            tokens: 0
+          },
+          {
+            name: "B",
+            threshold: 600,
+            tokens: 5
+          },
+          {
+            name: "A",
+            threshold: 1e3,
+            tokens: 8
+          },
+          {
+            name: "S",
+            threshold: 1500,
+            tokens: 15
+          }
+        ],
+        recommended: {
+          grade: "A",
+          tokens: 13,
+          baseScore: 950,
+          totalScore: 1181,
+          items: [
+            {
+              definitionId: 190286,
+              score: 140,
+              clubEaId: 456,
+              price: 700
+            },
+            {
+              definitionId: 243792,
+              score: 120,
+              clubEaId: 456,
+              price: 750
+            },
+            {
+              definitionId: 246044,
+              score: 120,
+              clubEaId: 456,
+              price: 700
+            },
+            {
+              definitionId: 246928,
+              score: 120,
+              clubEaId: 456,
+              price: 1e3
+            },
+            {
+              definitionId: 263880,
+              score: 100,
+              clubEaId: 456,
+              price: 950
+            },
+            {
+              definitionId: 74881,
+              score: 35,
+              clubEaId: 456,
+              price: 750
+            },
+            {
+              definitionId: 81732,
+              score: 35,
+              clubEaId: 456,
+              price: 750
+            },
+            {
+              definitionId: 243155,
+              score: 35,
+              clubEaId: 456,
+              price: 750
+            },
+            {
+              definitionId: 254005,
+              score: 35,
+              clubEaId: 456,
+              price: 700
+            },
+            {
+              definitionId: 269197,
+              score: 35,
+              clubEaId: 456,
+              price: 750
+            },
+            {
+              definitionId: 50408387,
+              score: 35,
+              clubEaId: 456,
+              price: 750
+            },
+            {
+              definitionId: 50567943,
+              score: 35,
+              clubEaId: 456,
+              price: 800
+            },
+            {
+              definitionId: 50579377,
+              score: 35,
+              clubEaId: 456,
+              price: 800
+            },
+            {
+              definitionId: 50600270,
+              score: 35,
+              clubEaId: 456,
+              price: 800
+            },
+            {
+              definitionId: 50604373,
+              score: 35,
+              clubEaId: 456,
+              price: 700
+            }
+          ]
+        }
+      },
+      {
+        id: 91,
+        categoryId: 1,
+        category: "laliga",
+        name: "Rayo Vallecano",
+        slug: "rayo-vallecano",
+        description: "Requires 15 Rayo Vallecano Mens players to complete.",
+        requiredCards: 15,
+        priority: 17,
+        clubEaId: 480,
+        totalTokens: 38,
+        grades: [
+          {
+            name: "D",
+            threshold: 10,
+            tokens: 0
+          },
+          {
+            name: "C",
+            threshold: 1400,
+            tokens: 0
+          },
+          {
+            name: "B",
+            threshold: 2200,
+            tokens: 8
+          },
+          {
+            name: "A",
+            threshold: 3300,
+            tokens: 10
+          },
+          {
+            name: "S",
+            threshold: 4700,
+            tokens: 20
+          }
+        ],
+        recommended: {
+          grade: "S",
+          tokens: 38,
+          baseScore: 8088,
+          totalScore: 11134,
+          items: [
+            {
+              definitionId: 67357029,
+              score: 3938,
+              clubEaId: 480,
+              price: 222e3
+            },
+            {
+              definitionId: 50579813,
+              score: 2625,
+              clubEaId: 480,
+              price: 171e3
+            },
+            {
+              definitionId: 216447,
+              score: 280,
+              clubEaId: 480,
+              price: 650
+            },
+            {
+              definitionId: 243559,
+              score: 280,
+              clubEaId: 480,
+              price: 650
+            },
+            {
+              definitionId: 232498,
+              score: 180,
+              clubEaId: 480,
+              price: 650
+            },
+            {
+              definitionId: 248165,
+              score: 180,
+              clubEaId: 480,
+              price: 2300
+            },
+            {
+              definitionId: 243558,
+              score: 120,
+              clubEaId: 480,
+              price: 1500
+            },
+            {
+              definitionId: 250858,
+              score: 120,
+              clubEaId: 480,
+              price: 850
+            },
+            {
+              definitionId: 222390,
+              score: 100,
+              clubEaId: 480,
+              price: 1900
+            },
+            {
+              definitionId: 236492,
+              score: 90,
+              clubEaId: 480,
+              price: 3600
+            },
+            {
+              definitionId: 245131,
+              score: 35,
+              clubEaId: 480,
+              price: 900
+            },
+            {
+              definitionId: 248805,
+              score: 35,
+              clubEaId: 480,
+              price: 850
+            },
+            {
+              definitionId: 251756,
+              score: 35,
+              clubEaId: 480,
+              price: 900
+            },
+            {
+              definitionId: 271373,
+              score: 35,
+              clubEaId: 480,
+              price: 900
+            },
+            {
+              definitionId: 50577761,
+              score: 35,
+              clubEaId: 480,
+              price: 850
+            }
+          ]
+        }
+      },
+      {
+        id: 41,
+        categoryId: 1,
+        category: "laliga",
+        name: "RC Deportivo",
+        slug: "rc-deportivo",
+        description: "Requires 15 RC Deportivo Men's players to complete.",
+        requiredCards: 15,
+        priority: 18,
+        clubEaId: 242,
+        totalTokens: 38,
+        grades: [
+          {
+            name: "D",
+            threshold: 10,
+            tokens: 0
+          },
+          {
+            name: "C",
+            threshold: 500,
+            tokens: 0
+          },
+          {
+            name: "B",
+            threshold: 3700,
+            tokens: 8
+          },
+          {
+            name: "A",
+            threshold: 5500,
+            tokens: 10
+          },
+          {
+            name: "S",
+            threshold: 7800,
+            tokens: 20
+          }
+        ],
+        recommended: {
+          grade: "S",
+          tokens: 38,
+          baseScore: 14133,
+          totalScore: 17762,
+          items: [
+            {
+              definitionId: 67297431,
+              score: 7688,
+              clubEaId: 242,
+              price: 249e3
+            },
+            {
+              definitionId: 50520215,
+              score: 5125,
+              clubEaId: 242,
+              price: 165e3
+            },
+            {
+              definitionId: 50548108,
+              score: 340,
+              clubEaId: 242,
+              price: 550
+            },
+            {
+              definitionId: 188567,
+              score: 160,
+              clubEaId: 242,
+              price: 850
+            },
+            {
+              definitionId: 220651,
+              score: 140,
+              clubEaId: 242,
+              price: 950
+            },
+            {
+              definitionId: 50604248,
+              score: 140,
+              clubEaId: 242,
+              price: 700
+            },
+            {
+              definitionId: 258466,
+              score: 120,
+              clubEaId: 242,
+              price: 2800
+            },
+            {
+              definitionId: 264492,
+              score: 120,
+              clubEaId: 242,
+              price: 750
+            },
+            {
+              definitionId: 260463,
+              score: 90,
+              clubEaId: 242,
+              price: 4900
+            },
+            {
+              definitionId: 72246,
+              score: 35,
+              clubEaId: 242,
+              price: 3300
+            },
+            {
+              definitionId: 255580,
+              score: 35,
+              clubEaId: 242,
+              price: 3500
+            },
+            {
+              definitionId: 268082,
+              score: 35,
+              clubEaId: 242,
+              price: 2300
+            },
+            {
+              definitionId: 269228,
+              score: 35,
+              clubEaId: 242,
+              price: 1e3
+            },
+            {
+              definitionId: 277069,
+              score: 35,
+              clubEaId: 242,
+              price: 3200
+            },
+            {
+              definitionId: 278035,
+              score: 35,
+              clubEaId: 242,
+              price: 1100
+            }
+          ]
+        }
+      },
+      {
+        id: 2,
+        categoryId: 1,
+        category: "laliga",
+        name: "RCD Espanyol",
+        slug: "rcd-espanyol",
+        description: "Requires 15 RCD Espanyol Mens or Womens players to complete.",
+        requiredCards: 15,
+        priority: 19,
+        clubEaId: 452,
+        totalTokens: 38,
+        grades: [
+          {
+            name: "D",
+            threshold: 10,
+            tokens: 0
+          },
+          {
+            name: "C",
+            threshold: 800,
+            tokens: 0
+          },
+          {
+            name: "B",
+            threshold: 1500,
+            tokens: 8
+          },
+          {
+            name: "A",
+            threshold: 2300,
+            tokens: 10
+          },
+          {
+            name: "S",
+            threshold: 3200,
+            tokens: 20
+          }
+        ],
+        recommended: {
+          grade: "B",
+          tokens: 8,
+          baseScore: 1560,
+          totalScore: 1727,
+          items: [
+            {
+              definitionId: 227290,
+              score: 160,
+              clubEaId: 452,
+              price: 700
+            },
+            {
+              definitionId: 229862,
+              score: 120,
+              clubEaId: 452,
+              price: 650
+            },
+            {
+              definitionId: 244622,
+              score: 120,
+              clubEaId: 452,
+              price: 650
+            },
+            {
+              definitionId: 50603564,
+              score: 120,
+              clubEaId: 452,
+              price: 650
+            },
+            {
+              definitionId: 192816,
+              score: 100,
+              clubEaId: 452,
+              price: 1700
+            },
+            {
+              definitionId: 260546,
+              score: 100,
+              clubEaId: 452,
+              price: 1700
+            },
+            {
+              definitionId: 269921,
+              score: 100,
+              clubEaId: 131733,
+              price: 950
+            },
+            {
+              definitionId: 272101,
+              score: 100,
+              clubEaId: 131733,
+              price: 750
+            },
+            {
+              definitionId: 50572697,
+              score: 100,
+              clubEaId: 452,
+              price: 1800
+            },
+            {
+              definitionId: 73505,
+              score: 90,
+              clubEaId: 452,
+              price: 650
+            },
+            {
+              definitionId: 192678,
+              score: 90,
+              clubEaId: 452,
+              price: 3100
+            },
+            {
+              definitionId: 225926,
+              score: 90,
+              clubEaId: 452,
+              price: 1800
+            },
+            {
+              definitionId: 240900,
+              score: 90,
+              clubEaId: 452,
+              price: 2100
+            },
+            {
+              definitionId: 261654,
+              score: 90,
+              clubEaId: 452,
+              price: 1200
+            },
+            {
+              definitionId: 271121,
+              score: 90,
+              clubEaId: 452,
+              price: 2900
+            }
+          ]
+        }
+      },
+      {
+        id: 96,
+        categoryId: 1,
+        category: "laliga",
+        name: "Real Betis Balompi\xE9",
+        slug: "real-betis-balompie",
+        description: "Requires 15 Real Betis Balompi\xE9 Mens players to complete.",
+        requiredCards: 15,
+        priority: 20,
+        clubEaId: 449,
+        totalTokens: 38,
+        grades: [
+          {
+            name: "D",
+            threshold: 10,
+            tokens: 0
+          },
+          {
+            name: "C",
+            threshold: 1900,
+            tokens: 0
+          },
+          {
+            name: "B",
+            threshold: 7300,
+            tokens: 8
+          },
+          {
+            name: "A",
+            threshold: 10900,
+            tokens: 10
+          },
+          {
+            name: "S",
+            threshold: 15400,
+            tokens: 20
+          }
+        ],
+        recommended: {
+          grade: "C",
+          tokens: 0,
+          baseScore: 2810,
+          totalScore: 3195,
+          items: [
+            {
+              definitionId: 197781,
+              score: 410,
+              clubEaId: 449,
+              price: 750
+            },
+            {
+              definitionId: 226456,
+              score: 280,
+              clubEaId: 449,
+              price: 650
+            },
+            {
+              definitionId: 255475,
+              score: 280,
+              clubEaId: 449,
+              price: 650
+            },
+            {
+              definitionId: 264432,
+              score: 280,
+              clubEaId: 449,
+              price: 650
+            },
+            {
+              definitionId: 226226,
+              score: 180,
+              clubEaId: 449,
+              price: 650
+            },
+            {
+              definitionId: 198141,
+              score: 160,
+              clubEaId: 449,
+              price: 800
+            },
+            {
+              definitionId: 212602,
+              score: 160,
+              clubEaId: 449,
+              price: 850
+            },
+            {
+              definitionId: 237034,
+              score: 160,
+              clubEaId: 449,
+              price: 650
+            },
+            {
+              definitionId: 277537,
+              score: 160,
+              clubEaId: 449,
+              price: 650
+            },
+            {
+              definitionId: 235945,
+              score: 140,
+              clubEaId: 449,
+              price: 800
+            },
+            {
+              definitionId: 245902,
+              score: 140,
+              clubEaId: 449,
+              price: 950
+            },
+            {
+              definitionId: 241867,
+              score: 120,
+              clubEaId: 449,
+              price: 1700
+            },
+            {
+              definitionId: 246606,
+              score: 120,
+              clubEaId: 449,
+              price: 800
+            },
+            {
+              definitionId: 246608,
+              score: 120,
+              clubEaId: 449,
+              price: 2400
+            },
+            {
+              definitionId: 252324,
+              score: 100,
+              clubEaId: 449,
+              price: 1900
+            }
+          ]
+        }
+      },
+      {
+        id: 74,
+        categoryId: 1,
+        category: "laliga",
+        name: "Real Madrid",
+        slug: "real-madrid",
+        description: "Requires 20 Real Madrid Mens or Womens players to complete.",
+        requiredCards: 20,
+        priority: 21,
+        clubEaId: 243,
+        totalTokens: 220,
+        grades: [
+          {
+            name: "D",
+            threshold: 10,
+            tokens: 0
+          },
+          {
+            name: "C",
+            threshold: 7e4,
+            tokens: 0
+          },
+          {
+            name: "B",
+            threshold: 1e6,
+            tokens: 50
+          },
+          {
+            name: "A",
+            threshold: 14e5,
+            tokens: 70
+          },
+          {
+            name: "S",
+            threshold: 21e5,
+            tokens: 100
+          }
+        ],
+        recommended: {
+          grade: "C",
+          tokens: 0,
+          baseScore: 133837,
+          totalScore: 187080,
+          items: [
+            {
+              definitionId: 67340611,
+              score: 35625,
+              clubEaId: 243,
+              price: null
+            },
+            {
+              definitionId: 50563395,
+              score: 23750,
+              clubEaId: 243,
+              price: 117e5
+            },
+            {
+              definitionId: 231747,
+              score: 19e3,
+              clubEaId: 243,
+              price: 395e4
+            },
+            {
+              definitionId: 192119,
+              score: 14e3,
+              clubEaId: 243,
+              price: 68e3
+            },
+            {
+              definitionId: 252371,
+              score: 14e3,
+              clubEaId: 243,
+              price: 212e3
+            },
+            {
+              definitionId: 238794,
+              score: 11e3,
+              clubEaId: 243,
+              price: 983e3
+            },
+            {
+              definitionId: 239053,
+              score: 5500,
+              clubEaId: 243,
+              price: 385e3
+            },
+            {
+              definitionId: 239231,
+              score: 4100,
+              clubEaId: 243,
+              price: 3600
+            },
+            {
+              definitionId: 50409660,
+              score: 1038,
+              clubEaId: 243,
+              price: null
+            },
+            {
+              definitionId: 78012,
+              score: 830,
+              clubEaId: 243,
+              price: 54e3
+            },
+            {
+              definitionId: 218667,
+              score: 830,
+              clubEaId: 243,
+              price: 850
+            },
+            {
+              definitionId: 231281,
+              score: 830,
+              clubEaId: 243,
+              price: 750
+            },
+            {
+              definitionId: 241637,
+              score: 830,
+              clubEaId: 243,
+              price: 41e3
+            },
+            {
+              definitionId: 243812,
+              score: 830,
+              clubEaId: 243,
+              price: 22500
+            },
+            {
+              definitionId: 50600537,
+              score: 769,
+              clubEaId: 243,
+              price: 401e3
+            },
+            {
+              definitionId: 264309,
+              score: 410,
+              clubEaId: 243,
+              price: 850
+            },
+            {
+              definitionId: 231410,
+              score: 280,
+              clubEaId: 243,
+              price: 700
+            },
+            {
+              definitionId: 272505,
+              score: 160,
+              clubEaId: 243,
+              price: 1500
+            },
+            {
+              definitionId: 88073,
+              score: 35,
+              clubEaId: 243,
+              price: 1300
+            },
+            {
+              definitionId: 75917,
+              score: 20,
+              clubEaId: 243,
+              price: 300
+            }
+          ]
+        }
+      },
+      {
+        id: 42,
+        categoryId: 1,
+        category: "laliga",
+        name: "Real Sociedad",
+        slug: "real-sociedad",
+        description: "Requires 15 Real Sociedad Mens or Womens players to complete.",
+        requiredCards: 15,
+        priority: 22,
+        clubEaId: 457,
+        totalTokens: 80,
+        grades: [
+          {
+            name: "D",
+            threshold: 10,
+            tokens: 0
+          },
+          {
+            name: "C",
+            threshold: 3500,
+            tokens: 0
+          },
+          {
+            name: "B",
+            threshold: 22e3,
+            tokens: 15
+          },
+          {
+            name: "A",
+            threshold: 37e3,
+            tokens: 25
+          },
+          {
+            name: "S",
+            threshold: 65e3,
+            tokens: 40
+          }
+        ],
+        recommended: {
+          grade: "C",
+          tokens: 0,
+          baseScore: 3710,
+          totalScore: 4178,
+          items: [
+            {
+              definitionId: 230142,
+              score: 830,
+              clubEaId: 457,
+              price: 750
+            },
+            {
+              definitionId: 272007,
+              score: 340,
+              clubEaId: 116336,
+              price: 650
+            },
+            {
+              definitionId: 72149,
+              score: 280,
+              clubEaId: 116336,
+              price: 700
+            },
+            {
+              definitionId: 227127,
+              score: 280,
+              clubEaId: 457,
+              price: 650
+            },
+            {
+              definitionId: 256302,
+              score: 280,
+              clubEaId: 116336,
+              price: 700
+            },
+            {
+              definitionId: 259334,
+              score: 280,
+              clubEaId: 116336,
+              price: 750
+            },
+            {
+              definitionId: 224411,
+              score: 180,
+              clubEaId: 457,
+              price: 650
+            },
+            {
+              definitionId: 237681,
+              score: 180,
+              clubEaId: 457,
+              price: 800
+            },
+            {
+              definitionId: 272153,
+              score: 180,
+              clubEaId: 116336,
+              price: 750
+            },
+            {
+              definitionId: 234153,
+              score: 160,
+              clubEaId: 457,
+              price: 650
+            },
+            {
+              definitionId: 246672,
+              score: 160,
+              clubEaId: 457,
+              price: 650
+            },
+            {
+              definitionId: 74091,
+              score: 140,
+              clubEaId: 457,
+              price: 800
+            },
+            {
+              definitionId: 234060,
+              score: 140,
+              clubEaId: 457,
+              price: 800
+            },
+            {
+              definitionId: 241811,
+              score: 140,
+              clubEaId: 457,
+              price: 650
+            },
+            {
+              definitionId: 277225,
+              score: 140,
+              clubEaId: 457,
+              price: 1e3
+            }
+          ]
+        }
+      },
+      {
+        id: 84,
+        categoryId: 1,
+        category: "laliga",
+        name: "SD Eibar",
+        slug: "sd-eibar",
+        description: "Requires 15 SD Eibar Women's players to complete.",
+        requiredCards: 15,
+        priority: 23,
+        clubEaId: 116331,
+        totalTokens: 28,
+        grades: [
+          {
+            name: "D",
+            threshold: 10,
+            tokens: 0
+          },
+          {
+            name: "C",
+            threshold: 300,
+            tokens: 0
+          },
+          {
+            name: "B",
+            threshold: 500,
+            tokens: 5
+          },
+          {
+            name: "A",
+            threshold: 700,
+            tokens: 8
+          },
+          {
+            name: "S",
+            threshold: 1e3,
+            tokens: 15
+          }
+        ]
+      },
+      {
+        id: 32,
+        categoryId: 1,
+        category: "laliga",
+        name: "Sevilla FC",
+        slug: "sevilla-fc",
+        description: "Requires 15 Sevilla FC Mens or Womens players to complete.",
+        requiredCards: 15,
+        priority: 24,
+        clubEaId: 481,
+        totalTokens: 80,
+        grades: [
+          {
+            name: "D",
+            threshold: 10,
+            tokens: 0
+          },
+          {
+            name: "C",
+            threshold: 1500,
+            tokens: 0
+          },
+          {
+            name: "B",
+            threshold: 4500,
+            tokens: 15
+          },
+          {
+            name: "A",
+            threshold: 5500,
+            tokens: 25
+          },
+          {
+            name: "S",
+            threshold: 7e3,
+            tokens: 40
+          }
+        ],
+        recommended: {
+          grade: "C",
+          tokens: 0,
+          baseScore: 2310,
+          totalScore: 2579,
+          items: [
+            {
+              definitionId: 262460,
+              score: 340,
+              clubEaId: 116337,
+              price: 650
+            },
+            {
+              definitionId: 50561297,
+              score: 280,
+              clubEaId: 481,
+              price: null
+            },
+            {
+              definitionId: 228630,
+              score: 180,
+              clubEaId: 116337,
+              price: 750
+            },
+            {
+              definitionId: 50577278,
+              score: 180,
+              clubEaId: 481,
+              price: 750
+            },
+            {
+              definitionId: 211990,
+              score: 160,
+              clubEaId: 481,
+              price: 650
+            },
+            {
+              definitionId: 275787,
+              score: 160,
+              clubEaId: 116337,
+              price: 650
+            },
+            {
+              definitionId: 238581,
+              score: 140,
+              clubEaId: 481,
+              price: 650
+            },
+            {
+              definitionId: 241182,
+              score: 140,
+              clubEaId: 116337,
+              price: 750
+            },
+            {
+              definitionId: 264172,
+              score: 120,
+              clubEaId: 481,
+              price: 800
+            },
+            {
+              definitionId: 275589,
+              score: 120,
+              clubEaId: 116337,
+              price: 800
+            },
+            {
+              definitionId: 238050,
+              score: 100,
+              clubEaId: 481,
+              price: 650
+            },
+            {
+              definitionId: 246683,
+              score: 100,
+              clubEaId: 481,
+              price: 2700
+            },
+            {
+              definitionId: 260178,
+              score: 100,
+              clubEaId: 481,
+              price: 800
+            },
+            {
+              definitionId: 271755,
+              score: 100,
+              clubEaId: 481,
+              price: 3e3
+            },
+            {
+              definitionId: 50584815,
+              score: 90,
+              clubEaId: 481,
+              price: 700
+            }
+          ]
+        }
+      },
+      {
+        id: 69,
+        categoryId: 1,
+        category: "laliga",
+        name: "Valencia CF",
+        slug: "valencia-cf",
+        description: "Requires 15 Valencia CF Mens players to complete.",
+        requiredCards: 15,
+        priority: 25,
+        clubEaId: 461,
+        totalTokens: 28,
+        grades: [
+          {
+            name: "D",
+            threshold: 10,
+            tokens: 0
+          },
+          {
+            name: "C",
+            threshold: 1300,
+            tokens: 0
+          },
+          {
+            name: "B",
+            threshold: 1800,
+            tokens: 5
+          },
+          {
+            name: "A",
+            threshold: 2800,
+            tokens: 8
+          },
+          {
+            name: "S",
+            threshold: 4100,
+            tokens: 15
+          }
+        ],
+        recommended: {
+          grade: "B",
+          tokens: 5,
+          baseScore: 1940,
+          totalScore: 2232,
+          items: [
+            {
+              definitionId: 50574680,
+              score: 340,
+              clubEaId: 461,
+              price: null
+            },
+            {
+              definitionId: 225659,
+              score: 140,
+              clubEaId: 461,
+              price: 700
+            },
+            {
+              definitionId: 211348,
+              score: 120,
+              clubEaId: 461,
+              price: 950
+            },
+            {
+              definitionId: 211688,
+              score: 120,
+              clubEaId: 461,
+              price: 1600
+            },
+            {
+              definitionId: 221342,
+              score: 120,
+              clubEaId: 461,
+              price: 1600
+            },
+            {
+              definitionId: 224415,
+              score: 120,
+              clubEaId: 461,
+              price: 700
+            },
+            {
+              definitionId: 243032,
+              score: 120,
+              clubEaId: 461,
+              price: 1700
+            },
+            {
+              definitionId: 264238,
+              score: 120,
+              clubEaId: 461,
+              price: 650
+            },
+            {
+              definitionId: 266436,
+              score: 120,
+              clubEaId: 461,
+              price: 700
+            },
+            {
+              definitionId: 50577822,
+              score: 120,
+              clubEaId: 461,
+              price: 650
+            },
+            {
+              definitionId: 50592463,
+              score: 120,
+              clubEaId: 461,
+              price: 1600
+            },
+            {
+              definitionId: 230578,
+              score: 100,
+              clubEaId: 461,
+              price: 1600
+            },
+            {
+              definitionId: 230786,
+              score: 100,
+              clubEaId: 461,
+              price: 1600
+            },
+            {
+              definitionId: 236276,
+              score: 90,
+              clubEaId: 461,
+              price: 700
+            },
+            {
+              definitionId: 236657,
+              score: 90,
+              clubEaId: 461,
+              price: 950
+            }
+          ]
+        }
+      },
+      {
+        id: 5,
+        categoryId: 1,
+        category: "laliga",
+        name: "Villarreal CF",
+        slug: "villarreal-cf",
+        description: "Requires 15 Villarreal CF Mens players to complete.",
+        requiredCards: 15,
+        priority: 26,
+        clubEaId: 483,
+        totalTokens: 38,
+        grades: [
+          {
+            name: "D",
+            threshold: 10,
+            tokens: 0
+          },
+          {
+            name: "C",
+            threshold: 1900,
+            tokens: 0
+          },
+          {
+            name: "B",
+            threshold: 3500,
+            tokens: 8
+          },
+          {
+            name: "A",
+            threshold: 5300,
+            tokens: 10
+          },
+          {
+            name: "S",
+            threshold: 7500,
+            tokens: 20
+          }
+        ],
+        recommended: {
+          grade: "A",
+          tokens: 18,
+          baseScore: 5294,
+          totalScore: 6515,
+          items: [
+            {
+              definitionId: 67373252,
+              score: 1556,
+              clubEaId: 483,
+              price: 69e3
+            },
+            {
+              definitionId: 50596036,
+              score: 1038,
+              clubEaId: 483,
+              price: 57e3
+            },
+            {
+              definitionId: 185122,
+              score: 340,
+              clubEaId: 483,
+              price: 650
+            },
+            {
+              definitionId: 264388,
+              score: 340,
+              clubEaId: 483,
+              price: 1200
+            },
+            {
+              definitionId: 208093,
+              score: 280,
+              clubEaId: 483,
+              price: 650
+            },
+            {
+              definitionId: 226110,
+              score: 280,
+              clubEaId: 483,
+              price: 650
+            },
+            {
+              definitionId: 215590,
+              score: 180,
+              clubEaId: 483,
+              price: 700
+            },
+            {
+              definitionId: 241707,
+              score: 180,
+              clubEaId: 483,
+              price: 750
+            },
+            {
+              definitionId: 270728,
+              score: 180,
+              clubEaId: 483,
+              price: 750
+            },
+            {
+              definitionId: 235781,
+              score: 160,
+              clubEaId: 483,
+              price: 900
+            },
+            {
+              definitionId: 237221,
+              score: 160,
+              clubEaId: 483,
+              price: 800
+            },
+            {
+              definitionId: 254551,
+              score: 160,
+              clubEaId: 483,
+              price: 700
+            },
+            {
+              definitionId: 262402,
+              score: 160,
+              clubEaId: 483,
+              price: 700
+            },
+            {
+              definitionId: 273906,
+              score: 140,
+              clubEaId: 483,
+              price: 650
+            },
+            {
+              definitionId: 276493,
+              score: 140,
+              clubEaId: 483,
+              price: 900
+            }
+          ]
+        }
+      },
+      {
+        id: 65,
+        categoryId: 4,
+        category: "bundesliga",
+        name: "Bayer 04 Leverkusen",
+        slug: "bayer-04-leverkusen",
+        description: "Requires 15 Bayer 04 Leverkusen Mens or Womens players to complete.",
+        requiredCards: 15,
+        priority: 1,
+        clubEaId: 32,
+        totalTokens: 155,
+        grades: [
+          {
+            name: "D",
+            threshold: 10,
+            tokens: 0
+          },
+          {
+            name: "C",
+            threshold: 9e3,
+            tokens: 0
+          },
+          {
+            name: "B",
+            threshold: 7e4,
+            tokens: 30
+          },
+          {
+            name: "A",
+            threshold: 16e4,
+            tokens: 50
+          },
+          {
+            name: "S",
+            threshold: 325e3,
+            tokens: 75
+          }
+        ],
+        recommended: {
+          grade: "D",
+          tokens: 0,
+          baseScore: 5033,
+          totalScore: 5904,
+          items: [
+            {
+              definitionId: 228813,
+              score: 830,
+              clubEaId: 32,
+              price: 750
+            },
+            {
+              definitionId: 67370729,
+              score: 638,
+              clubEaId: 32,
+              price: 14500
+            },
+            {
+              definitionId: 50593513,
+              score: 425,
+              clubEaId: 32,
+              price: 11e3
+            },
+            {
+              definitionId: 234236,
+              score: 410,
+              clubEaId: 32,
+              price: 750
+            },
+            {
+              definitionId: 265377,
+              score: 410,
+              clubEaId: 115996,
+              price: 700
+            },
+            {
+              definitionId: 239344,
+              score: 340,
+              clubEaId: 115996,
+              price: 700
+            },
+            {
+              definitionId: 247263,
+              score: 340,
+              clubEaId: 32,
+              price: 650
+            },
+            {
+              definitionId: 50408064,
+              score: 340,
+              clubEaId: 32,
+              price: null
+            },
+            {
+              definitionId: 50573500,
+              score: 340,
+              clubEaId: 32,
+              price: 800
+            },
+            {
+              definitionId: 261865,
+              score: 180,
+              clubEaId: 32,
+              price: 1200
+            },
+            {
+              definitionId: 275029,
+              score: 180,
+              clubEaId: 32,
+              price: 650
+            },
+            {
+              definitionId: 236804,
+              score: 160,
+              clubEaId: 32,
+              price: 650
+            },
+            {
+              definitionId: 256853,
+              score: 160,
+              clubEaId: 32,
+              price: 650
+            },
+            {
+              definitionId: 276901,
+              score: 140,
+              clubEaId: 32,
+              price: 650
+            },
+            {
+              definitionId: 50606856,
+              score: 140,
+              clubEaId: 32,
+              price: 700
+            }
+          ]
+        }
+      },
+      {
+        id: 4,
+        categoryId: 4,
+        category: "bundesliga",
+        name: "Borussia Dortmund",
+        slug: "borussia-dortmund",
+        description: "Requires 15 Borussia Dortmund Mens players to complete.",
+        requiredCards: 15,
+        priority: 2,
+        clubEaId: 22,
+        totalTokens: 155,
+        grades: [
+          {
+            name: "D",
+            threshold: 10,
+            tokens: 0
+          },
+          {
+            name: "C",
+            threshold: 13e3,
+            tokens: 0
+          },
+          {
+            name: "B",
+            threshold: 15e4,
+            tokens: 30
+          },
+          {
+            name: "A",
+            threshold: 32e4,
+            tokens: 50
+          },
+          {
+            name: "S",
+            threshold: 625e3,
+            tokens: 75
+          }
+        ],
+        recommended: {
+          grade: "C",
+          tokens: 0,
+          baseScore: 37206,
+          totalScore: 44635,
+          items: [
+            {
+              definitionId: 50578511,
+              score: 7688,
+              clubEaId: 22,
+              price: 29e4
+            },
+            {
+              definitionId: 235073,
+              score: 5500,
+              clubEaId: 22,
+              price: 11e3
+            },
+            {
+              definitionId: 247819,
+              score: 5500,
+              clubEaId: 22,
+              price: 18500
+            },
+            {
+              definitionId: 67355727,
+              score: 5125,
+              clubEaId: 22,
+              price: 205e3
+            },
+            {
+              definitionId: 67361973,
+              score: 3938,
+              clubEaId: 22,
+              price: 8e4
+            },
+            {
+              definitionId: 50584757,
+              score: 2625,
+              clubEaId: 22,
+              price: 51500
+            },
+            {
+              definitionId: 215441,
+              score: 2100,
+              clubEaId: 22,
+              price: 2e3
+            },
+            {
+              definitionId: 246863,
+              score: 2100,
+              clubEaId: 22,
+              price: 38e3
+            },
+            {
+              definitionId: 229476,
+              score: 830,
+              clubEaId: 22,
+              price: 900
+            },
+            {
+              definitionId: 229891,
+              score: 340,
+              clubEaId: 22,
+              price: 700
+            },
+            {
+              definitionId: 253109,
+              score: 340,
+              clubEaId: 22,
+              price: 750
+            },
+            {
+              definitionId: 204923,
+              score: 280,
+              clubEaId: 22,
+              price: 700
+            },
+            {
+              definitionId: 208333,
+              score: 280,
+              clubEaId: 22,
+              price: 750
+            },
+            {
+              definitionId: 254117,
+              score: 280,
+              clubEaId: 22,
+              price: 650
+            },
+            {
+              definitionId: 50591364,
+              score: 280,
+              clubEaId: 22,
+              price: null
+            }
+          ]
+        }
+      },
+      {
+        id: 31,
+        categoryId: 4,
+        category: "bundesliga",
+        name: "Borussia M\xF6nchengladbach",
+        slug: "borussia-monchengladbach",
+        description: "Requires 15 Borussia M\xF6nchengladbach Mens players to complete.",
+        requiredCards: 15,
+        priority: 3,
+        clubEaId: 23,
+        totalTokens: 38,
+        grades: [
+          {
+            name: "D",
+            threshold: 10,
+            tokens: 0
+          },
+          {
+            name: "C",
+            threshold: 1100,
+            tokens: 0
+          },
+          {
+            name: "B",
+            threshold: 2400,
+            tokens: 8
+          },
+          {
+            name: "A",
+            threshold: 3500,
+            tokens: 10
+          },
+          {
+            name: "S",
+            threshold: 5e3,
+            tokens: 20
+          }
+        ],
+        recommended: {
+          grade: "C",
+          tokens: 0,
+          baseScore: 1365,
+          totalScore: 1585,
+          items: [
+            {
+              definitionId: 214096,
+              score: 180,
+              clubEaId: 23,
+              price: 650
+            },
+            {
+              definitionId: 235018,
+              score: 160,
+              clubEaId: 23,
+              price: 650
+            },
+            {
+              definitionId: 220876,
+              score: 140,
+              clubEaId: 23,
+              price: 650
+            },
+            {
+              definitionId: 224841,
+              score: 120,
+              clubEaId: 23,
+              price: 650
+            },
+            {
+              definitionId: 239367,
+              score: 120,
+              clubEaId: 23,
+              price: 650
+            },
+            {
+              definitionId: 233152,
+              score: 100,
+              clubEaId: 23,
+              price: 1900
+            },
+            {
+              definitionId: 50571625,
+              score: 100,
+              clubEaId: 23,
+              price: 700
+            },
+            {
+              definitionId: 199803,
+              score: 90,
+              clubEaId: 23,
+              price: 650
+            },
+            {
+              definitionId: 243354,
+              score: 90,
+              clubEaId: 23,
+              price: 3400
+            },
+            {
+              definitionId: 264194,
+              score: 90,
+              clubEaId: 23,
+              price: 900
+            },
+            {
+              definitionId: 80454,
+              score: 35,
+              clubEaId: 23,
+              price: 650
+            },
+            {
+              definitionId: 242006,
+              score: 35,
+              clubEaId: 23,
+              price: 550
+            },
+            {
+              definitionId: 257273,
+              score: 35,
+              clubEaId: 23,
+              price: 650
+            },
+            {
+              definitionId: 271119,
+              score: 35,
+              clubEaId: 23,
+              price: 650
+            },
+            {
+              definitionId: 274093,
+              score: 35,
+              clubEaId: 23,
+              price: 600
+            }
+          ]
+        }
+      },
+      {
+        id: 59,
+        categoryId: 4,
+        category: "bundesliga",
+        name: "Eintracht Frankfurt",
+        slug: "eintracht-frankfurt",
+        description: "Requires 15 Eintracht Frankfurt Mens or Womens players to complete.",
+        requiredCards: 15,
+        priority: 4,
+        clubEaId: 1824,
+        totalTokens: 155,
+        grades: [
+          {
+            name: "D",
+            threshold: 10,
+            tokens: 0
+          },
+          {
+            name: "C",
+            threshold: 9e3,
+            tokens: 0
+          },
+          {
+            name: "B",
+            threshold: 4e4,
+            tokens: 30
+          },
+          {
+            name: "A",
+            threshold: 8e4,
+            tokens: 50
+          },
+          {
+            name: "S",
+            threshold: 15e4,
+            tokens: 75
+          }
+        ],
+        recommended: {
+          grade: "D",
+          tokens: 0,
+          baseScore: 6044,
+          totalScore: 7452,
+          items: [
+            {
+              definitionId: 50596706,
+              score: 1556,
+              clubEaId: 115997,
+              price: 21e3
+            },
+            {
+              definitionId: 67373922,
+              score: 1038,
+              clubEaId: 115997,
+              price: 12500
+            },
+            {
+              definitionId: 261773,
+              score: 830,
+              clubEaId: 115997,
+              price: 850
+            },
+            {
+              definitionId: 238470,
+              score: 340,
+              clubEaId: 115997,
+              price: 700
+            },
+            {
+              definitionId: 244257,
+              score: 340,
+              clubEaId: 1824,
+              price: 650
+            },
+            {
+              definitionId: 265058,
+              score: 340,
+              clubEaId: 115997,
+              price: 700
+            },
+            {
+              definitionId: 50568180,
+              score: 340,
+              clubEaId: 1824,
+              price: null
+            },
+            {
+              definitionId: 226979,
+              score: 280,
+              clubEaId: 115997,
+              price: 650
+            },
+            {
+              definitionId: 232639,
+              score: 180,
+              clubEaId: 1824,
+              price: 650
+            },
+            {
+              definitionId: 265121,
+              score: 180,
+              clubEaId: 115997,
+              price: 750
+            },
+            {
+              definitionId: 73023,
+              score: 140,
+              clubEaId: 115997,
+              price: 850
+            },
+            {
+              definitionId: 275328,
+              score: 140,
+              clubEaId: 1824,
+              price: 650
+            },
+            {
+              definitionId: 192318,
+              score: 120,
+              clubEaId: 1824,
+              price: 800
+            },
+            {
+              definitionId: 277815,
+              score: 120,
+              clubEaId: 115997,
+              price: 700
+            },
+            {
+              definitionId: 264058,
+              score: 100,
+              clubEaId: 115997,
+              price: 750
+            }
+          ]
+        }
+      },
+      {
+        id: 10,
+        categoryId: 4,
+        category: "bundesliga",
+        name: "FC Augsburg",
+        slug: "fc-augsburg",
+        description: "Requires 15 FC Augsburg Mens players to complete.",
+        requiredCards: 15,
+        priority: 5,
+        clubEaId: 100409,
+        totalTokens: 38,
+        grades: [
+          {
+            name: "D",
+            threshold: 10,
+            tokens: 0
+          },
+          {
+            name: "C",
+            threshold: 800,
+            tokens: 0
+          },
+          {
+            name: "B",
+            threshold: 1600,
+            tokens: 8
+          },
+          {
+            name: "A",
+            threshold: 2400,
+            tokens: 10
+          },
+          {
+            name: "S",
+            threshold: 3500,
+            tokens: 20
+          }
+        ],
+        recommended: {
+          grade: "C",
+          tokens: 0,
+          baseScore: 1250,
+          totalScore: 1423,
+          items: [
+            {
+              definitionId: 236477,
+              score: 120,
+              clubEaId: 100409,
+              price: 650
+            },
+            {
+              definitionId: 258432,
+              score: 120,
+              clubEaId: 100409,
+              price: 650
+            },
+            {
+              definitionId: 199439,
+              score: 100,
+              clubEaId: 100409,
+              price: 1500
+            },
+            {
+              definitionId: 202201,
+              score: 100,
+              clubEaId: 100409,
+              price: 1500
+            },
+            {
+              definitionId: 242818,
+              score: 100,
+              clubEaId: 100409,
+              price: 700
+            },
+            {
+              definitionId: 246594,
+              score: 100,
+              clubEaId: 100409,
+              price: 1100
+            },
+            {
+              definitionId: 259306,
+              score: 100,
+              clubEaId: 100409,
+              price: 1e3
+            },
+            {
+              definitionId: 266433,
+              score: 100,
+              clubEaId: 100409,
+              price: 700
+            },
+            {
+              definitionId: 257889,
+              score: 90,
+              clubEaId: 100409,
+              price: 9500
+            },
+            {
+              definitionId: 269305,
+              score: 90,
+              clubEaId: 100409,
+              price: 1200
+            },
+            {
+              definitionId: 50597884,
+              score: 90,
+              clubEaId: 100409,
+              price: 650
+            },
+            {
+              definitionId: 80729,
+              score: 35,
+              clubEaId: 100409,
+              price: 600
+            },
+            {
+              definitionId: 224425,
+              score: 35,
+              clubEaId: 100409,
+              price: 650
+            },
+            {
+              definitionId: 268837,
+              score: 35,
+              clubEaId: 100409,
+              price: 600
+            },
+            {
+              definitionId: 274226,
+              score: 35,
+              clubEaId: 100409,
+              price: 650
+            }
+          ]
+        }
+      },
+      {
+        id: 52,
+        categoryId: 4,
+        category: "bundesliga",
+        name: "FC Bayern M\xFCnchen",
+        slug: "fc-bayern-munchen",
+        description: "Requires 20 FC Bayern M\xFCnchen Mens or Womens players to complete.",
+        requiredCards: 20,
+        priority: 6,
+        clubEaId: 115995,
+        totalTokens: 220,
+        grades: [
+          {
+            name: "D",
+            threshold: 10,
+            tokens: 0
+          },
+          {
+            name: "C",
+            threshold: 6e4,
+            tokens: 0
+          },
+          {
+            name: "B",
+            threshold: 7e5,
+            tokens: 50
+          },
+          {
+            name: "A",
+            threshold: 14e5,
+            tokens: 70
+          },
+          {
+            name: "S",
+            threshold: 28e5,
+            tokens: 100
+          }
+        ],
+        recommended: {
+          grade: "C",
+          tokens: 0,
+          baseScore: 165363,
+          totalScore: 224982,
+          items: [
+            {
+              definitionId: 67356691,
+              score: 35625,
+              clubEaId: 21,
+              price: 2095e3
+            },
+            {
+              definitionId: 50579475,
+              score: 23750,
+              clubEaId: 21,
+              price: 1375e3
+            },
+            {
+              definitionId: 67368151,
+              score: 15563,
+              clubEaId: 115995,
+              price: 44e4
+            },
+            {
+              definitionId: 202126,
+              score: 14e3,
+              clubEaId: 21,
+              price: 26500
+            },
+            {
+              definitionId: 247827,
+              score: 14e3,
+              clubEaId: 21,
+              price: 365e3
+            },
+            {
+              definitionId: 50590935,
+              score: 10375,
+              clubEaId: 115995,
+              price: 166e3
+            },
+            {
+              definitionId: 212622,
+              score: 8300,
+              clubEaId: 21,
+              price: 8500
+            },
+            {
+              definitionId: 241084,
+              score: 8300,
+              clubEaId: 21,
+              price: 1e4
+            },
+            {
+              definitionId: 248822,
+              score: 8300,
+              clubEaId: 115995,
+              price: 8300
+            },
+            {
+              definitionId: 213331,
+              score: 5500,
+              clubEaId: 21,
+              price: 5800
+            },
+            {
+              definitionId: 229558,
+              score: 5500,
+              clubEaId: 21,
+              price: 39e3
+            },
+            {
+              definitionId: 256790,
+              score: 5500,
+              clubEaId: 21,
+              price: 15e3
+            },
+            {
+              definitionId: 259287,
+              score: 5500,
+              clubEaId: 115995,
+              price: 5800
+            },
+            {
+              definitionId: 225375,
+              score: 2100,
+              clubEaId: 21,
+              price: 6300
+            },
+            {
+              definitionId: 239345,
+              score: 830,
+              clubEaId: 115995,
+              price: 800
+            },
+            {
+              definitionId: 264886,
+              score: 830,
+              clubEaId: 115995,
+              price: 750
+            },
+            {
+              definitionId: 206113,
+              score: 410,
+              clubEaId: 21,
+              price: 750
+            },
+            {
+              definitionId: 259480,
+              score: 410,
+              clubEaId: 21,
+              price: 750
+            },
+            {
+              definitionId: 277452,
+              score: 410,
+              clubEaId: 115995,
+              price: 650
+            },
+            {
+              definitionId: 264890,
+              score: 160,
+              clubEaId: 115995,
+              price: 650
+            }
+          ]
+        }
+      },
+      {
+        id: 15,
+        categoryId: 4,
+        category: "bundesliga",
+        name: "FC K\xF6ln",
+        slug: "fc-koln",
+        description: "Requires 15 FC K\xF6ln Mens or Womens players to complete.",
+        requiredCards: 15,
+        priority: 7,
+        clubEaId: 31,
+        totalTokens: 38,
+        grades: [
+          {
+            name: "D",
+            threshold: 10,
+            tokens: 0
+          },
+          {
+            name: "C",
+            threshold: 1e3,
+            tokens: 0
+          },
+          {
+            name: "B",
+            threshold: 1700,
+            tokens: 8
+          },
+          {
+            name: "A",
+            threshold: 2500,
+            tokens: 10
+          },
+          {
+            name: "S",
+            threshold: 3600,
+            tokens: 20
+          }
+        ],
+        recommended: {
+          grade: "C",
+          tokens: 0,
+          baseScore: 1465,
+          totalScore: 1635,
+          items: [
+            {
+              definitionId: 226375,
+              score: 160,
+              clubEaId: 116003,
+              price: 750
+            },
+            {
+              definitionId: 71178,
+              score: 140,
+              clubEaId: 31,
+              price: 700
+            },
+            {
+              definitionId: 224041,
+              score: 140,
+              clubEaId: 31,
+              price: 650
+            },
+            {
+              definitionId: 248715,
+              score: 140,
+              clubEaId: 116003,
+              price: 850
+            },
+            {
+              definitionId: 264940,
+              score: 120,
+              clubEaId: 116003,
+              price: 800
+            },
+            {
+              definitionId: 225126,
+              score: 100,
+              clubEaId: 31,
+              price: 1700
+            },
+            {
+              definitionId: 235360,
+              score: 100,
+              clubEaId: 31,
+              price: 1800
+            },
+            {
+              definitionId: 279523,
+              score: 100,
+              clubEaId: 116003,
+              price: 850
+            },
+            {
+              definitionId: 226355,
+              score: 90,
+              clubEaId: 116003,
+              price: 1300
+            },
+            {
+              definitionId: 252021,
+              score: 90,
+              clubEaId: 31,
+              price: 3500
+            },
+            {
+              definitionId: 265102,
+              score: 90,
+              clubEaId: 116003,
+              price: 800
+            },
+            {
+              definitionId: 271952,
+              score: 90,
+              clubEaId: 116003,
+              price: 1700
+            },
+            {
+              definitionId: 265033,
+              score: 35,
+              clubEaId: 116003,
+              price: 500
+            },
+            {
+              definitionId: 265091,
+              score: 35,
+              clubEaId: 116003,
+              price: 600
+            },
+            {
+              definitionId: 276480,
+              score: 35,
+              clubEaId: 116003,
+              price: 1400
+            }
+          ]
+        }
+      },
+      {
+        id: 73,
+        categoryId: 4,
+        category: "bundesliga",
+        name: "1. FC N\xFCrnberg",
+        slug: "1-fc-nurnberg",
+        description: "Requires 15 1. FC N\xFCrnberg Women's players to complete.",
+        requiredCards: 15,
+        priority: 8,
+        clubEaId: 171,
+        totalTokens: 28,
+        grades: [
+          {
+            name: "D",
+            threshold: 10,
+            tokens: 0
+          },
+          {
+            name: "C",
+            threshold: 400,
+            tokens: 0
+          },
+          {
+            name: "B",
+            threshold: 600,
+            tokens: 5
+          },
+          {
+            name: "A",
+            threshold: 1e3,
+            tokens: 8
+          },
+          {
+            name: "S",
+            threshold: 1400,
+            tokens: 15
+          }
+        ],
+        recommended: {
+          grade: "B",
+          tokens: 5,
+          baseScore: 580,
+          totalScore: 823,
+          items: [
+            {
+              definitionId: 275760,
+              score: 90,
+              clubEaId: 131386,
+              price: 1e3
+            },
+            {
+              definitionId: 73655,
+              score: 35,
+              clubEaId: 131386,
+              price: 500
+            },
+            {
+              definitionId: 78820,
+              score: 35,
+              clubEaId: 131386,
+              price: 550
+            },
+            {
+              definitionId: 78842,
+              score: 35,
+              clubEaId: 131386,
+              price: 500
+            },
+            {
+              definitionId: 78844,
+              score: 35,
+              clubEaId: 131386,
+              price: 500
+            },
+            {
+              definitionId: 79626,
+              score: 35,
+              clubEaId: 131386,
+              price: 550
+            },
+            {
+              definitionId: 79630,
+              score: 35,
+              clubEaId: 131386,
+              price: 500
+            },
+            {
+              definitionId: 79633,
+              score: 35,
+              clubEaId: 131386,
+              price: 550
+            },
+            {
+              definitionId: 86937,
+              score: 35,
+              clubEaId: 131386,
+              price: 600
+            },
+            {
+              definitionId: 264920,
+              score: 35,
+              clubEaId: 131386,
+              price: 600
+            },
+            {
+              definitionId: 271406,
+              score: 35,
+              clubEaId: 131386,
+              price: 550
+            },
+            {
+              definitionId: 271598,
+              score: 35,
+              clubEaId: 131386,
+              price: 650
+            },
+            {
+              definitionId: 271868,
+              score: 35,
+              clubEaId: 131386,
+              price: 600
+            },
+            {
+              definitionId: 275527,
+              score: 35,
+              clubEaId: 131386,
+              price: 1e3
+            },
+            {
+              definitionId: 275533,
+              score: 35,
+              clubEaId: 131386,
+              price: 550
+            }
+          ]
+        }
+      },
+      {
+        id: 64,
+        categoryId: 4,
+        category: "bundesliga",
+        name: "FC Union Berlin",
+        slug: "fc-union-berlin",
+        description: "Requires 15 FC Union Berlin Mens or Womens players to complete.",
+        requiredCards: 15,
+        priority: 9,
+        clubEaId: 1831,
+        totalTokens: 28,
+        grades: [
+          {
+            name: "D",
+            threshold: 10,
+            tokens: 0
+          },
+          {
+            name: "C",
+            threshold: 900,
+            tokens: 0
+          },
+          {
+            name: "B",
+            threshold: 1300,
+            tokens: 5
+          },
+          {
+            name: "A",
+            threshold: 2e3,
+            tokens: 8
+          },
+          {
+            name: "S",
+            threshold: 3e3,
+            tokens: 15
+          }
+        ],
+        recommended: {
+          grade: "B",
+          tokens: 5,
+          baseScore: 1565,
+          totalScore: 1715,
+          items: [
+            {
+              definitionId: 264925,
+              score: 180,
+              clubEaId: 132589,
+              price: 650
+            },
+            {
+              definitionId: 201269,
+              score: 140,
+              clubEaId: 1831,
+              price: 650
+            },
+            {
+              definitionId: 264954,
+              score: 140,
+              clubEaId: 132589,
+              price: 650
+            },
+            {
+              definitionId: 265576,
+              score: 120,
+              clubEaId: 1831,
+              price: 900
+            },
+            {
+              definitionId: 268451,
+              score: 120,
+              clubEaId: 132589,
+              price: 800
+            },
+            {
+              definitionId: 211999,
+              score: 100,
+              clubEaId: 1831,
+              price: 950
+            },
+            {
+              definitionId: 265079,
+              score: 100,
+              clubEaId: 132589,
+              price: 950
+            },
+            {
+              definitionId: 78602,
+              score: 90,
+              clubEaId: 132589,
+              price: 1300
+            },
+            {
+              definitionId: 193254,
+              score: 90,
+              clubEaId: 1831,
+              price: 2e3
+            },
+            {
+              definitionId: 250941,
+              score: 90,
+              clubEaId: 1831,
+              price: 900
+            },
+            {
+              definitionId: 260931,
+              score: 90,
+              clubEaId: 1831,
+              price: 1900
+            },
+            {
+              definitionId: 265026,
+              score: 90,
+              clubEaId: 132589,
+              price: 650
+            },
+            {
+              definitionId: 277799,
+              score: 90,
+              clubEaId: 1831,
+              price: 1700
+            },
+            {
+              definitionId: 279693,
+              score: 90,
+              clubEaId: 132589,
+              price: 850
+            },
+            {
+              definitionId: 275534,
+              score: 35,
+              clubEaId: 132589,
+              price: 550
+            }
+          ]
+        }
+      },
+      {
+        id: 33,
+        categoryId: 4,
+        category: "bundesliga",
+        name: "FSV Mainz 05",
+        slug: "fsv-mainz-05",
+        description: "Requires 15 FSV Mainz 05 Mens or Womens players to complete.",
+        requiredCards: 15,
+        priority: 10,
+        clubEaId: 169,
+        totalTokens: 38,
+        grades: [
+          {
+            name: "D",
+            threshold: 10,
+            tokens: 0
+          },
+          {
+            name: "C",
+            threshold: 1e3,
+            tokens: 0
+          },
+          {
+            name: "B",
+            threshold: 2200,
+            tokens: 8
+          },
+          {
+            name: "A",
+            threshold: 3400,
+            tokens: 10
+          },
+          {
+            name: "S",
+            threshold: 4800,
+            tokens: 20
+          }
+        ],
+        recommended: {
+          grade: "C",
+          tokens: 0,
+          baseScore: 1660,
+          totalScore: 1897,
+          items: [
+            {
+              definitionId: 73078,
+              score: 280,
+              clubEaId: 169,
+              price: 900
+            },
+            {
+              definitionId: 225309,
+              score: 180,
+              clubEaId: 169,
+              price: 650
+            },
+            {
+              definitionId: 223671,
+              score: 120,
+              clubEaId: 169,
+              price: 1200
+            },
+            {
+              definitionId: 224251,
+              score: 120,
+              clubEaId: 169,
+              price: 650
+            },
+            {
+              definitionId: 236636,
+              score: 120,
+              clubEaId: 169,
+              price: 1400
+            },
+            {
+              definitionId: 257075,
+              score: 120,
+              clubEaId: 169,
+              price: 650
+            },
+            {
+              definitionId: 221671,
+              score: 100,
+              clubEaId: 169,
+              price: 800
+            },
+            {
+              definitionId: 256942,
+              score: 100,
+              clubEaId: 169,
+              price: 1700
+            },
+            {
+              definitionId: 202429,
+              score: 90,
+              clubEaId: 169,
+              price: 800
+            },
+            {
+              definitionId: 212212,
+              score: 90,
+              clubEaId: 169,
+              price: 2600
+            },
+            {
+              definitionId: 216275,
+              score: 90,
+              clubEaId: 169,
+              price: 2200
+            },
+            {
+              definitionId: 233216,
+              score: 90,
+              clubEaId: 169,
+              price: 1200
+            },
+            {
+              definitionId: 258715,
+              score: 90,
+              clubEaId: 169,
+              price: 700
+            },
+            {
+              definitionId: 86949,
+              score: 35,
+              clubEaId: 132866,
+              price: 550
+            },
+            {
+              definitionId: 271838,
+              score: 35,
+              clubEaId: 132866,
+              price: 500
+            }
+          ]
+        }
+      },
+      {
+        id: 67,
+        categoryId: 4,
+        category: "bundesliga",
+        name: "Hamburger SV",
+        slug: "hamburger-sv",
+        description: "Requires 15 Hamburger SV Mens or Womens players to complete.",
+        requiredCards: 15,
+        priority: 11,
+        clubEaId: 28,
+        totalTokens: 38,
+        grades: [
+          {
+            name: "D",
+            threshold: 10,
+            tokens: 0
+          },
+          {
+            name: "C",
+            threshold: 500,
+            tokens: 0
+          },
+          {
+            name: "B",
+            threshold: 1e3,
+            tokens: 8
+          },
+          {
+            name: "A",
+            threshold: 1400,
+            tokens: 10
+          },
+          {
+            name: "S",
+            threshold: 2e3,
+            tokens: 20
+          }
+        ],
+        recommended: {
+          grade: "B",
+          tokens: 8,
+          baseScore: 1165,
+          totalScore: 1357,
+          items: [
+            {
+              definitionId: 212197,
+              score: 160,
+              clubEaId: 28,
+              price: 650
+            },
+            {
+              definitionId: 50588606,
+              score: 140,
+              clubEaId: 28,
+              price: 850
+            },
+            {
+              definitionId: 50607001,
+              score: 140,
+              clubEaId: 28,
+              price: 800
+            },
+            {
+              definitionId: 241928,
+              score: 120,
+              clubEaId: 28,
+              price: 1300
+            },
+            {
+              definitionId: 232839,
+              score: 90,
+              clubEaId: 28,
+              price: 1700
+            },
+            {
+              definitionId: 242663,
+              score: 90,
+              clubEaId: 28,
+              price: 3200
+            },
+            {
+              definitionId: 246885,
+              score: 90,
+              clubEaId: 28,
+              price: 750
+            },
+            {
+              definitionId: 276119,
+              score: 90,
+              clubEaId: 28,
+              price: 1800
+            },
+            {
+              definitionId: 78682,
+              score: 35,
+              clubEaId: 132533,
+              price: 750
+            },
+            {
+              definitionId: 78694,
+              score: 35,
+              clubEaId: 132533,
+              price: 600
+            },
+            {
+              definitionId: 78782,
+              score: 35,
+              clubEaId: 132533,
+              price: 550
+            },
+            {
+              definitionId: 234640,
+              score: 35,
+              clubEaId: 28,
+              price: 600
+            },
+            {
+              definitionId: 256854,
+              score: 35,
+              clubEaId: 28,
+              price: 600
+            },
+            {
+              definitionId: 266272,
+              score: 35,
+              clubEaId: 28,
+              price: 700
+            },
+            {
+              definitionId: 50593783,
+              score: 35,
+              clubEaId: 28,
+              price: 1400
+            }
+          ]
+        }
+      },
+      {
+        id: 28,
+        categoryId: 4,
+        category: "bundesliga",
+        name: "RB Leipzig",
+        slug: "rb-leipzig",
+        description: "Requires 15 RB Leipzig Mens or Womens players to complete.",
+        requiredCards: 15,
+        priority: 12,
+        clubEaId: 112172,
+        totalTokens: 155,
+        grades: [
+          {
+            name: "D",
+            threshold: 10,
+            tokens: 0
+          },
+          {
+            name: "C",
+            threshold: 7e3,
+            tokens: 0
+          },
+          {
+            name: "B",
+            threshold: 4e4,
+            tokens: 30
+          },
+          {
+            name: "A",
+            threshold: 8e4,
+            tokens: 50
+          },
+          {
+            name: "S",
+            threshold: 175e3,
+            tokens: 75
+          }
+        ],
+        recommended: {
+          grade: "C",
+          tokens: 0,
+          baseScore: 5745,
+          totalScore: 7014,
+          items: [
+            {
+              definitionId: 50594511,
+              score: 2625,
+              clubEaId: 112172,
+              price: 68100
+            },
+            {
+              definitionId: 204638,
+              score: 410,
+              clubEaId: 112172,
+              price: 700
+            },
+            {
+              definitionId: 236703,
+              score: 410,
+              clubEaId: 112172,
+              price: 650
+            },
+            {
+              definitionId: 242187,
+              score: 340,
+              clubEaId: 112172,
+              price: 650
+            },
+            {
+              definitionId: 257876,
+              score: 280,
+              clubEaId: 112172,
+              price: 650
+            },
+            {
+              definitionId: 262138,
+              score: 280,
+              clubEaId: 112172,
+              price: 650
+            },
+            {
+              definitionId: 50607864,
+              score: 280,
+              clubEaId: 112172,
+              price: null
+            },
+            {
+              definitionId: 50564059,
+              score: 180,
+              clubEaId: 112172,
+              price: 650
+            },
+            {
+              definitionId: 240709,
+              score: 160,
+              clubEaId: 112172,
+              price: 700
+            },
+            {
+              definitionId: 73398,
+              score: 140,
+              clubEaId: 112172,
+              price: 1100
+            },
+            {
+              definitionId: 228579,
+              score: 140,
+              clubEaId: 112172,
+              price: 950
+            },
+            {
+              definitionId: 242879,
+              score: 140,
+              clubEaId: 112172,
+              price: 650
+            },
+            {
+              definitionId: 262863,
+              score: 140,
+              clubEaId: 112172,
+              price: 700
+            },
+            {
+              definitionId: 272612,
+              score: 120,
+              clubEaId: 112172,
+              price: 800
+            },
+            {
+              definitionId: 265450,
+              score: 100,
+              clubEaId: 112172,
+              price: 1200
+            }
+          ]
+        }
+      },
+      {
+        id: 21,
+        categoryId: 4,
+        category: "bundesliga",
+        name: "SC Freiburg",
+        slug: "sc-freiburg",
+        description: "Requires 15 SC Freiburg Mens or Womens players to complete.",
+        requiredCards: 15,
+        priority: 13,
+        clubEaId: 25,
+        totalTokens: 80,
+        grades: [
+          {
+            name: "D",
+            threshold: 10,
+            tokens: 0
+          },
+          {
+            name: "C",
+            threshold: 2e3,
+            tokens: 0
+          },
+          {
+            name: "B",
+            threshold: 11500,
+            tokens: 15
+          },
+          {
+            name: "A",
+            threshold: 18e3,
+            tokens: 25
+          },
+          {
+            name: "S",
+            threshold: 3e4,
+            tokens: 40
+          }
+        ],
+        recommended: {
+          grade: "C",
+          tokens: 0,
+          baseScore: 2513,
+          totalScore: 2867,
+          items: [
+            {
+              definitionId: 207862,
+              score: 410,
+              clubEaId: 25,
+              price: 700
+            },
+            {
+              definitionId: 50594554,
+              score: 338,
+              clubEaId: 25,
+              price: 22e3
+            },
+            {
+              definitionId: 67371770,
+              score: 225,
+              clubEaId: 25,
+              price: 13500
+            },
+            {
+              definitionId: 212096,
+              score: 160,
+              clubEaId: 25,
+              price: 650
+            },
+            {
+              definitionId: 231366,
+              score: 160,
+              clubEaId: 25,
+              price: 650
+            },
+            {
+              definitionId: 265069,
+              score: 160,
+              clubEaId: 116002,
+              price: 750
+            },
+            {
+              definitionId: 265073,
+              score: 140,
+              clubEaId: 116002,
+              price: 650
+            },
+            {
+              definitionId: 227330,
+              score: 120,
+              clubEaId: 116002,
+              price: 750
+            },
+            {
+              definitionId: 240451,
+              score: 120,
+              clubEaId: 25,
+              price: 950
+            },
+            {
+              definitionId: 255185,
+              score: 120,
+              clubEaId: 25,
+              price: 700
+            },
+            {
+              definitionId: 259750,
+              score: 120,
+              clubEaId: 25,
+              price: 850
+            },
+            {
+              definitionId: 268428,
+              score: 120,
+              clubEaId: 25,
+              price: 650
+            },
+            {
+              definitionId: 271839,
+              score: 120,
+              clubEaId: 116002,
+              price: 650
+            },
+            {
+              definitionId: 226168,
+              score: 100,
+              clubEaId: 25,
+              price: 1600
+            },
+            {
+              definitionId: 262666,
+              score: 100,
+              clubEaId: 25,
+              price: 1600
+            }
+          ]
+        }
+      },
+      {
+        id: 47,
+        categoryId: 4,
+        category: "bundesliga",
+        name: "SC Paderborn 07",
+        slug: "sc-paderborn-07",
+        description: "Requires 15 SC Paderborn 07 Mens players to complete.",
+        requiredCards: 15,
+        priority: 14,
+        clubEaId: 10030,
+        totalTokens: 28,
+        grades: [
+          {
+            name: "D",
+            threshold: 10,
+            tokens: 0
+          },
+          {
+            name: "C",
+            threshold: 400,
+            tokens: 0
+          },
+          {
+            name: "B",
+            threshold: 600,
+            tokens: 5
+          },
+          {
+            name: "A",
+            threshold: 1e3,
+            tokens: 8
+          },
+          {
+            name: "S",
+            threshold: 1400,
+            tokens: 15
+          }
+        ],
+        recommended: {
+          grade: "B",
+          tokens: 5,
+          baseScore: 525,
+          totalScore: 791,
+          items: [
+            {
+              definitionId: 76291,
+              score: 35,
+              clubEaId: 10030,
+              price: 700
+            },
+            {
+              definitionId: 79816,
+              score: 35,
+              clubEaId: 10030,
+              price: 650
+            },
+            {
+              definitionId: 212879,
+              score: 35,
+              clubEaId: 10030,
+              price: 700
+            },
+            {
+              definitionId: 238363,
+              score: 35,
+              clubEaId: 10030,
+              price: 600
+            },
+            {
+              definitionId: 244024,
+              score: 35,
+              clubEaId: 10030,
+              price: 650
+            },
+            {
+              definitionId: 250926,
+              score: 35,
+              clubEaId: 10030,
+              price: 700
+            },
+            {
+              definitionId: 267899,
+              score: 35,
+              clubEaId: 10030,
+              price: 500
+            },
+            {
+              definitionId: 270008,
+              score: 35,
+              clubEaId: 10030,
+              price: 600
+            },
+            {
+              definitionId: 270901,
+              score: 35,
+              clubEaId: 10030,
+              price: 600
+            },
+            {
+              definitionId: 275262,
+              score: 35,
+              clubEaId: 10030,
+              price: 600
+            },
+            {
+              definitionId: 276367,
+              score: 35,
+              clubEaId: 10030,
+              price: 600
+            },
+            {
+              definitionId: 278178,
+              score: 35,
+              clubEaId: 10030,
+              price: 650
+            },
+            {
+              definitionId: 279116,
+              score: 35,
+              clubEaId: 10030,
+              price: 700
+            },
+            {
+              definitionId: 50583609,
+              score: 35,
+              clubEaId: 10030,
+              price: 650
+            },
+            {
+              definitionId: 50591938,
+              score: 35,
+              clubEaId: 10030,
+              price: 700
+            }
+          ]
+        }
+      },
+      {
+        id: 57,
+        categoryId: 4,
+        category: "bundesliga",
+        name: "Schalke 04",
+        slug: "schalke-04",
+        description: "Requires 15 Schalke 04 Mens players to complete.",
+        requiredCards: 15,
+        priority: 15,
+        clubEaId: 34,
+        totalTokens: 28,
+        grades: [
+          {
+            name: "D",
+            threshold: 10,
+            tokens: 0
+          },
+          {
+            name: "C",
+            threshold: 400,
+            tokens: 0
+          },
+          {
+            name: "B",
+            threshold: 600,
+            tokens: 5
+          },
+          {
+            name: "A",
+            threshold: 1e3,
+            tokens: 8
+          },
+          {
+            name: "S",
+            threshold: 1400,
+            tokens: 15
+          }
+        ],
+        recommended: {
+          grade: "B",
+          tokens: 5,
+          baseScore: 735,
+          totalScore: 971,
+          items: [
+            {
+              definitionId: 180930,
+              score: 140,
+              clubEaId: 34,
+              price: 700
+            },
+            {
+              definitionId: 223697,
+              score: 140,
+              clubEaId: 34,
+              price: 950
+            },
+            {
+              definitionId: 72964,
+              score: 35,
+              clubEaId: 34,
+              price: 700
+            },
+            {
+              definitionId: 212240,
+              score: 35,
+              clubEaId: 34,
+              price: 700
+            },
+            {
+              definitionId: 229472,
+              score: 35,
+              clubEaId: 34,
+              price: 600
+            },
+            {
+              definitionId: 237509,
+              score: 35,
+              clubEaId: 34,
+              price: 700
+            },
+            {
+              definitionId: 237708,
+              score: 35,
+              clubEaId: 34,
+              price: 650
+            },
+            {
+              definitionId: 239099,
+              score: 35,
+              clubEaId: 34,
+              price: 600
+            },
+            {
+              definitionId: 240916,
+              score: 35,
+              clubEaId: 34,
+              price: 650
+            },
+            {
+              definitionId: 248573,
+              score: 35,
+              clubEaId: 34,
+              price: 700
+            },
+            {
+              definitionId: 253102,
+              score: 35,
+              clubEaId: 34,
+              price: 700
+            },
+            {
+              definitionId: 254245,
+              score: 35,
+              clubEaId: 34,
+              price: 700
+            },
+            {
+              definitionId: 257877,
+              score: 35,
+              clubEaId: 34,
+              price: 650
+            },
+            {
+              definitionId: 269566,
+              score: 35,
+              clubEaId: 34,
+              price: 650
+            },
+            {
+              definitionId: 50558028,
+              score: 35,
+              clubEaId: 34,
+              price: 750
+            }
+          ]
+        }
+      },
+      {
+        id: 38,
+        categoryId: 4,
+        category: "bundesliga",
+        name: "SV Elversberg",
+        slug: "sv-elversberg",
+        description: "Requires 15 SV Elversberg Mens players to complete.",
+        requiredCards: 15,
+        priority: 16,
+        clubEaId: 580,
+        totalTokens: 28,
+        grades: [
+          {
+            name: "D",
+            threshold: 10,
+            tokens: 0
+          },
+          {
+            name: "C",
+            threshold: 400,
+            tokens: 0
+          },
+          {
+            name: "B",
+            threshold: 600,
+            tokens: 5
+          },
+          {
+            name: "A",
+            threshold: 1e3,
+            tokens: 8
+          },
+          {
+            name: "S",
+            threshold: 1400,
+            tokens: 15
+          }
+        ],
+        recommended: {
+          grade: "B",
+          tokens: 5,
+          baseScore: 525,
+          totalScore: 772,
+          items: [
+            {
+              definitionId: 70037,
+              score: 35,
+              clubEaId: 580,
+              price: 550
+            },
+            {
+              definitionId: 73002,
+              score: 35,
+              clubEaId: 580,
+              price: 600
+            },
+            {
+              definitionId: 73057,
+              score: 35,
+              clubEaId: 580,
+              price: 550
+            },
+            {
+              definitionId: 73135,
+              score: 35,
+              clubEaId: 580,
+              price: 750
+            },
+            {
+              definitionId: 216416,
+              score: 35,
+              clubEaId: 580,
+              price: 650
+            },
+            {
+              definitionId: 234860,
+              score: 35,
+              clubEaId: 580,
+              price: 600
+            },
+            {
+              definitionId: 244233,
+              score: 35,
+              clubEaId: 580,
+              price: 700
+            },
+            {
+              definitionId: 246301,
+              score: 35,
+              clubEaId: 580,
+              price: 600
+            },
+            {
+              definitionId: 246858,
+              score: 35,
+              clubEaId: 580,
+              price: 650
+            },
+            {
+              definitionId: 260925,
+              score: 35,
+              clubEaId: 580,
+              price: 550
+            },
+            {
+              definitionId: 261745,
+              score: 35,
+              clubEaId: 580,
+              price: 600
+            },
+            {
+              definitionId: 262978,
+              score: 35,
+              clubEaId: 580,
+              price: 550
+            },
+            {
+              definitionId: 268916,
+              score: 35,
+              clubEaId: 580,
+              price: 650
+            },
+            {
+              definitionId: 270554,
+              score: 35,
+              clubEaId: 580,
+              price: 650
+            },
+            {
+              definitionId: 275436,
+              score: 35,
+              clubEaId: 580,
+              price: 650
+            }
+          ]
+        }
+      },
+      {
+        id: 19,
+        categoryId: 4,
+        category: "bundesliga",
+        name: "TSG Hoffenheim",
+        slug: "tsg-hoffenheim",
+        description: "Requires 15 TSG Hoffenheim Mens or Womens players to complete.",
+        requiredCards: 15,
+        priority: 17,
+        clubEaId: 10029,
+        totalTokens: 155,
+        grades: [
+          {
+            name: "D",
+            threshold: 10,
+            tokens: 0
+          },
+          {
+            name: "C",
+            threshold: 3e3,
+            tokens: 0
+          },
+          {
+            name: "B",
+            threshold: 1e4,
+            tokens: 30
+          },
+          {
+            name: "A",
+            threshold: 1e5,
+            tokens: 50
+          },
+          {
+            name: "S",
+            threshold: 25e4,
+            tokens: 75
+          }
+        ],
+        recommended: {
+          grade: "C",
+          tokens: 0,
+          baseScore: 3193,
+          totalScore: 3615,
+          items: [
+            {
+              definitionId: 193698,
+              score: 830,
+              clubEaId: 10029,
+              price: 800
+            },
+            {
+              definitionId: 67382431,
+              score: 338,
+              clubEaId: 115999,
+              price: 12750
+            },
+            {
+              definitionId: 216354,
+              score: 280,
+              clubEaId: 10029,
+              price: 650
+            },
+            {
+              definitionId: 50605215,
+              score: 225,
+              clubEaId: 115999,
+              price: 10250
+            },
+            {
+              definitionId: 244470,
+              score: 180,
+              clubEaId: 10029,
+              price: 650
+            },
+            {
+              definitionId: 264995,
+              score: 180,
+              clubEaId: 115999,
+              price: 750
+            },
+            {
+              definitionId: 265577,
+              score: 160,
+              clubEaId: 10029,
+              price: 650
+            },
+            {
+              definitionId: 276969,
+              score: 160,
+              clubEaId: 10029,
+              price: 650
+            },
+            {
+              definitionId: 239890,
+              score: 140,
+              clubEaId: 10029,
+              price: 750
+            },
+            {
+              definitionId: 244050,
+              score: 140,
+              clubEaId: 10029,
+              price: 650
+            },
+            {
+              definitionId: 254566,
+              score: 120,
+              clubEaId: 10029,
+              price: 650
+            },
+            {
+              definitionId: 256564,
+              score: 120,
+              clubEaId: 10029,
+              price: 1200
+            },
+            {
+              definitionId: 265703,
+              score: 120,
+              clubEaId: 115999,
+              price: 950
+            },
+            {
+              definitionId: 246618,
+              score: 100,
+              clubEaId: 10029,
+              price: 1e3
+            },
+            {
+              definitionId: 263041,
+              score: 100,
+              clubEaId: 10029,
+              price: 1900
+            }
+          ]
+        }
+      },
+      {
+        id: 37,
+        categoryId: 4,
+        category: "bundesliga",
+        name: "VfB Stuttgart",
+        slug: "vfb-stuttgart",
+        description: "Requires 15 VfB Stuttgart Mens or Womens players to complete.",
+        requiredCards: 15,
+        priority: 18,
+        clubEaId: 36,
+        totalTokens: 38,
+        grades: [
+          {
+            name: "D",
+            threshold: 10,
+            tokens: 0
+          },
+          {
+            name: "C",
+            threshold: 1500,
+            tokens: 0
+          },
+          {
+            name: "B",
+            threshold: 4700,
+            tokens: 8
+          },
+          {
+            name: "A",
+            threshold: 7e3,
+            tokens: 10
+          },
+          {
+            name: "S",
+            threshold: 9900,
+            tokens: 20
+          }
+        ],
+        recommended: {
+          grade: "S",
+          tokens: 38,
+          baseScore: 21053,
+          totalScore: 29601,
+          items: [
+            {
+              definitionId: 67353040,
+              score: 10313,
+              clubEaId: 36,
+              price: 132e3
+            },
+            {
+              definitionId: 50575824,
+              score: 6875,
+              clubEaId: 36,
+              price: 94e3
+            },
+            {
+              definitionId: 244176,
+              score: 2100,
+              clubEaId: 36,
+              price: 2300
+            },
+            {
+              definitionId: 227647,
+              score: 410,
+              clubEaId: 36,
+              price: 700
+            },
+            {
+              definitionId: 250959,
+              score: 410,
+              clubEaId: 36,
+              price: 700
+            },
+            {
+              definitionId: 241925,
+              score: 140,
+              clubEaId: 36,
+              price: 750
+            },
+            {
+              definitionId: 252448,
+              score: 140,
+              clubEaId: 36,
+              price: 650
+            },
+            {
+              definitionId: 257504,
+              score: 140,
+              clubEaId: 36,
+              price: 700
+            },
+            {
+              definitionId: 228595,
+              score: 120,
+              clubEaId: 36,
+              price: 2600
+            },
+            {
+              definitionId: 251829,
+              score: 100,
+              clubEaId: 36,
+              price: 800
+            },
+            {
+              definitionId: 257073,
+              score: 100,
+              clubEaId: 36,
+              price: 750
+            },
+            {
+              definitionId: 264901,
+              score: 100,
+              clubEaId: 132865,
+              price: 1600
+            },
+            {
+              definitionId: 273667,
+              score: 35,
+              clubEaId: 36,
+              price: 850
+            },
+            {
+              definitionId: 277482,
+              score: 35,
+              clubEaId: 36,
+              price: 700
+            },
+            {
+              definitionId: 277742,
+              score: 35,
+              clubEaId: 36,
+              price: 7e3
+            }
+          ]
+        }
+      },
+      {
+        id: 88,
+        categoryId: 4,
+        category: "bundesliga",
+        name: "VfL Wolfsburg",
+        slug: "vfl-wolfsburg",
+        description: "Requires 15 VfL Wolfsburg Women's players to complete.",
+        requiredCards: 15,
+        priority: 19,
+        clubEaId: 115998,
+        totalTokens: 80,
+        grades: [
+          {
+            name: "D",
+            threshold: 10,
+            tokens: 0
+          },
+          {
+            name: "C",
+            threshold: 4e3,
+            tokens: 0
+          },
+          {
+            name: "B",
+            threshold: 3e4,
+            tokens: 15
+          },
+          {
+            name: "A",
+            threshold: 46e3,
+            tokens: 25
+          },
+          {
+            name: "S",
+            threshold: 75e3,
+            tokens: 40
+          }
+        ],
+        recommended: {
+          grade: "C",
+          tokens: 0,
+          baseScore: 5570,
+          totalScore: 6429,
+          items: [
+            {
+              definitionId: 227337,
+              score: 2100,
+              clubEaId: 115998,
+              price: 1900
+            },
+            {
+              definitionId: 265063,
+              score: 830,
+              clubEaId: 115998,
+              price: 700
+            },
+            {
+              definitionId: 264864,
+              score: 410,
+              clubEaId: 115998,
+              price: 650
+            },
+            {
+              definitionId: 247790,
+              score: 340,
+              clubEaId: 115998,
+              price: 700
+            },
+            {
+              definitionId: 264939,
+              score: 340,
+              clubEaId: 115998,
+              price: 650
+            },
+            {
+              definitionId: 257530,
+              score: 280,
+              clubEaId: 115998,
+              price: 650
+            },
+            {
+              definitionId: 265004,
+              score: 180,
+              clubEaId: 115998,
+              price: 700
+            },
+            {
+              definitionId: 265054,
+              score: 180,
+              clubEaId: 115998,
+              price: 700
+            },
+            {
+              definitionId: 269972,
+              score: 180,
+              clubEaId: 115998,
+              price: 650
+            },
+            {
+              definitionId: 265059,
+              score: 160,
+              clubEaId: 115998,
+              price: 650
+            },
+            {
+              definitionId: 265042,
+              score: 140,
+              clubEaId: 115998,
+              price: 700
+            },
+            {
+              definitionId: 265057,
+              score: 140,
+              clubEaId: 115998,
+              price: 650
+            },
+            {
+              definitionId: 241847,
+              score: 100,
+              clubEaId: 115998,
+              price: 1500
+            },
+            {
+              definitionId: 264934,
+              score: 100,
+              clubEaId: 115998,
+              price: 1600
+            },
+            {
+              definitionId: 76201,
+              score: 90,
+              clubEaId: 115998,
+              price: 1700
+            }
+          ]
+        }
+      },
+      {
+        id: 34,
+        categoryId: 4,
+        category: "bundesliga",
+        name: "Werder Bremen",
+        slug: "werder-bremen",
+        description: "Requires 15 Werder Bremen Mens or Womens players to complete.",
+        requiredCards: 15,
+        priority: 20,
+        clubEaId: 38,
+        totalTokens: 80,
+        grades: [
+          {
+            name: "D",
+            threshold: 10,
+            tokens: 0
+          },
+          {
+            name: "C",
+            threshold: 2e3,
+            tokens: 0
+          },
+          {
+            name: "B",
+            threshold: 5500,
+            tokens: 15
+          },
+          {
+            name: "A",
+            threshold: 7500,
+            tokens: 25
+          },
+          {
+            name: "S",
+            threshold: 11e3,
+            tokens: 40
+          }
+        ],
+        recommended: {
+          grade: "D",
+          tokens: 0,
+          baseScore: 1265,
+          totalScore: 1460,
+          items: [
+            {
+              definitionId: 232711,
+              score: 160,
+              clubEaId: 38,
+              price: 650
+            },
+            {
+              definitionId: 206591,
+              score: 120,
+              clubEaId: 38,
+              price: 1200
+            },
+            {
+              definitionId: 237595,
+              score: 120,
+              clubEaId: 38,
+              price: 650
+            },
+            {
+              definitionId: 261659,
+              score: 120,
+              clubEaId: 38,
+              price: 800
+            },
+            {
+              definitionId: 205431,
+              score: 100,
+              clubEaId: 38,
+              price: 3400
+            },
+            {
+              definitionId: 246836,
+              score: 100,
+              clubEaId: 38,
+              price: 1700
+            },
+            {
+              definitionId: 265119,
+              score: 100,
+              clubEaId: 116004,
+              price: 1300
+            },
+            {
+              definitionId: 73717,
+              score: 90,
+              clubEaId: 116004,
+              price: 650
+            },
+            {
+              definitionId: 227734,
+              score: 90,
+              clubEaId: 116004,
+              price: 1700
+            },
+            {
+              definitionId: 276505,
+              score: 90,
+              clubEaId: 116004,
+              price: 850
+            },
+            {
+              definitionId: 243350,
+              score: 35,
+              clubEaId: 38,
+              price: 600
+            },
+            {
+              definitionId: 272284,
+              score: 35,
+              clubEaId: 116004,
+              price: 500
+            },
+            {
+              definitionId: 50597038,
+              score: 35,
+              clubEaId: 38,
+              price: 650
+            },
+            {
+              definitionId: 50603211,
+              score: 35,
+              clubEaId: 38,
+              price: 650
+            },
+            {
+              definitionId: 50606676,
+              score: 35,
+              clubEaId: 38,
+              price: 600
+            }
+          ]
+        }
+      },
+      {
+        id: 75,
+        categoryId: 2,
+        category: "ligue-1",
+        name: "AJ Auxerre",
+        slug: "aj-auxerre",
+        description: "Requires 15 AJ Auxerre Mens players to complete.",
+        requiredCards: 15,
+        priority: 1,
+        clubEaId: 57,
+        totalTokens: 28,
+        grades: [
+          {
+            name: "D",
+            threshold: 10,
+            tokens: 0
+          },
+          {
+            name: "C",
+            threshold: 500,
+            tokens: 0
+          },
+          {
+            name: "B",
+            threshold: 700,
+            tokens: 5
+          },
+          {
+            name: "A",
+            threshold: 1e3,
+            tokens: 8
+          },
+          {
+            name: "S",
+            threshold: 1500,
+            tokens: 15
+          }
+        ],
+        recommended: {
+          grade: "A",
+          tokens: 13,
+          baseScore: 890,
+          totalScore: 1194,
+          items: [
+            {
+              definitionId: 50604542,
+              score: 280,
+              clubEaId: 57,
+              price: null
+            },
+            {
+              definitionId: 272894,
+              score: 100,
+              clubEaId: 57,
+              price: 1100
+            },
+            {
+              definitionId: 242577,
+              score: 90,
+              clubEaId: 57,
+              price: 700
+            },
+            {
+              definitionId: 230144,
+              score: 35,
+              clubEaId: 57,
+              price: 500
+            },
+            {
+              definitionId: 239631,
+              score: 35,
+              clubEaId: 57,
+              price: 550
+            },
+            {
+              definitionId: 259205,
+              score: 35,
+              clubEaId: 57,
+              price: 550
+            },
+            {
+              definitionId: 260100,
+              score: 35,
+              clubEaId: 57,
+              price: 550
+            },
+            {
+              definitionId: 260943,
+              score: 35,
+              clubEaId: 57,
+              price: 9800
+            },
+            {
+              definitionId: 263031,
+              score: 35,
+              clubEaId: 57,
+              price: 550
+            },
+            {
+              definitionId: 268440,
+              score: 35,
+              clubEaId: 57,
+              price: 550
+            },
+            {
+              definitionId: 274692,
+              score: 35,
+              clubEaId: 57,
+              price: 550
+            },
+            {
+              definitionId: 275337,
+              score: 35,
+              clubEaId: 57,
+              price: 500
+            },
+            {
+              definitionId: 276315,
+              score: 35,
+              clubEaId: 57,
+              price: 500
+            },
+            {
+              definitionId: 50563133,
+              score: 35,
+              clubEaId: 57,
+              price: 550
+            },
+            {
+              definitionId: 50580121,
+              score: 35,
+              clubEaId: 57,
+              price: 550
+            }
+          ]
+        }
+      },
+      {
+        id: 87,
+        categoryId: 2,
+        category: "ligue-1",
+        name: "Angers SCO",
+        slug: "angers-sco",
+        description: "Requires 15 Angers SCO Mens players to complete.",
+        requiredCards: 15,
+        priority: 2,
+        clubEaId: 1530,
+        totalTokens: 28,
+        grades: [
+          {
+            name: "D",
+            threshold: 10,
+            tokens: 0
+          },
+          {
+            name: "C",
+            threshold: 500,
+            tokens: 0
+          },
+          {
+            name: "B",
+            threshold: 700,
+            tokens: 5
+          },
+          {
+            name: "A",
+            threshold: 1e3,
+            tokens: 8
+          },
+          {
+            name: "S",
+            threshold: 1500,
+            tokens: 15
+          }
+        ],
+        recommended: {
+          grade: "B",
+          tokens: 5,
+          baseScore: 755,
+          totalScore: 952,
+          items: [
+            {
+              definitionId: 234515,
+              score: 100,
+              clubEaId: 1530,
+              price: 800
+            },
+            {
+              definitionId: 199482,
+              score: 90,
+              clubEaId: 1530,
+              price: 800
+            },
+            {
+              definitionId: 224444,
+              score: 90,
+              clubEaId: 1530,
+              price: 1200
+            },
+            {
+              definitionId: 258439,
+              score: 90,
+              clubEaId: 1530,
+              price: 1400
+            },
+            {
+              definitionId: 70005,
+              score: 35,
+              clubEaId: 1530,
+              price: 450
+            },
+            {
+              definitionId: 74442,
+              score: 35,
+              clubEaId: 1530,
+              price: 750
+            },
+            {
+              definitionId: 81849,
+              score: 35,
+              clubEaId: 1530,
+              price: 500
+            },
+            {
+              definitionId: 228591,
+              score: 35,
+              clubEaId: 1530,
+              price: 500
+            },
+            {
+              definitionId: 229158,
+              score: 35,
+              clubEaId: 1530,
+              price: 550
+            },
+            {
+              definitionId: 251191,
+              score: 35,
+              clubEaId: 1530,
+              price: 450
+            },
+            {
+              definitionId: 260590,
+              score: 35,
+              clubEaId: 1530,
+              price: 500
+            },
+            {
+              definitionId: 269725,
+              score: 35,
+              clubEaId: 1530,
+              price: 500
+            },
+            {
+              definitionId: 269729,
+              score: 35,
+              clubEaId: 1530,
+              price: 450
+            },
+            {
+              definitionId: 273666,
+              score: 35,
+              clubEaId: 1530,
+              price: 450
+            },
+            {
+              definitionId: 273835,
+              score: 35,
+              clubEaId: 1530,
+              price: 500
+            }
+          ]
+        }
+      },
+      {
+        id: 98,
+        categoryId: 2,
+        category: "ligue-1",
+        name: "AS Monaco",
+        slug: "as-monaco",
+        description: "Requires 15 AS Monaco Mens players to complete.",
+        requiredCards: 15,
+        priority: 3,
+        clubEaId: 69,
+        totalTokens: 38,
+        grades: [
+          {
+            name: "D",
+            threshold: 10,
+            tokens: 0
+          },
+          {
+            name: "C",
+            threshold: 1700,
+            tokens: 0
+          },
+          {
+            name: "B",
+            threshold: 3100,
+            tokens: 8
+          },
+          {
+            name: "A",
+            threshold: 4700,
+            tokens: 10
+          },
+          {
+            name: "S",
+            threshold: 6600,
+            tokens: 20
+          }
+        ],
+        recommended: {
+          grade: "C",
+          tokens: 0,
+          baseScore: 2070,
+          totalScore: 2321,
+          items: [
+            {
+              definitionId: 229261,
+              score: 280,
+              clubEaId: 69,
+              price: 650
+            },
+            {
+              definitionId: 247463,
+              score: 180,
+              clubEaId: 69,
+              price: 650
+            },
+            {
+              definitionId: 275138,
+              score: 180,
+              clubEaId: 69,
+              price: 650
+            },
+            {
+              definitionId: 190941,
+              score: 160,
+              clubEaId: 69,
+              price: 650
+            },
+            {
+              definitionId: 225663,
+              score: 140,
+              clubEaId: 69,
+              price: 650
+            },
+            {
+              definitionId: 245211,
+              score: 140,
+              clubEaId: 69,
+              price: 800
+            },
+            {
+              definitionId: 202335,
+              score: 120,
+              clubEaId: 69,
+              price: 1800
+            },
+            {
+              definitionId: 226627,
+              score: 120,
+              clubEaId: 69,
+              price: 3600
+            },
+            {
+              definitionId: 239364,
+              score: 120,
+              clubEaId: 69,
+              price: 800
+            },
+            {
+              definitionId: 253004,
+              score: 120,
+              clubEaId: 69,
+              price: 650
+            },
+            {
+              definitionId: 263781,
+              score: 120,
+              clubEaId: 69,
+              price: 750
+            },
+            {
+              definitionId: 244915,
+              score: 100,
+              clubEaId: 69,
+              price: 1700
+            },
+            {
+              definitionId: 264422,
+              score: 100,
+              clubEaId: 69,
+              price: 650
+            },
+            {
+              definitionId: 270050,
+              score: 100,
+              clubEaId: 69,
+              price: 1500
+            },
+            {
+              definitionId: 272785,
+              score: 90,
+              clubEaId: 69,
+              price: 800
+            }
+          ]
+        }
+      },
+      {
+        id: 78,
+        categoryId: 2,
+        category: "ligue-1",
+        name: "ESTAC Troyes",
+        slug: "estac-troyes",
+        description: "Requires 15 ESTAC Troyes Mens players to complete.",
+        requiredCards: 15,
+        priority: 4,
+        clubEaId: 294,
+        totalTokens: 28,
+        grades: [
+          {
+            name: "D",
+            threshold: 10,
+            tokens: 0
+          },
+          {
+            name: "C",
+            threshold: 400,
+            tokens: 0
+          },
+          {
+            name: "B",
+            threshold: 600,
+            tokens: 5
+          },
+          {
+            name: "A",
+            threshold: 1e3,
+            tokens: 8
+          },
+          {
+            name: "S",
+            threshold: 1400,
+            tokens: 15
+          }
+        ],
+        recommended: {
+          grade: "B",
+          tokens: 5,
+          baseScore: 525,
+          totalScore: 747,
+          items: [
+            {
+              definitionId: 72138,
+              score: 35,
+              clubEaId: 294,
+              price: 450
+            },
+            {
+              definitionId: 73085,
+              score: 35,
+              clubEaId: 294,
+              price: 500
+            },
+            {
+              definitionId: 76509,
+              score: 35,
+              clubEaId: 294,
+              price: 500
+            },
+            {
+              definitionId: 209430,
+              score: 35,
+              clubEaId: 294,
+              price: 500
+            },
+            {
+              definitionId: 215708,
+              score: 35,
+              clubEaId: 294,
+              price: 500
+            },
+            {
+              definitionId: 247758,
+              score: 35,
+              clubEaId: 294,
+              price: 500
+            },
+            {
+              definitionId: 248408,
+              score: 35,
+              clubEaId: 294,
+              price: 500
+            },
+            {
+              definitionId: 256788,
+              score: 35,
+              clubEaId: 294,
+              price: 500
+            },
+            {
+              definitionId: 264079,
+              score: 35,
+              clubEaId: 294,
+              price: 500
+            },
+            {
+              definitionId: 272835,
+              score: 35,
+              clubEaId: 294,
+              price: 500
+            },
+            {
+              definitionId: 277354,
+              score: 35,
+              clubEaId: 294,
+              price: 500
+            },
+            {
+              definitionId: 277356,
+              score: 35,
+              clubEaId: 294,
+              price: 450
+            },
+            {
+              definitionId: 278282,
+              score: 35,
+              clubEaId: 294,
+              price: 500
+            },
+            {
+              definitionId: 50580432,
+              score: 35,
+              clubEaId: 294,
+              price: 550
+            },
+            {
+              definitionId: 50588759,
+              score: 35,
+              clubEaId: 294,
+              price: 600
+            }
+          ]
+        }
+      },
+      {
+        id: 77,
+        categoryId: 2,
+        category: "ligue-1",
+        name: "FC Fleury 91",
+        slug: "fc-fleury-91",
+        description: "Requires 15 FC Fleury 91 Women's players to complete.",
+        requiredCards: 15,
+        priority: 5,
+        clubEaId: 116036,
+        totalTokens: 28,
+        grades: [
+          {
+            name: "D",
+            threshold: 10,
+            tokens: 0
+          },
+          {
+            name: "C",
+            threshold: 1300,
+            tokens: 0
+          },
+          {
+            name: "B",
+            threshold: 1900,
+            tokens: 5
+          },
+          {
+            name: "A",
+            threshold: 3e3,
+            tokens: 8
+          },
+          {
+            name: "S",
+            threshold: 4300,
+            tokens: 15
+          }
+        ],
+        recommended: {
+          grade: "C",
+          tokens: 0,
+          baseScore: 1295,
+          totalScore: 1509,
+          items: [
+            {
+              definitionId: 227357,
+              score: 140,
+              clubEaId: 116036,
+              price: 700
+            },
+            {
+              definitionId: 74083,
+              score: 120,
+              clubEaId: 116036,
+              price: 650
+            },
+            {
+              definitionId: 265833,
+              score: 120,
+              clubEaId: 116036,
+              price: 750
+            },
+            {
+              definitionId: 265879,
+              score: 120,
+              clubEaId: 116036,
+              price: 700
+            },
+            {
+              definitionId: 265968,
+              score: 120,
+              clubEaId: 116036,
+              price: 650
+            },
+            {
+              definitionId: 268640,
+              score: 120,
+              clubEaId: 116036,
+              price: 650
+            },
+            {
+              definitionId: 246177,
+              score: 100,
+              clubEaId: 116036,
+              price: 650
+            },
+            {
+              definitionId: 246568,
+              score: 100,
+              clubEaId: 116036,
+              price: 750
+            },
+            {
+              definitionId: 265840,
+              score: 90,
+              clubEaId: 116036,
+              price: 1e3
+            },
+            {
+              definitionId: 270966,
+              score: 90,
+              clubEaId: 116036,
+              price: 1100
+            },
+            {
+              definitionId: 79542,
+              score: 35,
+              clubEaId: 116036,
+              price: 600
+            },
+            {
+              definitionId: 79717,
+              score: 35,
+              clubEaId: 116036,
+              price: 600
+            },
+            {
+              definitionId: 83542,
+              score: 35,
+              clubEaId: 116036,
+              price: 650
+            },
+            {
+              definitionId: 265002,
+              score: 35,
+              clubEaId: 116036,
+              price: 650
+            },
+            {
+              definitionId: 268e3,
+              score: 35,
+              clubEaId: 116036,
+              price: 650
+            }
+          ]
+        }
+      },
+      {
+        id: 60,
+        categoryId: 2,
+        category: "ligue-1",
+        name: "FC Lorient",
+        slug: "fc-lorient",
+        description: "Requires 15 FC Lorient Mens players to complete.",
+        requiredCards: 15,
+        priority: 6,
+        clubEaId: 217,
+        totalTokens: 28,
+        grades: [
+          {
+            name: "D",
+            threshold: 10,
+            tokens: 0
+          },
+          {
+            name: "C",
+            threshold: 500,
+            tokens: 0
+          },
+          {
+            name: "B",
+            threshold: 700,
+            tokens: 5
+          },
+          {
+            name: "A",
+            threshold: 1100,
+            tokens: 8
+          },
+          {
+            name: "S",
+            threshold: 1600,
+            tokens: 15
+          }
+        ],
+        recommended: {
+          grade: "B",
+          tokens: 5,
+          baseScore: 805,
+          totalScore: 1027,
+          items: [
+            {
+              definitionId: 72100,
+              score: 120,
+              clubEaId: 217,
+              price: 1300
+            },
+            {
+              definitionId: 206003,
+              score: 120,
+              clubEaId: 217,
+              price: 650
+            },
+            {
+              definitionId: 69997,
+              score: 90,
+              clubEaId: 217,
+              price: 1500
+            },
+            {
+              definitionId: 245410,
+              score: 90,
+              clubEaId: 217,
+              price: 1300
+            },
+            {
+              definitionId: 229194,
+              score: 35,
+              clubEaId: 217,
+              price: 600
+            },
+            {
+              definitionId: 253181,
+              score: 35,
+              clubEaId: 217,
+              price: 550
+            },
+            {
+              definitionId: 259215,
+              score: 35,
+              clubEaId: 217,
+              price: 500
+            },
+            {
+              definitionId: 261360,
+              score: 35,
+              clubEaId: 217,
+              price: 500
+            },
+            {
+              definitionId: 265544,
+              score: 35,
+              clubEaId: 217,
+              price: 450
+            },
+            {
+              definitionId: 271075,
+              score: 35,
+              clubEaId: 217,
+              price: 500
+            },
+            {
+              definitionId: 271507,
+              score: 35,
+              clubEaId: 217,
+              price: 500
+            },
+            {
+              definitionId: 276007,
+              score: 35,
+              clubEaId: 217,
+              price: 500
+            },
+            {
+              definitionId: 50404944,
+              score: 35,
+              clubEaId: 217,
+              price: 500
+            },
+            {
+              definitionId: 50595911,
+              score: 35,
+              clubEaId: 217,
+              price: 550
+            },
+            {
+              definitionId: 50609241,
+              score: 35,
+              clubEaId: 217,
+              price: 550
+            }
+          ]
+        }
+      },
+      {
+        id: 23,
+        categoryId: 2,
+        category: "ligue-1",
+        name: "FC Nantes",
+        slug: "fc-nantes",
+        description: "Requires 15 FC Nantes Women's players to complete.",
+        requiredCards: 15,
+        priority: 7,
+        clubEaId: 116417,
+        totalTokens: 28,
+        grades: [
+          {
+            name: "D",
+            threshold: 10,
+            tokens: 0
+          },
+          {
+            name: "C",
+            threshold: 500,
+            tokens: 0
+          },
+          {
+            name: "B",
+            threshold: 700,
+            tokens: 5
+          },
+          {
+            name: "A",
+            threshold: 1200,
+            tokens: 8
+          },
+          {
+            name: "S",
+            threshold: 1700,
+            tokens: 15
+          }
+        ],
+        recommended: {
+          grade: "B",
+          tokens: 5,
+          baseScore: 700,
+          totalScore: 901,
+          items: [
+            {
+              definitionId: 265893,
+              score: 140,
+              clubEaId: 116417,
+              price: 800
+            },
+            {
+              definitionId: 269829,
+              score: 120,
+              clubEaId: 116417,
+              price: 700
+            },
+            {
+              definitionId: 72463,
+              score: 35,
+              clubEaId: 116417,
+              price: 600
+            },
+            {
+              definitionId: 78462,
+              score: 35,
+              clubEaId: 116417,
+              price: 650
+            },
+            {
+              definitionId: 80036,
+              score: 35,
+              clubEaId: 116417,
+              price: 650
+            },
+            {
+              definitionId: 83519,
+              score: 35,
+              clubEaId: 116417,
+              price: 750
+            },
+            {
+              definitionId: 87250,
+              score: 35,
+              clubEaId: 116417,
+              price: 650
+            },
+            {
+              definitionId: 87465,
+              score: 35,
+              clubEaId: 116417,
+              price: 700
+            },
+            {
+              definitionId: 87542,
+              score: 35,
+              clubEaId: 116417,
+              price: 700
+            },
+            {
+              definitionId: 265385,
+              score: 35,
+              clubEaId: 116417,
+              price: 650
+            },
+            {
+              definitionId: 266861,
+              score: 35,
+              clubEaId: 116417,
+              price: 650
+            },
+            {
+              definitionId: 269818,
+              score: 35,
+              clubEaId: 116417,
+              price: 700
+            },
+            {
+              definitionId: 270708,
+              score: 35,
+              clubEaId: 116417,
+              price: 600
+            },
+            {
+              definitionId: 273255,
+              score: 35,
+              clubEaId: 116417,
+              price: 700
+            },
+            {
+              definitionId: 277202,
+              score: 20,
+              clubEaId: 116417,
+              price: 200
+            }
+          ]
+        }
+      },
+      {
+        id: 7,
+        categoryId: 2,
+        category: "ligue-1",
+        name: "Le Havre AC",
+        slug: "le-havre-ac",
+        description: "Requires 15 Le Havre AC Mens or Womens players to complete.",
+        requiredCards: 15,
+        priority: 8,
+        clubEaId: 1738,
+        totalTokens: 28,
+        grades: [
+          {
+            name: "D",
+            threshold: 10,
+            tokens: 0
+          },
+          {
+            name: "C",
+            threshold: 500,
+            tokens: 0
+          },
+          {
+            name: "B",
+            threshold: 700,
+            tokens: 5
+          },
+          {
+            name: "A",
+            threshold: 1100,
+            tokens: 8
+          },
+          {
+            name: "S",
+            threshold: 1600,
+            tokens: 15
+          }
+        ],
+        recommended: {
+          grade: "B",
+          tokens: 5,
+          baseScore: 580,
+          totalScore: 822,
+          items: [
+            {
+              definitionId: 268647,
+              score: 90,
+              clubEaId: 116416,
+              price: 750
+            },
+            {
+              definitionId: 81595,
+              score: 35,
+              clubEaId: 1738,
+              price: 500
+            },
+            {
+              definitionId: 87154,
+              score: 35,
+              clubEaId: 1738,
+              price: 2900
+            },
+            {
+              definitionId: 247264,
+              score: 35,
+              clubEaId: 1738,
+              price: 650
+            },
+            {
+              definitionId: 247519,
+              score: 35,
+              clubEaId: 1738,
+              price: 500
+            },
+            {
+              definitionId: 251926,
+              score: 35,
+              clubEaId: 1738,
+              price: 500
+            },
+            {
+              definitionId: 257270,
+              score: 35,
+              clubEaId: 1738,
+              price: 600
+            },
+            {
+              definitionId: 264245,
+              score: 35,
+              clubEaId: 1738,
+              price: 650
+            },
+            {
+              definitionId: 265195,
+              score: 35,
+              clubEaId: 1738,
+              price: 450
+            },
+            {
+              definitionId: 269184,
+              score: 35,
+              clubEaId: 1738,
+              price: 450
+            },
+            {
+              definitionId: 271252,
+              score: 35,
+              clubEaId: 1738,
+              price: 500
+            },
+            {
+              definitionId: 271811,
+              score: 35,
+              clubEaId: 116416,
+              price: 650
+            },
+            {
+              definitionId: 275395,
+              score: 35,
+              clubEaId: 116416,
+              price: 650
+            },
+            {
+              definitionId: 276971,
+              score: 35,
+              clubEaId: 116416,
+              price: 550
+            },
+            {
+              definitionId: 277067,
+              score: 35,
+              clubEaId: 116416,
+              price: 600
+            }
+          ]
+        }
+      },
+      {
+        id: 82,
+        categoryId: 2,
+        category: "ligue-1",
+        name: "Le Mans FC",
+        slug: "le-mans-fc",
+        description: "Requires 15 Le Mans FC Mens players to complete.",
+        requiredCards: 15,
+        priority: 9,
+        clubEaId: 1739,
+        totalTokens: 28,
+        grades: [
+          {
+            name: "D",
+            threshold: 10,
+            tokens: 0
+          },
+          {
+            name: "C",
+            threshold: 300,
+            tokens: 0
+          },
+          {
+            name: "B",
+            threshold: 500,
+            tokens: 5
+          },
+          {
+            name: "A",
+            threshold: 700,
+            tokens: 8
+          },
+          {
+            name: "S",
+            threshold: 1e3,
+            tokens: 15
+          }
+        ],
+        recommended: {
+          grade: "A",
+          tokens: 13,
+          baseScore: 590,
+          totalScore: 827,
+          items: [
+            {
+              definitionId: 201042,
+              score: 100,
+              clubEaId: 1739,
+              price: 2900
+            },
+            {
+              definitionId: 71778,
+              score: 35,
+              clubEaId: 1739,
+              price: 800
+            },
+            {
+              definitionId: 78757,
+              score: 35,
+              clubEaId: 1739,
+              price: 750
+            },
+            {
+              definitionId: 78760,
+              score: 35,
+              clubEaId: 1739,
+              price: 800
+            },
+            {
+              definitionId: 78761,
+              score: 35,
+              clubEaId: 1739,
+              price: 800
+            },
+            {
+              definitionId: 78771,
+              score: 35,
+              clubEaId: 1739,
+              price: 850
+            },
+            {
+              definitionId: 83817,
+              score: 35,
+              clubEaId: 1739,
+              price: 800
+            },
+            {
+              definitionId: 229646,
+              score: 35,
+              clubEaId: 1739,
+              price: 750
+            },
+            {
+              definitionId: 241818,
+              score: 35,
+              clubEaId: 1739,
+              price: 600
+            },
+            {
+              definitionId: 248357,
+              score: 35,
+              clubEaId: 1739,
+              price: 850
+            },
+            {
+              definitionId: 252302,
+              score: 35,
+              clubEaId: 1739,
+              price: 800
+            },
+            {
+              definitionId: 257397,
+              score: 35,
+              clubEaId: 1739,
+              price: 5500
+            },
+            {
+              definitionId: 257975,
+              score: 35,
+              clubEaId: 1739,
+              price: 750
+            },
+            {
+              definitionId: 264103,
+              score: 35,
+              clubEaId: 1739,
+              price: 700
+            },
+            {
+              definitionId: 265651,
+              score: 35,
+              clubEaId: 1739,
+              price: 850
+            }
+          ]
+        }
+      },
+      {
+        id: 43,
+        categoryId: 2,
+        category: "ligue-1",
+        name: "LOSC Lille",
+        slug: "losc-lille",
+        description: "Requires 15 LOSC Lille Mens players to complete.",
+        requiredCards: 15,
+        priority: 10,
+        clubEaId: 65,
+        totalTokens: 38,
+        grades: [
+          {
+            name: "D",
+            threshold: 10,
+            tokens: 0
+          },
+          {
+            name: "C",
+            threshold: 1300,
+            tokens: 0
+          },
+          {
+            name: "B",
+            threshold: 2500,
+            tokens: 8
+          },
+          {
+            name: "A",
+            threshold: 3700,
+            tokens: 10
+          },
+          {
+            name: "S",
+            threshold: 5200,
+            tokens: 20
+          }
+        ],
+        recommended: {
+          grade: "B",
+          tokens: 8,
+          baseScore: 2293,
+          totalScore: 2685,
+          items: [
+            {
+              definitionId: 50602207,
+              score: 338,
+              clubEaId: 65,
+              price: 15250
+            },
+            {
+              definitionId: 67379423,
+              score: 225,
+              clubEaId: 65,
+              price: 11e3
+            },
+            {
+              definitionId: 190674,
+              score: 180,
+              clubEaId: 65,
+              price: 650
+            },
+            {
+              definitionId: 278901,
+              score: 180,
+              clubEaId: 65,
+              price: null
+            },
+            {
+              definitionId: 239254,
+              score: 160,
+              clubEaId: 65,
+              price: 750
+            },
+            {
+              definitionId: 231318,
+              score: 140,
+              clubEaId: 65,
+              price: 750
+            },
+            {
+              definitionId: 262088,
+              score: 140,
+              clubEaId: 65,
+              price: 650
+            },
+            {
+              definitionId: 269493,
+              score: 140,
+              clubEaId: 65,
+              price: 750
+            },
+            {
+              definitionId: 50583810,
+              score: 140,
+              clubEaId: 65,
+              price: 5400
+            },
+            {
+              definitionId: 178509,
+              score: 120,
+              clubEaId: 65,
+              price: 1700
+            },
+            {
+              definitionId: 213296,
+              score: 120,
+              clubEaId: 65,
+              price: 900
+            },
+            {
+              definitionId: 262071,
+              score: 120,
+              clubEaId: 65,
+              price: 1100
+            },
+            {
+              definitionId: 73449,
+              score: 100,
+              clubEaId: 65,
+              price: 700
+            },
+            {
+              definitionId: 50582437,
+              score: 100,
+              clubEaId: 65,
+              price: 700
+            },
+            {
+              definitionId: 270559,
+              score: 90,
+              clubEaId: 65,
+              price: 650
+            }
+          ]
+        }
+      },
+      {
+        id: 55,
+        categoryId: 2,
+        category: "ligue-1",
+        name: "Montpellier H\xE9rault SC",
+        slug: "montpellier-herault-sc",
+        description: "Requires 15 Montpellier H\xE9rault SC Women's players to complete.",
+        requiredCards: 15,
+        priority: 11,
+        clubEaId: 116037,
+        totalTokens: 28,
+        grades: [
+          {
+            name: "D",
+            threshold: 10,
+            tokens: 0
+          },
+          {
+            name: "C",
+            threshold: 300,
+            tokens: 0
+          },
+          {
+            name: "B",
+            threshold: 500,
+            tokens: 5
+          },
+          {
+            name: "A",
+            threshold: 700,
+            tokens: 8
+          },
+          {
+            name: "S",
+            threshold: 1e3,
+            tokens: 15
+          }
+        ],
+        recommended: {
+          grade: "A",
+          tokens: 13,
+          baseScore: 735,
+          totalScore: 934,
+          items: [
+            {
+              definitionId: 75178,
+              score: 140,
+              clubEaId: 116037,
+              price: 700
+            },
+            {
+              definitionId: 231347,
+              score: 100,
+              clubEaId: 116037,
+              price: 1200
+            },
+            {
+              definitionId: 241547,
+              score: 90,
+              clubEaId: 116037,
+              price: 1100
+            },
+            {
+              definitionId: 75177,
+              score: 35,
+              clubEaId: 116037,
+              price: 1100
+            },
+            {
+              definitionId: 75368,
+              score: 35,
+              clubEaId: 116037,
+              price: 1100
+            },
+            {
+              definitionId: 81431,
+              score: 35,
+              clubEaId: 116037,
+              price: 1100
+            },
+            {
+              definitionId: 81600,
+              score: 35,
+              clubEaId: 116037,
+              price: 1e3
+            },
+            {
+              definitionId: 87068,
+              score: 35,
+              clubEaId: 116037,
+              price: 1e3
+            },
+            {
+              definitionId: 264885,
+              score: 35,
+              clubEaId: 116037,
+              price: 1e3
+            },
+            {
+              definitionId: 265005,
+              score: 35,
+              clubEaId: 116037,
+              price: 1e3
+            },
+            {
+              definitionId: 265715,
+              score: 35,
+              clubEaId: 116037,
+              price: 1100
+            },
+            {
+              definitionId: 265859,
+              score: 35,
+              clubEaId: 116037,
+              price: 1100
+            },
+            {
+              definitionId: 265915,
+              score: 35,
+              clubEaId: 116037,
+              price: 1100
+            },
+            {
+              definitionId: 268261,
+              score: 35,
+              clubEaId: 116037,
+              price: 1100
+            },
+            {
+              definitionId: 75180,
+              score: 20,
+              clubEaId: 116037,
+              price: 550
+            }
+          ]
+        }
+      },
+      {
+        id: 1,
+        categoryId: 2,
+        category: "ligue-1",
+        name: "OGC Nice",
+        slug: "ogc-nice",
+        description: "Requires 15 OGC Nice Mens players to complete.",
+        requiredCards: 15,
+        priority: 12,
+        clubEaId: 72,
+        totalTokens: 38,
+        grades: [
+          {
+            name: "D",
+            threshold: 10,
+            tokens: 0
+          },
+          {
+            name: "C",
+            threshold: 1200,
+            tokens: 0
+          },
+          {
+            name: "B",
+            threshold: 2e3,
+            tokens: 8
+          },
+          {
+            name: "A",
+            threshold: 3e3,
+            tokens: 10
+          },
+          {
+            name: "S",
+            threshold: 4200,
+            tokens: 20
+          }
+        ],
+        recommended: {
+          grade: "C",
+          tokens: 0,
+          baseScore: 1345,
+          totalScore: 1539,
+          items: [
+            {
+              definitionId: 50596345,
+              score: 160,
+              clubEaId: 72,
+              price: 650
+            },
+            {
+              definitionId: 239093,
+              score: 120,
+              clubEaId: 72,
+              price: 750
+            },
+            {
+              definitionId: 177413,
+              score: 100,
+              clubEaId: 72,
+              price: 900
+            },
+            {
+              definitionId: 213367,
+              score: 100,
+              clubEaId: 72,
+              price: 1600
+            },
+            {
+              definitionId: 234239,
+              score: 100,
+              clubEaId: 72,
+              price: 650
+            },
+            {
+              definitionId: 235633,
+              score: 100,
+              clubEaId: 72,
+              price: 750
+            },
+            {
+              definitionId: 244892,
+              score: 100,
+              clubEaId: 72,
+              price: 700
+            },
+            {
+              definitionId: 50592055,
+              score: 100,
+              clubEaId: 72,
+              price: 650
+            },
+            {
+              definitionId: 210896,
+              score: 90,
+              clubEaId: 72,
+              price: 1800
+            },
+            {
+              definitionId: 252711,
+              score: 90,
+              clubEaId: 72,
+              price: 1100
+            },
+            {
+              definitionId: 253157,
+              score: 90,
+              clubEaId: 72,
+              price: 1300
+            },
+            {
+              definitionId: 255533,
+              score: 90,
+              clubEaId: 72,
+              price: 1500
+            },
+            {
+              definitionId: 250724,
+              score: 35,
+              clubEaId: 72,
+              price: 500
+            },
+            {
+              definitionId: 252960,
+              score: 35,
+              clubEaId: 72,
+              price: 450
+            },
+            {
+              definitionId: 50586798,
+              score: 35,
+              clubEaId: 72,
+              price: 500
+            }
+          ]
+        }
+      },
+      {
+        id: 18,
+        categoryId: 2,
+        category: "ligue-1",
+        name: "Olympique de Marseille",
+        slug: "olympique-de-marseille",
+        description: "Requires 15 Olympique de Marseille Mens or Womens players to complete.",
+        requiredCards: 15,
+        priority: 13,
+        clubEaId: 219,
+        totalTokens: 155,
+        grades: [
+          {
+            name: "D",
+            threshold: 10,
+            tokens: 0
+          },
+          {
+            name: "C",
+            threshold: 6e3,
+            tokens: 0
+          },
+          {
+            name: "B",
+            threshold: 5e4,
+            tokens: 30
+          },
+          {
+            name: "A",
+            threshold: 8e4,
+            tokens: 50
+          },
+          {
+            name: "S",
+            threshold: 15e4,
+            tokens: 75
+          }
+        ],
+        recommended: {
+          grade: "D",
+          tokens: 0,
+          baseScore: 2370,
+          totalScore: 2679,
+          items: [
+            {
+              definitionId: 265861,
+              score: 340,
+              clubEaId: 132370,
+              price: 650
+            },
+            {
+              definitionId: 264968,
+              score: 280,
+              clubEaId: 132370,
+              price: 650
+            },
+            {
+              definitionId: 213648,
+              score: 180,
+              clubEaId: 219,
+              price: 650
+            },
+            {
+              definitionId: 240753,
+              score: 180,
+              clubEaId: 219,
+              price: 650
+            },
+            {
+              definitionId: 244749,
+              score: 180,
+              clubEaId: 219,
+              price: 650
+            },
+            {
+              definitionId: 265937,
+              score: 160,
+              clubEaId: 132370,
+              price: 650
+            },
+            {
+              definitionId: 271400,
+              score: 160,
+              clubEaId: 219,
+              price: 650
+            },
+            {
+              definitionId: 241496,
+              score: 140,
+              clubEaId: 219,
+              price: 650
+            },
+            {
+              definitionId: 265903,
+              score: 140,
+              clubEaId: 132370,
+              price: 700
+            },
+            {
+              definitionId: 72438,
+              score: 120,
+              clubEaId: 132370,
+              price: 1300
+            },
+            {
+              definitionId: 210736,
+              score: 120,
+              clubEaId: 219,
+              price: 1600
+            },
+            {
+              definitionId: 201455,
+              score: 100,
+              clubEaId: 219,
+              price: 2200
+            },
+            {
+              definitionId: 240507,
+              score: 90,
+              clubEaId: 219,
+              price: 650
+            },
+            {
+              definitionId: 246297,
+              score: 90,
+              clubEaId: 219,
+              price: 1700
+            },
+            {
+              definitionId: 264401,
+              score: 90,
+              clubEaId: 219,
+              price: 3700
+            }
+          ]
+        }
+      },
+      {
+        id: 36,
+        categoryId: 2,
+        category: "ligue-1",
+        name: "Olympique Lyonnais",
+        slug: "olympique-lyonnais",
+        description: "Requires 15 Olympique Lyonnais Mens or Womens players to complete.",
+        requiredCards: 15,
+        priority: 14,
+        clubEaId: 66,
+        totalTokens: 155,
+        grades: [
+          {
+            name: "D",
+            threshold: 10,
+            tokens: 0
+          },
+          {
+            name: "C",
+            threshold: 58e3,
+            tokens: 0
+          },
+          {
+            name: "B",
+            threshold: 17e4,
+            tokens: 30
+          },
+          {
+            name: "A",
+            threshold: 4e5,
+            tokens: 50
+          },
+          {
+            name: "S",
+            threshold: 8e5,
+            tokens: 75
+          }
+        ],
+        recommended: {
+          grade: "C",
+          tokens: 0,
+          baseScore: 73569,
+          totalScore: 100514,
+          items: [
+            {
+              definitionId: 50597546,
+              score: 20625,
+              clubEaId: 116033,
+              price: null
+            },
+            {
+              definitionId: 67374762,
+              score: 13750,
+              clubEaId: 116033,
+              price: 203e4
+            },
+            {
+              definitionId: 265898,
+              score: 8300,
+              clubEaId: 116033,
+              price: 609e3
+            },
+            {
+              definitionId: 269404,
+              score: 5500,
+              clubEaId: 116033,
+              price: 224e3
+            },
+            {
+              definitionId: 278219,
+              score: 5500,
+              clubEaId: 116033,
+              price: 46e3
+            },
+            {
+              definitionId: 245879,
+              score: 4100,
+              clubEaId: 116033,
+              price: 4e3
+            },
+            {
+              definitionId: 246272,
+              score: 4100,
+              clubEaId: 116033,
+              price: 3700
+            },
+            {
+              definitionId: 265674,
+              score: 4100,
+              clubEaId: 116033,
+              price: 20500
+            },
+            {
+              definitionId: 227310,
+              score: 2100,
+              clubEaId: 116033,
+              price: 1800
+            },
+            {
+              definitionId: 67328547,
+              score: 1556,
+              clubEaId: 66,
+              price: 30500
+            },
+            {
+              definitionId: 50551331,
+              score: 1038,
+              clubEaId: 66,
+              price: 16250
+            },
+            {
+              definitionId: 242896,
+              score: 830,
+              clubEaId: 116033,
+              price: 750
+            },
+            {
+              definitionId: 261740,
+              score: 830,
+              clubEaId: 116033,
+              price: 850
+            },
+            {
+              definitionId: 265536,
+              score: 830,
+              clubEaId: 116033,
+              price: 800
+            },
+            {
+              definitionId: 265905,
+              score: 410,
+              clubEaId: 116033,
+              price: 650
+            }
+          ]
+        }
+      },
+      {
+        id: 3,
+        categoryId: 2,
+        category: "ligue-1",
+        name: "Paris FC",
+        slug: "paris-fc",
+        description: "Requires 15 Paris FC Mens or Womens players to complete.",
+        requiredCards: 15,
+        priority: 15,
+        clubEaId: 111817,
+        totalTokens: 155,
+        grades: [
+          {
+            name: "D",
+            threshold: 10,
+            tokens: 0
+          },
+          {
+            name: "C",
+            threshold: 5e3,
+            tokens: 0
+          },
+          {
+            name: "B",
+            threshold: 2e4,
+            tokens: 30
+          },
+          {
+            name: "A",
+            threshold: 6e4,
+            tokens: 50
+          },
+          {
+            name: "S",
+            threshold: 125e3,
+            tokens: 75
+          }
+        ],
+        recommended: {
+          grade: "C",
+          tokens: 0,
+          baseScore: 4620,
+          totalScore: 5285,
+          items: [
+            {
+              definitionId: 245697,
+              score: 2100,
+              clubEaId: 116035,
+              price: 5500
+            },
+            {
+              definitionId: 264865,
+              score: 340,
+              clubEaId: 116035,
+              price: 650
+            },
+            {
+              definitionId: 50582818,
+              score: 340,
+              clubEaId: 111817,
+              price: null
+            },
+            {
+              definitionId: 276825,
+              score: 280,
+              clubEaId: 116035,
+              price: 650
+            },
+            {
+              definitionId: 241546,
+              score: 180,
+              clubEaId: 116035,
+              price: 650
+            },
+            {
+              definitionId: 261514,
+              score: 180,
+              clubEaId: 116035,
+              price: 700
+            },
+            {
+              definitionId: 264963,
+              score: 180,
+              clubEaId: 116035,
+              price: 650
+            },
+            {
+              definitionId: 269811,
+              score: 180,
+              clubEaId: 116035,
+              price: 650
+            },
+            {
+              definitionId: 188943,
+              score: 140,
+              clubEaId: 111817,
+              price: 650
+            },
+            {
+              definitionId: 79532,
+              score: 120,
+              clubEaId: 116035,
+              price: 950
+            },
+            {
+              definitionId: 230020,
+              score: 120,
+              clubEaId: 111817,
+              price: 650
+            },
+            {
+              definitionId: 251170,
+              score: 120,
+              clubEaId: 111817,
+              price: 650
+            },
+            {
+              definitionId: 257118,
+              score: 120,
+              clubEaId: 111817,
+              price: 850
+            },
+            {
+              definitionId: 276765,
+              score: 120,
+              clubEaId: 116035,
+              price: 650
+            },
+            {
+              definitionId: 276862,
+              score: 100,
+              clubEaId: 116035,
+              price: 750
+            }
+          ]
+        }
+      },
+      {
+        id: 95,
+        categoryId: 2,
+        category: "ligue-1",
+        name: "Paris Saint-Germain",
+        slug: "paris-saint-germain",
+        description: "Requires 20 Paris Saint-Germain Mens or Womens players to complete.",
+        requiredCards: 20,
+        priority: 16,
+        clubEaId: 73,
+        totalTokens: 220,
+        grades: [
+          {
+            name: "D",
+            threshold: 10,
+            tokens: 0
+          },
+          {
+            name: "C",
+            threshold: 8e4,
+            tokens: 0
+          },
+          {
+            name: "B",
+            threshold: 9e5,
+            tokens: 50
+          },
+          {
+            name: "A",
+            threshold: 17e5,
+            tokens: 70
+          },
+          {
+            name: "S",
+            threshold: 31e5,
+            tokens: 100
+          }
+        ],
+        recommended: {
+          grade: "C",
+          tokens: 0,
+          baseScore: 156007,
+          totalScore: 210710,
+          items: [
+            {
+              definitionId: 67361009,
+              score: 20625,
+              clubEaId: 73,
+              price: 1609e3
+            },
+            {
+              definitionId: 67316729,
+              score: 15563,
+              clubEaId: 73,
+              price: 237e3
+            },
+            {
+              definitionId: 231443,
+              score: 14e3,
+              clubEaId: 73,
+              price: 1838e3
+            },
+            {
+              definitionId: 255253,
+              score: 14e3,
+              clubEaId: 73,
+              price: 107e3
+            },
+            {
+              definitionId: 50583793,
+              score: 13750,
+              clubEaId: 73,
+              price: 12e5
+            },
+            {
+              definitionId: 247635,
+              score: 11e3,
+              clubEaId: 73,
+              price: 184e3
+            },
+            {
+              definitionId: 252145,
+              score: 11e3,
+              clubEaId: 73,
+              price: 389e3
+            },
+            {
+              definitionId: 256196,
+              score: 11e3,
+              clubEaId: 73,
+              price: 17e4
+            },
+            {
+              definitionId: 50539513,
+              score: 10375,
+              clubEaId: 73,
+              price: 17e4
+            },
+            {
+              definitionId: 235212,
+              score: 8300,
+              clubEaId: 73,
+              price: 183e3
+            },
+            {
+              definitionId: 272834,
+              score: 8300,
+              clubEaId: 73,
+              price: 30500
+            },
+            {
+              definitionId: 207865,
+              score: 5500,
+              clubEaId: 73,
+              price: 20250
+            },
+            {
+              definitionId: 226271,
+              score: 4100,
+              clubEaId: 73,
+              price: 3900
+            },
+            {
+              definitionId: 271421,
+              score: 4100,
+              clubEaId: 73,
+              price: 4e4
+            },
+            {
+              definitionId: 50571873,
+              score: 1556,
+              clubEaId: 73,
+              price: 36e3
+            },
+            {
+              definitionId: 50573109,
+              score: 1038,
+              clubEaId: 73,
+              price: null
+            },
+            {
+              definitionId: 241461,
+              score: 830,
+              clubEaId: 73,
+              price: 9e3
+            },
+            {
+              definitionId: 270673,
+              score: 410,
+              clubEaId: 73,
+              price: 1900
+            },
+            {
+              definitionId: 220814,
+              score: 280,
+              clubEaId: 73,
+              price: 650
+            },
+            {
+              definitionId: 264862,
+              score: 280,
+              clubEaId: 73,
+              price: 650
+            }
+          ]
+        }
+      },
+      {
+        id: 51,
+        categoryId: 2,
+        category: "ligue-1",
+        name: "RC Strasbourg",
+        slug: "rc-strasbourg",
+        description: "Requires 15 RC Strasbourg Mens or Womens players to complete.",
+        requiredCards: 15,
+        priority: 17,
+        clubEaId: 131724,
+        totalTokens: 80,
+        grades: [
+          {
+            name: "D",
+            threshold: 10,
+            tokens: 0
+          },
+          {
+            name: "C",
+            threshold: 1500,
+            tokens: 0
+          },
+          {
+            name: "B",
+            threshold: 5e3,
+            tokens: 15
+          },
+          {
+            name: "A",
+            threshold: 6500,
+            tokens: 25
+          },
+          {
+            name: "S",
+            threshold: 9500,
+            tokens: 40
+          }
+        ],
+        recommended: {
+          grade: "C",
+          tokens: 0,
+          baseScore: 1805,
+          totalScore: 1999,
+          items: [
+            {
+              definitionId: 264922,
+              score: 340,
+              clubEaId: 131724,
+              price: 650
+            },
+            {
+              definitionId: 273748,
+              score: 160,
+              clubEaId: 76,
+              price: 650
+            },
+            {
+              definitionId: 268940,
+              score: 140,
+              clubEaId: 131724,
+              price: 650
+            },
+            {
+              definitionId: 71691,
+              score: 120,
+              clubEaId: 131724,
+              price: 700
+            },
+            {
+              definitionId: 257090,
+              score: 120,
+              clubEaId: 76,
+              price: 750
+            },
+            {
+              definitionId: 258485,
+              score: 120,
+              clubEaId: 76,
+              price: 700
+            },
+            {
+              definitionId: 265878,
+              score: 120,
+              clubEaId: 131724,
+              price: 850
+            },
+            {
+              definitionId: 227349,
+              score: 100,
+              clubEaId: 131724,
+              price: 700
+            },
+            {
+              definitionId: 271940,
+              score: 100,
+              clubEaId: 76,
+              price: 650
+            },
+            {
+              definitionId: 256782,
+              score: 90,
+              clubEaId: 76,
+              price: 900
+            },
+            {
+              definitionId: 275888,
+              score: 90,
+              clubEaId: 131724,
+              price: 950
+            },
+            {
+              definitionId: 279702,
+              score: 90,
+              clubEaId: 76,
+              price: 1500
+            },
+            {
+              definitionId: 50593178,
+              score: 90,
+              clubEaId: 76,
+              price: 1700
+            },
+            {
+              definitionId: 50609337,
+              score: 90,
+              clubEaId: 76,
+              price: 200
+            },
+            {
+              definitionId: 71706,
+              score: 35,
+              clubEaId: 131724,
+              price: 650
+            }
+          ]
+        }
+      },
+      {
+        id: 66,
+        categoryId: 2,
+        category: "ligue-1",
+        name: "RC Lens",
+        slug: "rc-lens",
+        description: "Requires 15 RC Lens Mens players to complete.",
+        requiredCards: 15,
+        priority: 18,
+        clubEaId: 64,
+        totalTokens: 80,
+        grades: [
+          {
+            name: "D",
+            threshold: 10,
+            tokens: 0
+          },
+          {
+            name: "C",
+            threshold: 1e3,
+            tokens: 0
+          },
+          {
+            name: "B",
+            threshold: 22500,
+            tokens: 15
+          },
+          {
+            name: "A",
+            threshold: 38e3,
+            tokens: 25
+          },
+          {
+            name: "S",
+            threshold: 67e3,
+            tokens: 40
+          }
+        ],
+        recommended: {
+          grade: "C",
+          tokens: 0,
+          baseScore: 8673,
+          totalScore: 11400,
+          items: [
+            {
+              definitionId: 67355552,
+              score: 3938,
+              clubEaId: 64,
+              price: 63e3
+            },
+            {
+              definitionId: 50578336,
+              score: 2625,
+              clubEaId: 64,
+              price: 52e3
+            },
+            {
+              definitionId: 204970,
+              score: 340,
+              clubEaId: 64,
+              price: 700
+            },
+            {
+              definitionId: 50406968,
+              score: 340,
+              clubEaId: 64,
+              price: null
+            },
+            {
+              definitionId: 229236,
+              score: 280,
+              clubEaId: 64,
+              price: 650
+            },
+            {
+              definitionId: 271918,
+              score: 280,
+              clubEaId: 64,
+              price: 650
+            },
+            {
+              definitionId: 270997,
+              score: 140,
+              clubEaId: 64,
+              price: 650
+            },
+            {
+              definitionId: 75320,
+              score: 120,
+              clubEaId: 64,
+              price: 1800
+            },
+            {
+              definitionId: 221284,
+              score: 120,
+              clubEaId: 64,
+              price: 1800
+            },
+            {
+              definitionId: 223597,
+              score: 120,
+              clubEaId: 64,
+              price: 1900
+            },
+            {
+              definitionId: 246688,
+              score: 120,
+              clubEaId: 64,
+              price: 2600
+            },
+            {
+              definitionId: 203486,
+              score: 90,
+              clubEaId: 64,
+              price: 650
+            },
+            {
+              definitionId: 238463,
+              score: 90,
+              clubEaId: 64,
+              price: 2900
+            },
+            {
+              definitionId: 259027,
+              score: 35,
+              clubEaId: 64,
+              price: 500
+            },
+            {
+              definitionId: 259816,
+              score: 35,
+              clubEaId: 64,
+              price: 500
+            }
+          ]
+        }
+      },
+      {
+        id: 58,
+        categoryId: 2,
+        category: "ligue-1",
+        name: "Stade Brestois 29",
+        slug: "stade-brestois-29",
+        description: "Requires 15 Stade Brestois 29 Men's players to complete.",
+        requiredCards: 15,
+        priority: 19,
+        clubEaId: 378,
+        totalTokens: 28,
+        grades: [
+          {
+            name: "D",
+            threshold: 10,
+            tokens: 0
+          },
+          {
+            name: "C",
+            threshold: 700,
+            tokens: 0
+          },
+          {
+            name: "B",
+            threshold: 1e3,
+            tokens: 5
+          },
+          {
+            name: "A",
+            threshold: 1600,
+            tokens: 8
+          },
+          {
+            name: "S",
+            threshold: 2300,
+            tokens: 15
+          }
+        ],
+        recommended: {
+          grade: "B",
+          tokens: 5,
+          baseScore: 960,
+          totalScore: 1123,
+          items: [
+            {
+              definitionId: 219733,
+              score: 120,
+              clubEaId: 378,
+              price: 700
+            },
+            {
+              definitionId: 215410,
+              score: 100,
+              clubEaId: 378,
+              price: 1700
+            },
+            {
+              definitionId: 244480,
+              score: 100,
+              clubEaId: 378,
+              price: 850
+            },
+            {
+              definitionId: 204105,
+              score: 90,
+              clubEaId: 378,
+              price: 1900
+            },
+            {
+              definitionId: 222286,
+              score: 90,
+              clubEaId: 378,
+              price: 1700
+            },
+            {
+              definitionId: 263908,
+              score: 90,
+              clubEaId: 378,
+              price: 1700
+            },
+            {
+              definitionId: 267702,
+              score: 90,
+              clubEaId: 378,
+              price: 750
+            },
+            {
+              definitionId: 76730,
+              score: 35,
+              clubEaId: 378,
+              price: 550
+            },
+            {
+              definitionId: 227234,
+              score: 35,
+              clubEaId: 378,
+              price: 550
+            },
+            {
+              definitionId: 237960,
+              score: 35,
+              clubEaId: 378,
+              price: 500
+            },
+            {
+              definitionId: 252541,
+              score: 35,
+              clubEaId: 378,
+              price: 500
+            },
+            {
+              definitionId: 271689,
+              score: 35,
+              clubEaId: 378,
+              price: 450
+            },
+            {
+              definitionId: 278926,
+              score: 35,
+              clubEaId: 378,
+              price: 500
+            },
+            {
+              definitionId: 50411272,
+              score: 35,
+              clubEaId: 378,
+              price: 700
+            },
+            {
+              definitionId: 50609855,
+              score: 35,
+              clubEaId: 378,
+              price: 550
+            }
+          ]
+        }
+      },
+      {
+        id: 27,
+        categoryId: 2,
+        category: "ligue-1",
+        name: "Stade Rennais FC",
+        slug: "stade-rennais-fc",
+        description: "Requires 15 Stade Rennais FC Mens players to complete.",
+        requiredCards: 15,
+        priority: 20,
+        clubEaId: 74,
+        totalTokens: 38,
+        grades: [
+          {
+            name: "D",
+            threshold: 10,
+            tokens: 0
+          },
+          {
+            name: "C",
+            threshold: 1100,
+            tokens: 0
+          },
+          {
+            name: "B",
+            threshold: 4700,
+            tokens: 8
+          },
+          {
+            name: "A",
+            threshold: 7e3,
+            tokens: 10
+          },
+          {
+            name: "S",
+            threshold: 9900,
+            tokens: 20
+          }
+        ],
+        recommended: {
+          grade: "C",
+          tokens: 0,
+          baseScore: 2205,
+          totalScore: 2482,
+          items: [
+            {
+              definitionId: 70415,
+              score: 280,
+              clubEaId: 74,
+              price: 650
+            },
+            {
+              definitionId: 204883,
+              score: 280,
+              clubEaId: 74,
+              price: 650
+            },
+            {
+              definitionId: 208787,
+              score: 280,
+              clubEaId: 74,
+              price: 650
+            },
+            {
+              definitionId: 223874,
+              score: 180,
+              clubEaId: 74,
+              price: 650
+            },
+            {
+              definitionId: 254121,
+              score: 140,
+              clubEaId: 74,
+              price: 800
+            },
+            {
+              definitionId: 50577890,
+              score: 140,
+              clubEaId: 74,
+              price: 650
+            },
+            {
+              definitionId: 235973,
+              score: 120,
+              clubEaId: 74,
+              price: 700
+            },
+            {
+              definitionId: 243631,
+              score: 120,
+              clubEaId: 74,
+              price: 1100
+            },
+            {
+              definitionId: 259191,
+              score: 120,
+              clubEaId: 74,
+              price: 650
+            },
+            {
+              definitionId: 261616,
+              score: 120,
+              clubEaId: 74,
+              price: 750
+            },
+            {
+              definitionId: 212138,
+              score: 100,
+              clubEaId: 74,
+              price: 1700
+            },
+            {
+              definitionId: 231102,
+              score: 100,
+              clubEaId: 74,
+              price: 1200
+            },
+            {
+              definitionId: 252512,
+              score: 100,
+              clubEaId: 74,
+              price: 2e3
+            },
+            {
+              definitionId: 253121,
+              score: 90,
+              clubEaId: 74,
+              price: 750
+            },
+            {
+              definitionId: 242907,
+              score: 35,
+              clubEaId: 74,
+              price: 500
+            }
+          ]
+        }
+      },
+      {
+        id: 72,
+        categoryId: 2,
+        category: "ligue-1",
+        name: "Toulouse FC",
+        slug: "toulouse-fc",
+        description: "Requires 15 Toulouse FC Mens or Womens players to complete.",
+        requiredCards: 15,
+        priority: 21,
+        clubEaId: 1809,
+        totalTokens: 28,
+        grades: [
+          {
+            name: "D",
+            threshold: 10,
+            tokens: 0
+          },
+          {
+            name: "C",
+            threshold: 500,
+            tokens: 0
+          },
+          {
+            name: "B",
+            threshold: 700,
+            tokens: 5
+          },
+          {
+            name: "A",
+            threshold: 1100,
+            tokens: 8
+          },
+          {
+            name: "S",
+            threshold: 1600,
+            tokens: 15
+          }
+        ],
+        recommended: {
+          grade: "A",
+          tokens: 13,
+          baseScore: 965,
+          totalScore: 1143,
+          items: [
+            {
+              definitionId: 265526,
+              score: 140,
+              clubEaId: 1809,
+              price: 650
+            },
+            {
+              definitionId: 265952,
+              score: 120,
+              clubEaId: 132831,
+              price: 1700
+            },
+            {
+              definitionId: 235244,
+              score: 100,
+              clubEaId: 1809,
+              price: 1900
+            },
+            {
+              definitionId: 237936,
+              score: 100,
+              clubEaId: 1809,
+              price: 1200
+            },
+            {
+              definitionId: 242534,
+              score: 100,
+              clubEaId: 1809,
+              price: 1200
+            },
+            {
+              definitionId: 242195,
+              score: 90,
+              clubEaId: 1809,
+              price: 1700
+            },
+            {
+              definitionId: 72099,
+              score: 35,
+              clubEaId: 1809,
+              price: 500
+            },
+            {
+              definitionId: 78379,
+              score: 35,
+              clubEaId: 1809,
+              price: 500
+            },
+            {
+              definitionId: 85773,
+              score: 35,
+              clubEaId: 132831,
+              price: 600
+            },
+            {
+              definitionId: 251845,
+              score: 35,
+              clubEaId: 1809,
+              price: 550
+            },
+            {
+              definitionId: 265839,
+              score: 35,
+              clubEaId: 132831,
+              price: 900
+            },
+            {
+              definitionId: 268648,
+              score: 35,
+              clubEaId: 132831,
+              price: 700
+            },
+            {
+              definitionId: 269719,
+              score: 35,
+              clubEaId: 1809,
+              price: 500
+            },
+            {
+              definitionId: 269923,
+              score: 35,
+              clubEaId: 1809,
+              price: 550
+            },
+            {
+              definitionId: 50606886,
+              score: 35,
+              clubEaId: 1809,
+              price: 600
+            }
+          ]
+        }
+      },
+      {
+        id: 50,
+        categoryId: 2,
+        category: "ligue-1",
+        name: "US Saint-Malo",
+        slug: "us-saint-malo",
+        description: "Requires 15 US Saint-Malo Women's players to complete.",
+        requiredCards: 15,
+        priority: 22,
+        clubEaId: 132861,
+        totalTokens: 28,
+        grades: [
+          {
+            name: "D",
+            threshold: 10,
+            tokens: 0
+          },
+          {
+            name: "C",
+            threshold: 300,
+            tokens: 0
+          },
+          {
+            name: "B",
+            threshold: 500,
+            tokens: 5
+          },
+          {
+            name: "A",
+            threshold: 700,
+            tokens: 8
+          },
+          {
+            name: "S",
+            threshold: 1e3,
+            tokens: 15
+          }
+        ]
+      },
+      {
+        id: 83,
+        categoryId: 3,
+        category: "serie-a",
+        name: "Bergamo Calcio",
+        slug: "bergamo-calcio",
+        description: "Requires 15 Bergamo Calcio players to complete.",
+        requiredCards: 15,
+        priority: 1,
+        clubEaId: 115845,
+        totalTokens: 38,
+        grades: [
+          {
+            name: "D",
+            threshold: 10,
+            tokens: 0
+          },
+          {
+            name: "C",
+            threshold: 2200,
+            tokens: 0
+          },
+          {
+            name: "B",
+            threshold: 3600,
+            tokens: 8
+          },
+          {
+            name: "A",
+            threshold: 5400,
+            tokens: 10
+          },
+          {
+            name: "S",
+            threshold: 7600,
+            tokens: 20
+          }
+        ],
+        recommended: {
+          grade: "A",
+          tokens: 18,
+          baseScore: 6460,
+          totalScore: 7108,
+          items: [
+            {
+              definitionId: 252154,
+              score: 4100,
+              clubEaId: 115845,
+              price: 4100
+            },
+            {
+              definitionId: 266866,
+              score: 340,
+              clubEaId: 115845,
+              price: 700
+            },
+            {
+              definitionId: 251470,
+              score: 280,
+              clubEaId: 115845,
+              price: 650
+            },
+            {
+              definitionId: 216150,
+              score: 160,
+              clubEaId: 115845,
+              price: 1e3
+            },
+            {
+              definitionId: 223273,
+              score: 160,
+              clubEaId: 115845,
+              price: 650
+            },
+            {
+              definitionId: 246875,
+              score: 160,
+              clubEaId: 115845,
+              price: 900
+            },
+            {
+              definitionId: 260697,
+              score: 160,
+              clubEaId: 115845,
+              price: 900
+            },
+            {
+              definitionId: 265188,
+              score: 160,
+              clubEaId: 115845,
+              price: 1e3
+            },
+            {
+              definitionId: 207993,
+              score: 140,
+              clubEaId: 115845,
+              price: 1400
+            },
+            {
+              definitionId: 226710,
+              score: 140,
+              clubEaId: 115845,
+              price: 1700
+            },
+            {
+              definitionId: 247229,
+              score: 140,
+              clubEaId: 115845,
+              price: 750
+            },
+            {
+              definitionId: 253002,
+              score: 140,
+              clubEaId: 115845,
+              price: 700
+            },
+            {
+              definitionId: 256115,
+              score: 140,
+              clubEaId: 115845,
+              price: 1500
+            },
+            {
+              definitionId: 262113,
+              score: 140,
+              clubEaId: 115845,
+              price: 750
+            },
+            {
+              definitionId: 50598148,
+              score: 100,
+              clubEaId: 115845,
+              price: 800
+            }
+          ]
+        }
+      },
+      {
+        id: 93,
+        categoryId: 3,
+        category: "serie-a",
+        name: "Bologna",
+        slug: "bologna",
+        description: "Requires 15 Bologna Mens players to complete.",
+        requiredCards: 15,
+        priority: 2,
+        clubEaId: 189,
+        totalTokens: 38,
+        grades: [
+          {
+            name: "D",
+            threshold: 10,
+            tokens: 0
+          },
+          {
+            name: "C",
+            threshold: 1300,
+            tokens: 0
+          },
+          {
+            name: "B",
+            threshold: 2800,
+            tokens: 8
+          },
+          {
+            name: "A",
+            threshold: 4100,
+            tokens: 10
+          },
+          {
+            name: "S",
+            threshold: 5900,
+            tokens: 20
+          }
+        ],
+        recommended: {
+          grade: "C",
+          tokens: 0,
+          baseScore: 1775,
+          totalScore: 1984,
+          items: [
+            {
+              definitionId: 233556,
+              score: 340,
+              clubEaId: 189,
+              price: 650
+            },
+            {
+              definitionId: 242458,
+              score: 160,
+              clubEaId: 189,
+              price: 650
+            },
+            {
+              definitionId: 189908,
+              score: 140,
+              clubEaId: 189,
+              price: 650
+            },
+            {
+              definitionId: 50588926,
+              score: 140,
+              clubEaId: 189,
+              price: 700
+            },
+            {
+              definitionId: 242280,
+              score: 120,
+              clubEaId: 189,
+              price: 700
+            },
+            {
+              definitionId: 234671,
+              score: 100,
+              clubEaId: 189,
+              price: 1700
+            },
+            {
+              definitionId: 240915,
+              score: 100,
+              clubEaId: 189,
+              price: 1700
+            },
+            {
+              definitionId: 268703,
+              score: 100,
+              clubEaId: 189,
+              price: 650
+            },
+            {
+              definitionId: 212404,
+              score: 90,
+              clubEaId: 189,
+              price: 650
+            },
+            {
+              definitionId: 244270,
+              score: 90,
+              clubEaId: 189,
+              price: 1800
+            },
+            {
+              definitionId: 246656,
+              score: 90,
+              clubEaId: 189,
+              price: 1100
+            },
+            {
+              definitionId: 248342,
+              score: 90,
+              clubEaId: 189,
+              price: 3e3
+            },
+            {
+              definitionId: 248385,
+              score: 90,
+              clubEaId: 189,
+              price: 1300
+            },
+            {
+              definitionId: 259748,
+              score: 90,
+              clubEaId: 189,
+              price: 1900
+            },
+            {
+              definitionId: 252440,
+              score: 35,
+              clubEaId: 189,
+              price: 550
+            }
+          ]
+        }
+      },
+      {
+        id: 39,
+        categoryId: 3,
+        category: "serie-a",
+        name: "Cagliari",
+        slug: "cagliari",
+        description: "Requires 15 Cagliari Mens players to complete.",
+        requiredCards: 15,
+        priority: 3,
+        clubEaId: 1842,
+        totalTokens: 28,
+        grades: [
+          {
+            name: "D",
+            threshold: 10,
+            tokens: 0
+          },
+          {
+            name: "C",
+            threshold: 700,
+            tokens: 0
+          },
+          {
+            name: "B",
+            threshold: 1e3,
+            tokens: 5
+          },
+          {
+            name: "A",
+            threshold: 1500,
+            tokens: 8
+          },
+          {
+            name: "S",
+            threshold: 2200,
+            tokens: 15
+          }
+        ],
+        recommended: {
+          grade: "B",
+          tokens: 5,
+          baseScore: 845,
+          totalScore: 1053,
+          items: [
+            {
+              definitionId: 255303,
+              score: 180,
+              clubEaId: 1842,
+              price: 650
+            },
+            {
+              definitionId: 220523,
+              score: 100,
+              clubEaId: 1842,
+              price: 1700
+            },
+            {
+              definitionId: 266636,
+              score: 90,
+              clubEaId: 1842,
+              price: 2e3
+            },
+            {
+              definitionId: 50574564,
+              score: 90,
+              clubEaId: 1842,
+              price: 3900
+            },
+            {
+              definitionId: 73095,
+              score: 35,
+              clubEaId: 1842,
+              price: 500
+            },
+            {
+              definitionId: 73838,
+              score: 35,
+              clubEaId: 1842,
+              price: 500
+            },
+            {
+              definitionId: 76431,
+              score: 35,
+              clubEaId: 1842,
+              price: 500
+            },
+            {
+              definitionId: 78037,
+              score: 35,
+              clubEaId: 1842,
+              price: 550
+            },
+            {
+              definitionId: 231073,
+              score: 35,
+              clubEaId: 1842,
+              price: 500
+            },
+            {
+              definitionId: 248857,
+              score: 35,
+              clubEaId: 1842,
+              price: 500
+            },
+            {
+              definitionId: 254982,
+              score: 35,
+              clubEaId: 1842,
+              price: 600
+            },
+            {
+              definitionId: 273917,
+              score: 35,
+              clubEaId: 1842,
+              price: 500
+            },
+            {
+              definitionId: 277872,
+              score: 35,
+              clubEaId: 1842,
+              price: 600
+            },
+            {
+              definitionId: 278668,
+              score: 35,
+              clubEaId: 1842,
+              price: 650
+            },
+            {
+              definitionId: 50596331,
+              score: 35,
+              clubEaId: 1842,
+              price: 500
+            }
+          ]
+        }
+      },
+      {
+        id: 63,
+        categoryId: 3,
+        category: "serie-a",
+        name: "Como",
+        slug: "como",
+        description: "Requires 15 Como Mens players to complete.",
+        requiredCards: 15,
+        priority: 4,
+        clubEaId: 1745,
+        totalTokens: 80,
+        grades: [
+          {
+            name: "D",
+            threshold: 10,
+            tokens: 0
+          },
+          {
+            name: "C",
+            threshold: 2e3,
+            tokens: 0
+          },
+          {
+            name: "B",
+            threshold: 13e3,
+            tokens: 15
+          },
+          {
+            name: "A",
+            threshold: 15500,
+            tokens: 25
+          },
+          {
+            name: "S",
+            threshold: 19500,
+            tokens: 40
+          }
+        ],
+        recommended: {
+          grade: "C",
+          tokens: 0,
+          baseScore: 3130,
+          totalScore: 3520,
+          items: [
+            {
+              definitionId: 277846,
+              score: 830,
+              clubEaId: 1745,
+              price: 750
+            },
+            {
+              definitionId: 50568258,
+              score: 340,
+              clubEaId: 1745,
+              price: 650
+            },
+            {
+              definitionId: 242201,
+              score: 280,
+              clubEaId: 1745,
+              price: 650
+            },
+            {
+              definitionId: 230918,
+              score: 180,
+              clubEaId: 1745,
+              price: 700
+            },
+            {
+              definitionId: 50560437,
+              score: 180,
+              clubEaId: 1745,
+              price: 650
+            },
+            {
+              definitionId: 262842,
+              score: 160,
+              clubEaId: 1745,
+              price: 650
+            },
+            {
+              definitionId: 225149,
+              score: 140,
+              clubEaId: 1745,
+              price: 650
+            },
+            {
+              definitionId: 246646,
+              score: 140,
+              clubEaId: 1745,
+              price: 650
+            },
+            {
+              definitionId: 254579,
+              score: 140,
+              clubEaId: 1745,
+              price: 650
+            },
+            {
+              definitionId: 261478,
+              score: 140,
+              clubEaId: 1745,
+              price: 700
+            },
+            {
+              definitionId: 267991,
+              score: 140,
+              clubEaId: 1745,
+              price: 700
+            },
+            {
+              definitionId: 50585121,
+              score: 140,
+              clubEaId: 1745,
+              price: 700
+            },
+            {
+              definitionId: 259075,
+              score: 120,
+              clubEaId: 1745,
+              price: 700
+            },
+            {
+              definitionId: 75055,
+              score: 100,
+              clubEaId: 1745,
+              price: 1300
+            },
+            {
+              definitionId: 275324,
+              score: 100,
+              clubEaId: 1745,
+              price: 700
+            }
+          ]
+        }
+      },
+      {
+        id: 70,
+        categoryId: 3,
+        category: "serie-a",
+        name: "Fiorentina",
+        slug: "fiorentina",
+        description: "Requires 15 Fiorentina Mens players to complete.",
+        requiredCards: 15,
+        priority: 5,
+        clubEaId: 110374,
+        totalTokens: 38,
+        grades: [
+          {
+            name: "D",
+            threshold: 10,
+            tokens: 0
+          },
+          {
+            name: "C",
+            threshold: 1900,
+            tokens: 0
+          },
+          {
+            name: "B",
+            threshold: 5600,
+            tokens: 8
+          },
+          {
+            name: "A",
+            threshold: 8400,
+            tokens: 10
+          },
+          {
+            name: "S",
+            threshold: 11800,
+            tokens: 20
+          }
+        ],
+        recommended: {
+          grade: "C",
+          tokens: 0,
+          baseScore: 2881,
+          totalScore: 3372,
+          items: [
+            {
+              definitionId: 50572598,
+              score: 513,
+              clubEaId: 110374,
+              price: 16950
+            },
+            {
+              definitionId: 193080,
+              score: 410,
+              clubEaId: 110374,
+              price: 800
+            },
+            {
+              definitionId: 67349814,
+              score: 340,
+              clubEaId: 110374,
+              price: 650
+            },
+            {
+              definitionId: 50610821,
+              score: 338,
+              clubEaId: 110374,
+              price: 13e3
+            },
+            {
+              definitionId: 67388037,
+              score: 225,
+              clubEaId: 110374,
+              price: 10750
+            },
+            {
+              definitionId: 278928,
+              score: 160,
+              clubEaId: 110374,
+              price: 650
+            },
+            {
+              definitionId: 234112,
+              score: 140,
+              clubEaId: 110374,
+              price: 650
+            },
+            {
+              definitionId: 279173,
+              score: 120,
+              clubEaId: 110374,
+              price: 1800
+            },
+            {
+              definitionId: 50583540,
+              score: 120,
+              clubEaId: 110374,
+              price: 1400
+            },
+            {
+              definitionId: 257290,
+              score: 100,
+              clubEaId: 110374,
+              price: 1900
+            },
+            {
+              definitionId: 260823,
+              score: 100,
+              clubEaId: 110374,
+              price: 650
+            },
+            {
+              definitionId: 272783,
+              score: 100,
+              clubEaId: 110374,
+              price: 700
+            },
+            {
+              definitionId: 240777,
+              score: 90,
+              clubEaId: 110374,
+              price: 4200
+            },
+            {
+              definitionId: 258976,
+              score: 90,
+              clubEaId: 110374,
+              price: 2e3
+            },
+            {
+              definitionId: 246431,
+              score: 35,
+              clubEaId: 110374,
+              price: 600
+            }
+          ]
+        }
+      },
+      {
+        id: 123,
+        categoryId: 3,
+        category: "serie-a",
+        name: "Frosinone",
+        slug: "frosinone",
+        description: "Requires 15 Frosinone Mens players to complete.",
+        requiredCards: 15,
+        priority: 6,
+        clubEaId: 111657,
+        totalTokens: 28,
+        grades: [
+          {
+            name: "D",
+            threshold: 10,
+            tokens: 0
+          },
+          {
+            name: "C",
+            threshold: 200,
+            tokens: 0
+          },
+          {
+            name: "B",
+            threshold: 320,
+            tokens: 5
+          },
+          {
+            name: "A",
+            threshold: 480,
+            tokens: 8
+          },
+          {
+            name: "S",
+            threshold: 720,
+            tokens: 15
+          }
+        ],
+        recommended: {
+          grade: "S",
+          tokens: 28,
+          baseScore: 1708,
+          totalScore: 2170,
+          items: [
+            {
+              definitionId: 67385589,
+              score: 638,
+              clubEaId: 111657,
+              price: 13e3
+            },
+            {
+              definitionId: 50608373,
+              score: 425,
+              clubEaId: 111657,
+              price: 11e3
+            },
+            {
+              definitionId: 239701,
+              score: 140,
+              clubEaId: 111657,
+              price: 1600
+            },
+            {
+              definitionId: 228336,
+              score: 120,
+              clubEaId: 111657,
+              price: 2700
+            },
+            {
+              definitionId: 74536,
+              score: 35,
+              clubEaId: 111657,
+              price: 1e3
+            },
+            {
+              definitionId: 252573,
+              score: 35,
+              clubEaId: 111657,
+              price: 1e3
+            },
+            {
+              definitionId: 253120,
+              score: 35,
+              clubEaId: 111657,
+              price: 1e3
+            },
+            {
+              definitionId: 270502,
+              score: 35,
+              clubEaId: 111657,
+              price: 1e3
+            },
+            {
+              definitionId: 276422,
+              score: 35,
+              clubEaId: 111657,
+              price: 1100
+            },
+            {
+              definitionId: 276632,
+              score: 35,
+              clubEaId: 111657,
+              price: 1e3
+            },
+            {
+              definitionId: 276725,
+              score: 35,
+              clubEaId: 111657,
+              price: 1400
+            },
+            {
+              definitionId: 278350,
+              score: 35,
+              clubEaId: 111657,
+              price: 1100
+            },
+            {
+              definitionId: 279877,
+              score: 35,
+              clubEaId: 111657,
+              price: 1100
+            },
+            {
+              definitionId: 50598376,
+              score: 35,
+              clubEaId: 111657,
+              price: 2100
+            },
+            {
+              definitionId: 50602166,
+              score: 35,
+              clubEaId: 111657,
+              price: 1600
+            }
+          ]
+        }
+      },
+      {
+        id: 126,
+        categoryId: 3,
+        category: "serie-a",
+        name: "Genoa",
+        slug: "genoa",
+        description: "Requires 15 Genoa Mens players to complete.",
+        requiredCards: 15,
+        priority: 7,
+        clubEaId: 110556,
+        totalTokens: 28,
+        grades: [
+          {
+            name: "D",
+            threshold: 10,
+            tokens: 0
+          },
+          {
+            name: "C",
+            threshold: 600,
+            tokens: 0
+          },
+          {
+            name: "B",
+            threshold: 900,
+            tokens: 5
+          },
+          {
+            name: "A",
+            threshold: 1400,
+            tokens: 8
+          },
+          {
+            name: "S",
+            threshold: 2e3,
+            tokens: 15
+          }
+        ],
+        recommended: {
+          grade: "B",
+          tokens: 5,
+          baseScore: 995,
+          totalScore: 1152,
+          items: [
+            {
+              definitionId: 229752,
+              score: 100,
+              clubEaId: 110556,
+              price: 1700
+            },
+            {
+              definitionId: 238516,
+              score: 100,
+              clubEaId: 110556,
+              price: 1800
+            },
+            {
+              definitionId: 242633,
+              score: 100,
+              clubEaId: 110556,
+              price: 1500
+            },
+            {
+              definitionId: 232229,
+              score: 90,
+              clubEaId: 110556,
+              price: 1700
+            },
+            {
+              definitionId: 240787,
+              score: 90,
+              clubEaId: 110556,
+              price: 850
+            },
+            {
+              definitionId: 244349,
+              score: 90,
+              clubEaId: 110556,
+              price: 3500
+            },
+            {
+              definitionId: 263829,
+              score: 90,
+              clubEaId: 110556,
+              price: 1700
+            },
+            {
+              definitionId: 269312,
+              score: 90,
+              clubEaId: 110556,
+              price: 1700
+            },
+            {
+              definitionId: 76172,
+              score: 35,
+              clubEaId: 110556,
+              price: 600
+            },
+            {
+              definitionId: 78316,
+              score: 35,
+              clubEaId: 110556,
+              price: 500
+            },
+            {
+              definitionId: 87430,
+              score: 35,
+              clubEaId: 110556,
+              price: 550
+            },
+            {
+              definitionId: 258147,
+              score: 35,
+              clubEaId: 110556,
+              price: 650
+            },
+            {
+              definitionId: 264436,
+              score: 35,
+              clubEaId: 110556,
+              price: 550
+            },
+            {
+              definitionId: 276178,
+              score: 35,
+              clubEaId: 110556,
+              price: 500
+            },
+            {
+              definitionId: 50586177,
+              score: 35,
+              clubEaId: 110556,
+              price: 2800
+            }
+          ]
+        }
+      },
+      {
+        id: 119,
+        categoryId: 3,
+        category: "serie-a",
+        name: "Juventus",
+        slug: "juventus",
+        description: "Requires 15 Juventus Mens players to complete.",
+        requiredCards: 15,
+        priority: 8,
+        clubEaId: 45,
+        totalTokens: 155,
+        grades: [
+          {
+            name: "D",
+            threshold: 10,
+            tokens: 0
+          },
+          {
+            name: "C",
+            threshold: 12e3,
+            tokens: 0
+          },
+          {
+            name: "B",
+            threshold: 6e4,
+            tokens: 30
+          },
+          {
+            name: "A",
+            threshold: 18e4,
+            tokens: 50
+          },
+          {
+            name: "S",
+            threshold: 375e3,
+            tokens: 75
+          }
+        ],
+        recommended: {
+          grade: "D",
+          tokens: 0,
+          baseScore: 8140,
+          totalScore: 9148,
+          items: [
+            {
+              definitionId: 239580,
+              score: 4100,
+              clubEaId: 45,
+              price: 20500
+            },
+            {
+              definitionId: 222077,
+              score: 830,
+              clubEaId: 45,
+              price: 750
+            },
+            {
+              definitionId: 277954,
+              score: 830,
+              clubEaId: 45,
+              price: 2500
+            },
+            {
+              definitionId: 247246,
+              score: 280,
+              clubEaId: 45,
+              price: 3100
+            },
+            {
+              definitionId: 255654,
+              score: 280,
+              clubEaId: 45,
+              price: 650
+            },
+            {
+              definitionId: 50560031,
+              score: 280,
+              clubEaId: 45,
+              price: 700
+            },
+            {
+              definitionId: 238744,
+              score: 180,
+              clubEaId: 45,
+              price: 750
+            },
+            {
+              definitionId: 240091,
+              score: 180,
+              clubEaId: 45,
+              price: 700
+            },
+            {
+              definitionId: 258966,
+              score: 180,
+              clubEaId: 45,
+              price: 800
+            },
+            {
+              definitionId: 261050,
+              score: 180,
+              clubEaId: 45,
+              price: 650
+            },
+            {
+              definitionId: 50585670,
+              score: 180,
+              clubEaId: 45,
+              price: 650
+            },
+            {
+              definitionId: 224490,
+              score: 160,
+              clubEaId: 45,
+              price: 850
+            },
+            {
+              definitionId: 240690,
+              score: 160,
+              clubEaId: 45,
+              price: 650
+            },
+            {
+              definitionId: 266872,
+              score: 160,
+              clubEaId: 45,
+              price: 650
+            },
+            {
+              definitionId: 50591516,
+              score: 160,
+              clubEaId: 45,
+              price: 750
+            }
+          ]
+        }
+      },
+      {
+        id: 110,
+        categoryId: 3,
+        category: "serie-a",
+        name: "SS Lazio",
+        slug: "ss-lazio",
+        description: "Requires 15 SS Lazio Men's players to complete.",
+        requiredCards: 15,
+        priority: 9,
+        clubEaId: 115841,
+        totalTokens: 38,
+        grades: [
+          {
+            name: "D",
+            threshold: 10,
+            tokens: 0
+          },
+          {
+            name: "C",
+            threshold: 2e3,
+            tokens: 0
+          },
+          {
+            name: "B",
+            threshold: 3400,
+            tokens: 8
+          },
+          {
+            name: "A",
+            threshold: 5100,
+            tokens: 10
+          },
+          {
+            name: "S",
+            threshold: 7200,
+            tokens: 20
+          }
+        ],
+        recommended: {
+          grade: "C",
+          tokens: 0,
+          baseScore: 1975,
+          totalScore: 2249,
+          items: [
+            {
+              definitionId: 220502,
+              score: 340,
+              clubEaId: 115841,
+              price: 650
+            },
+            {
+              definitionId: 239807,
+              score: 180,
+              clubEaId: 115841,
+              price: 650
+            },
+            {
+              definitionId: 232658,
+              score: 160,
+              clubEaId: 115841,
+              price: 700
+            },
+            {
+              definitionId: 211361,
+              score: 140,
+              clubEaId: 115841,
+              price: 650
+            },
+            {
+              definitionId: 224031,
+              score: 140,
+              clubEaId: 115841,
+              price: 750
+            },
+            {
+              definitionId: 255001,
+              score: 140,
+              clubEaId: 115841,
+              price: 650
+            },
+            {
+              definitionId: 255009,
+              score: 140,
+              clubEaId: 115841,
+              price: 650
+            },
+            {
+              definitionId: 50569652,
+              score: 120,
+              clubEaId: 115841,
+              price: 650
+            },
+            {
+              definitionId: 228302,
+              score: 100,
+              clubEaId: 115841,
+              price: 1800
+            },
+            {
+              definitionId: 248729,
+              score: 100,
+              clubEaId: 115841,
+              price: 650
+            },
+            {
+              definitionId: 251530,
+              score: 100,
+              clubEaId: 115841,
+              price: 750
+            },
+            {
+              definitionId: 256325,
+              score: 100,
+              clubEaId: 115841,
+              price: 1700
+            },
+            {
+              definitionId: 235374,
+              score: 90,
+              clubEaId: 115841,
+              price: 750
+            },
+            {
+              definitionId: 50567490,
+              score: 90,
+              clubEaId: 115841,
+              price: 3100
+            },
+            {
+              definitionId: 263929,
+              score: 35,
+              clubEaId: 115841,
+              price: 650
+            }
+          ]
+        }
+      },
+      {
+        id: 124,
+        categoryId: 3,
+        category: "serie-a",
+        name: "Lecce",
+        slug: "lecce",
+        description: "Requires 15 Lecce Mens players to complete.",
+        requiredCards: 15,
+        priority: 10,
+        clubEaId: 347,
+        totalTokens: 28,
+        grades: [
+          {
+            name: "D",
+            threshold: 10,
+            tokens: 0
+          },
+          {
+            name: "C",
+            threshold: 500,
+            tokens: 0
+          },
+          {
+            name: "B",
+            threshold: 800,
+            tokens: 5
+          },
+          {
+            name: "A",
+            threshold: 1200,
+            tokens: 8
+          },
+          {
+            name: "S",
+            threshold: 1700,
+            tokens: 15
+          }
+        ],
+        recommended: {
+          grade: "A",
+          tokens: 13,
+          baseScore: 1430,
+          totalScore: 1680,
+          items: [
+            {
+              definitionId: 210676,
+              score: 830,
+              clubEaId: 347,
+              price: 750
+            },
+            {
+              definitionId: 244717,
+              score: 90,
+              clubEaId: 347,
+              price: 750
+            },
+            {
+              definitionId: 50590331,
+              score: 90,
+              clubEaId: 347,
+              price: 1800
+            },
+            {
+              definitionId: 236838,
+              score: 35,
+              clubEaId: 347,
+              price: 650
+            },
+            {
+              definitionId: 247528,
+              score: 35,
+              clubEaId: 347,
+              price: 800
+            },
+            {
+              definitionId: 247668,
+              score: 35,
+              clubEaId: 347,
+              price: 800
+            },
+            {
+              definitionId: 253139,
+              score: 35,
+              clubEaId: 347,
+              price: 650
+            },
+            {
+              definitionId: 263949,
+              score: 35,
+              clubEaId: 347,
+              price: 700
+            },
+            {
+              definitionId: 266848,
+              score: 35,
+              clubEaId: 347,
+              price: 650
+            },
+            {
+              definitionId: 271198,
+              score: 35,
+              clubEaId: 347,
+              price: 700
+            },
+            {
+              definitionId: 271539,
+              score: 35,
+              clubEaId: 347,
+              price: 650
+            },
+            {
+              definitionId: 277840,
+              score: 35,
+              clubEaId: 347,
+              price: 600
+            },
+            {
+              definitionId: 50590572,
+              score: 35,
+              clubEaId: 347,
+              price: 800
+            },
+            {
+              definitionId: 50597697,
+              score: 35,
+              clubEaId: 347,
+              price: 700
+            },
+            {
+              definitionId: 50605584,
+              score: 35,
+              clubEaId: 347,
+              price: 650
+            }
+          ]
+        }
+      },
+      {
+        id: 107,
+        categoryId: 3,
+        category: "serie-a",
+        name: "Lombardia FC",
+        slug: "lombardia-fc",
+        description: "Requires 15 Lombardia FC Mens players to complete.",
+        requiredCards: 15,
+        priority: 11,
+        clubEaId: 131682,
+        totalTokens: 155,
+        grades: [
+          {
+            name: "D",
+            threshold: 10,
+            tokens: 0
+          },
+          {
+            name: "C",
+            threshold: 41e3,
+            tokens: 0
+          },
+          {
+            name: "B",
+            threshold: 22e4,
+            tokens: 30
+          },
+          {
+            name: "A",
+            threshold: 44e4,
+            tokens: 50
+          },
+          {
+            name: "S",
+            threshold: 825e3,
+            tokens: 75
+          }
+        ],
+        recommended: {
+          grade: "C",
+          tokens: 0,
+          baseScore: 44459,
+          totalScore: 52275,
+          items: [
+            {
+              definitionId: 50559741,
+              score: 7688,
+              clubEaId: 131682,
+              price: 86e3
+            },
+            {
+              definitionId: 224232,
+              score: 5500,
+              clubEaId: 131682,
+              price: 5900
+            },
+            {
+              definitionId: 231478,
+              score: 5500,
+              clubEaId: 131682,
+              price: 6300
+            },
+            {
+              definitionId: 67336957,
+              score: 5125,
+              clubEaId: 131682,
+              price: 6e4
+            },
+            {
+              definitionId: 226268,
+              score: 4100,
+              clubEaId: 131682,
+              price: 4e3
+            },
+            {
+              definitionId: 237383,
+              score: 4100,
+              clubEaId: 131682,
+              price: 4100
+            },
+            {
+              definitionId: 67350600,
+              score: 3938,
+              clubEaId: 131682,
+              price: 161e3
+            },
+            {
+              definitionId: 50573384,
+              score: 2625,
+              clubEaId: 131682,
+              price: 134e3
+            },
+            {
+              definitionId: 208128,
+              score: 2100,
+              clubEaId: 131682,
+              price: 2400
+            },
+            {
+              definitionId: 228093,
+              score: 2100,
+              clubEaId: 131682,
+              price: 3600
+            },
+            {
+              definitionId: 50575350,
+              score: 513,
+              clubEaId: 131682,
+              price: null
+            },
+            {
+              definitionId: 229237,
+              score: 410,
+              clubEaId: 131682,
+              price: 700
+            },
+            {
+              definitionId: 210406,
+              score: 340,
+              clubEaId: 131682,
+              price: 650
+            },
+            {
+              definitionId: 192883,
+              score: 280,
+              clubEaId: 131682,
+              price: 650
+            },
+            {
+              definitionId: 259565,
+              score: 140,
+              clubEaId: 131682,
+              price: 650
+            }
+          ]
+        }
+      },
+      {
+        id: 29,
+        categoryId: 3,
+        category: "serie-a",
+        name: "Milano FC",
+        slug: "milano-fc",
+        description: "Requires 15 Milano FC Mens players to complete.",
+        requiredCards: 15,
+        priority: 12,
+        clubEaId: 131681,
+        totalTokens: 155,
+        grades: [
+          {
+            name: "D",
+            threshold: 10,
+            tokens: 0
+          },
+          {
+            name: "C",
+            threshold: 1e4,
+            tokens: 0
+          },
+          {
+            name: "B",
+            threshold: 18e4,
+            tokens: 30
+          },
+          {
+            name: "A",
+            threshold: 4e5,
+            tokens: 50
+          },
+          {
+            name: "S",
+            threshold: 825e3,
+            tokens: 75
+          }
+        ],
+        recommended: {
+          grade: "C",
+          tokens: 0,
+          baseScore: 11910,
+          totalScore: 13179,
+          items: [
+            {
+              definitionId: 215698,
+              score: 5500,
+              clubEaId: 131681,
+              price: 13750
+            },
+            {
+              definitionId: 177003,
+              score: 2100,
+              clubEaId: 131681,
+              price: 2700
+            },
+            {
+              definitionId: 210008,
+              score: 2100,
+              clubEaId: 131681,
+              price: 3200
+            },
+            {
+              definitionId: 227796,
+              score: 410,
+              clubEaId: 131681,
+              price: 7900
+            },
+            {
+              definitionId: 268804,
+              score: 280,
+              clubEaId: 131681,
+              price: 950
+            },
+            {
+              definitionId: 232756,
+              score: 180,
+              clubEaId: 131681,
+              price: 1500
+            },
+            {
+              definitionId: 240277,
+              score: 180,
+              clubEaId: 131681,
+              price: 700
+            },
+            {
+              definitionId: 242664,
+              score: 180,
+              clubEaId: 131681,
+              price: 700
+            },
+            {
+              definitionId: 256903,
+              score: 180,
+              clubEaId: 131681,
+              price: 650
+            },
+            {
+              definitionId: 213666,
+              score: 160,
+              clubEaId: 131681,
+              price: 650
+            },
+            {
+              definitionId: 270039,
+              score: 160,
+              clubEaId: 131681,
+              price: 650
+            },
+            {
+              definitionId: 237942,
+              score: 140,
+              clubEaId: 131681,
+              price: 800
+            },
+            {
+              definitionId: 246172,
+              score: 140,
+              clubEaId: 131681,
+              price: 1100
+            },
+            {
+              definitionId: 257186,
+              score: 100,
+              clubEaId: 131681,
+              price: 2900
+            },
+            {
+              definitionId: 50591793,
+              score: 100,
+              clubEaId: 131681,
+              price: 2700
+            }
+          ]
+        }
+      },
+      {
+        id: 105,
+        categoryId: 3,
+        category: "serie-a",
+        name: "Monza",
+        slug: "monza",
+        description: "Requires 15 Monza Mens players to complete.",
+        requiredCards: 15,
+        priority: 13,
+        clubEaId: 111811,
+        totalTokens: 28,
+        grades: [
+          {
+            name: "D",
+            threshold: 10,
+            tokens: 0
+          },
+          {
+            name: "C",
+            threshold: 500,
+            tokens: 0
+          },
+          {
+            name: "B",
+            threshold: 700,
+            tokens: 5
+          },
+          {
+            name: "A",
+            threshold: 1100,
+            tokens: 8
+          },
+          {
+            name: "S",
+            threshold: 1700,
+            tokens: 15
+          }
+        ],
+        recommended: {
+          grade: "B",
+          tokens: 5,
+          baseScore: 775,
+          totalScore: 1016,
+          items: [
+            {
+              definitionId: 239613,
+              score: 100,
+              clubEaId: 111811,
+              price: 1900
+            },
+            {
+              definitionId: 251988,
+              score: 100,
+              clubEaId: 111811,
+              price: 1700
+            },
+            {
+              definitionId: 50592249,
+              score: 100,
+              clubEaId: 111811,
+              price: 700
+            },
+            {
+              definitionId: 237003,
+              score: 90,
+              clubEaId: 111811,
+              price: 800
+            },
+            {
+              definitionId: 70471,
+              score: 35,
+              clubEaId: 111811,
+              price: 500
+            },
+            {
+              definitionId: 78184,
+              score: 35,
+              clubEaId: 111811,
+              price: 550
+            },
+            {
+              definitionId: 80893,
+              score: 35,
+              clubEaId: 111811,
+              price: 600
+            },
+            {
+              definitionId: 215785,
+              score: 35,
+              clubEaId: 111811,
+              price: 550
+            },
+            {
+              definitionId: 219812,
+              score: 35,
+              clubEaId: 111811,
+              price: 550
+            },
+            {
+              definitionId: 233396,
+              score: 35,
+              clubEaId: 111811,
+              price: 650
+            },
+            {
+              definitionId: 234147,
+              score: 35,
+              clubEaId: 111811,
+              price: 650
+            },
+            {
+              definitionId: 237715,
+              score: 35,
+              clubEaId: 111811,
+              price: 600
+            },
+            {
+              definitionId: 268437,
+              score: 35,
+              clubEaId: 111811,
+              price: 550
+            },
+            {
+              definitionId: 50578105,
+              score: 35,
+              clubEaId: 111811,
+              price: 600
+            },
+            {
+              definitionId: 50600331,
+              score: 35,
+              clubEaId: 111811,
+              price: 550
+            }
+          ]
+        }
+      },
+      {
+        id: 112,
+        categoryId: 3,
+        category: "serie-a",
+        name: "Napoli",
+        slug: "napoli",
+        description: "Requires 15 Napoli Mens players to complete.",
+        requiredCards: 15,
+        priority: 14,
+        clubEaId: 48,
+        totalTokens: 155,
+        grades: [
+          {
+            name: "D",
+            threshold: 10,
+            tokens: 0
+          },
+          {
+            name: "C",
+            threshold: 13e3,
+            tokens: 0
+          },
+          {
+            name: "B",
+            threshold: 18e4,
+            tokens: 30
+          },
+          {
+            name: "A",
+            threshold: 28e4,
+            tokens: 50
+          },
+          {
+            name: "S",
+            threshold: 45e4,
+            tokens: 75
+          }
+        ],
+        recommended: {
+          grade: "D",
+          tokens: 0,
+          baseScore: 9500,
+          totalScore: 10786,
+          items: [
+            {
+              definitionId: 237238,
+              score: 4100,
+              clubEaId: 48,
+              price: 4e3
+            },
+            {
+              definitionId: 192985,
+              score: 2100,
+              clubEaId: 48,
+              price: 2400
+            },
+            {
+              definitionId: 216435,
+              score: 410,
+              clubEaId: 48,
+              price: 750
+            },
+            {
+              definitionId: 244263,
+              score: 410,
+              clubEaId: 48,
+              price: 750
+            },
+            {
+              definitionId: 217870,
+              score: 340,
+              clubEaId: 48,
+              price: 700
+            },
+            {
+              definitionId: 227236,
+              score: 340,
+              clubEaId: 48,
+              price: 650
+            },
+            {
+              definitionId: 225116,
+              score: 280,
+              clubEaId: 48,
+              price: 750
+            },
+            {
+              definitionId: 236632,
+              score: 280,
+              clubEaId: 48,
+              price: 650
+            },
+            {
+              definitionId: 243241,
+              score: 280,
+              clubEaId: 48,
+              price: 650
+            },
+            {
+              definitionId: 202884,
+              score: 180,
+              clubEaId: 48,
+              price: 650
+            },
+            {
+              definitionId: 216409,
+              score: 180,
+              clubEaId: 48,
+              price: 650
+            },
+            {
+              definitionId: 224836,
+              score: 180,
+              clubEaId: 48,
+              price: 650
+            },
+            {
+              definitionId: 239380,
+              score: 160,
+              clubEaId: 48,
+              price: 650
+            },
+            {
+              definitionId: 262394,
+              score: 140,
+              clubEaId: 48,
+              price: 1700
+            },
+            {
+              definitionId: 240716,
+              score: 120,
+              clubEaId: 48,
+              price: 2e3
+            }
+          ]
+        }
+      },
+      {
+        id: 125,
+        categoryId: 3,
+        category: "serie-a",
+        name: "Parma",
+        slug: "parma",
+        description: "Requires 15 Parma Mens players to complete.",
+        requiredCards: 15,
+        priority: 15,
+        clubEaId: 50,
+        totalTokens: 28,
+        grades: [
+          {
+            name: "D",
+            threshold: 10,
+            tokens: 0
+          },
+          {
+            name: "C",
+            threshold: 500,
+            tokens: 0
+          },
+          {
+            name: "B",
+            threshold: 700,
+            tokens: 5
+          },
+          {
+            name: "A",
+            threshold: 1100,
+            tokens: 8
+          },
+          {
+            name: "S",
+            threshold: 1600,
+            tokens: 15
+          }
+        ],
+        recommended: {
+          grade: "B",
+          tokens: 5,
+          baseScore: 860,
+          totalScore: 1071,
+          items: [
+            {
+              definitionId: 50551341,
+              score: 140,
+              clubEaId: 50,
+              price: 700
+            },
+            {
+              definitionId: 252794,
+              score: 100,
+              clubEaId: 50,
+              price: 1800
+            },
+            {
+              definitionId: 253162,
+              score: 90,
+              clubEaId: 50,
+              price: 650
+            },
+            {
+              definitionId: 258714,
+              score: 90,
+              clubEaId: 50,
+              price: 1600
+            },
+            {
+              definitionId: 261539,
+              score: 90,
+              clubEaId: 50,
+              price: 1100
+            },
+            {
+              definitionId: 75647,
+              score: 35,
+              clubEaId: 50,
+              price: 550
+            },
+            {
+              definitionId: 236706,
+              score: 35,
+              clubEaId: 50,
+              price: 500
+            },
+            {
+              definitionId: 255529,
+              score: 35,
+              clubEaId: 50,
+              price: 550
+            },
+            {
+              definitionId: 256508,
+              score: 35,
+              clubEaId: 50,
+              price: 500
+            },
+            {
+              definitionId: 259150,
+              score: 35,
+              clubEaId: 50,
+              price: 500
+            },
+            {
+              definitionId: 272687,
+              score: 35,
+              clubEaId: 50,
+              price: 550
+            },
+            {
+              definitionId: 273884,
+              score: 35,
+              clubEaId: 50,
+              price: 500
+            },
+            {
+              definitionId: 275401,
+              score: 35,
+              clubEaId: 50,
+              price: 550
+            },
+            {
+              definitionId: 50560241,
+              score: 35,
+              clubEaId: 50,
+              price: 550
+            },
+            {
+              definitionId: 50602667,
+              score: 35,
+              clubEaId: 50,
+              price: 600
+            }
+          ]
+        }
+      },
+      {
+        id: 104,
+        categoryId: 3,
+        category: "serie-a",
+        name: "Roma",
+        slug: "roma",
+        description: "Requires 15 Roma Mens players to complete.",
+        requiredCards: 15,
+        priority: 16,
+        clubEaId: 52,
+        totalTokens: 155,
+        grades: [
+          {
+            name: "D",
+            threshold: 10,
+            tokens: 0
+          },
+          {
+            name: "C",
+            threshold: 1e4,
+            tokens: 0
+          },
+          {
+            name: "B",
+            threshold: 8e4,
+            tokens: 30
+          },
+          {
+            name: "A",
+            threshold: 16e4,
+            tokens: 50
+          },
+          {
+            name: "S",
+            threshold: 3e5,
+            tokens: 75
+          }
+        ],
+        recommended: {
+          grade: "D",
+          tokens: 0,
+          baseScore: 8093,
+          totalScore: 9177,
+          items: [
+            {
+              definitionId: 211110,
+              score: 2100,
+              clubEaId: 52,
+              price: 7100
+            },
+            {
+              definitionId: 230872,
+              score: 2100,
+              clubEaId: 52,
+              price: 2600
+            },
+            {
+              definitionId: 229582,
+              score: 830,
+              clubEaId: 52,
+              price: 800
+            },
+            {
+              definitionId: 50404645,
+              score: 513,
+              clubEaId: 52,
+              price: 17600
+            },
+            {
+              definitionId: 231447,
+              score: 410,
+              clubEaId: 52,
+              price: 3e3
+            },
+            {
+              definitionId: 236403,
+              score: 410,
+              clubEaId: 52,
+              price: 650
+            },
+            {
+              definitionId: 208268,
+              score: 280,
+              clubEaId: 52,
+              price: 650
+            },
+            {
+              definitionId: 229668,
+              score: 280,
+              clubEaId: 52,
+              price: 700
+            },
+            {
+              definitionId: 250723,
+              score: 280,
+              clubEaId: 52,
+              price: 650
+            },
+            {
+              definitionId: 80170,
+              score: 180,
+              clubEaId: 52,
+              price: 800
+            },
+            {
+              definitionId: 265695,
+              score: 180,
+              clubEaId: 52,
+              price: 650
+            },
+            {
+              definitionId: 50540109,
+              score: 180,
+              clubEaId: 52,
+              price: 700
+            },
+            {
+              definitionId: 228251,
+              score: 140,
+              clubEaId: 52,
+              price: 650
+            },
+            {
+              definitionId: 72997,
+              score: 120,
+              clubEaId: 52,
+              price: 700
+            },
+            {
+              definitionId: 268728,
+              score: 90,
+              clubEaId: 52,
+              price: 9600
+            }
+          ]
+        }
+      },
+      {
+        id: 118,
+        categoryId: 3,
+        category: "serie-a",
+        name: "Sassuolo",
+        slug: "sassuolo",
+        description: "Requires 15 Sassuolo Mens players to complete.",
+        requiredCards: 15,
+        priority: 17,
+        clubEaId: 111974,
+        totalTokens: 38,
+        grades: [
+          {
+            name: "D",
+            threshold: 10,
+            tokens: 0
+          },
+          {
+            name: "C",
+            threshold: 600,
+            tokens: 0
+          },
+          {
+            name: "B",
+            threshold: 5100,
+            tokens: 8
+          },
+          {
+            name: "A",
+            threshold: 7300,
+            tokens: 10
+          },
+          {
+            name: "S",
+            threshold: 9565,
+            tokens: 20
+          }
+        ],
+        recommended: {
+          grade: "C",
+          tokens: 0,
+          baseScore: 1300,
+          totalScore: 1529,
+          items: [
+            {
+              definitionId: 210935,
+              score: 340,
+              clubEaId: 111974,
+              price: 650
+            },
+            {
+              definitionId: 243593,
+              score: 180,
+              clubEaId: 111974,
+              price: 650
+            },
+            {
+              definitionId: 191202,
+              score: 120,
+              clubEaId: 111974,
+              price: 700
+            },
+            {
+              definitionId: 242725,
+              score: 100,
+              clubEaId: 111974,
+              price: 850
+            },
+            {
+              definitionId: 50579536,
+              score: 100,
+              clubEaId: 111974,
+              price: 650
+            },
+            {
+              definitionId: 262396,
+              score: 90,
+              clubEaId: 111974,
+              price: 950
+            },
+            {
+              definitionId: 264207,
+              score: 90,
+              clubEaId: 111974,
+              price: 700
+            },
+            {
+              definitionId: 241628,
+              score: 35,
+              clubEaId: 111974,
+              price: 550
+            },
+            {
+              definitionId: 255561,
+              score: 35,
+              clubEaId: 111974,
+              price: 500
+            },
+            {
+              definitionId: 256856,
+              score: 35,
+              clubEaId: 111974,
+              price: 500
+            },
+            {
+              definitionId: 258507,
+              score: 35,
+              clubEaId: 111974,
+              price: 550
+            },
+            {
+              definitionId: 265761,
+              score: 35,
+              clubEaId: 111974,
+              price: 500
+            },
+            {
+              definitionId: 269558,
+              score: 35,
+              clubEaId: 111974,
+              price: 550
+            },
+            {
+              definitionId: 274702,
+              score: 35,
+              clubEaId: 111974,
+              price: 500
+            },
+            {
+              definitionId: 276705,
+              score: 35,
+              clubEaId: 111974,
+              price: 500
+            }
+          ]
+        }
+      },
+      {
+        id: 117,
+        categoryId: 3,
+        category: "serie-a",
+        name: "Torino",
+        slug: "torino",
+        description: "Requires 15 Torino Mens players to complete.",
+        requiredCards: 15,
+        priority: 18,
+        clubEaId: 54,
+        totalTokens: 38,
+        grades: [
+          {
+            name: "D",
+            threshold: 10,
+            tokens: 0
+          },
+          {
+            name: "C",
+            threshold: 1100,
+            tokens: 0
+          },
+          {
+            name: "B",
+            threshold: 1800,
+            tokens: 8
+          },
+          {
+            name: "A",
+            threshold: 2700,
+            tokens: 10
+          },
+          {
+            name: "S",
+            threshold: 3900,
+            tokens: 20
+          }
+        ],
+        recommended: {
+          grade: "C",
+          tokens: 0,
+          baseScore: 1485,
+          totalScore: 1644,
+          items: [
+            {
+              definitionId: 241095,
+              score: 180,
+              clubEaId: 54,
+              price: 650
+            },
+            {
+              definitionId: 215333,
+              score: 160,
+              clubEaId: 54,
+              price: 650
+            },
+            {
+              definitionId: 216816,
+              score: 120,
+              clubEaId: 54,
+              price: 700
+            },
+            {
+              definitionId: 226093,
+              score: 120,
+              clubEaId: 54,
+              price: 650
+            },
+            {
+              definitionId: 50557087,
+              score: 120,
+              clubEaId: 54,
+              price: 700
+            },
+            {
+              definitionId: 50583791,
+              score: 120,
+              clubEaId: 54,
+              price: 700
+            },
+            {
+              definitionId: 265650,
+              score: 100,
+              clubEaId: 54,
+              price: 700
+            },
+            {
+              definitionId: 50562318,
+              score: 100,
+              clubEaId: 54,
+              price: 750
+            },
+            {
+              definitionId: 201389,
+              score: 90,
+              clubEaId: 54,
+              price: 1700
+            },
+            {
+              definitionId: 258782,
+              score: 90,
+              clubEaId: 54,
+              price: 1700
+            },
+            {
+              definitionId: 273883,
+              score: 90,
+              clubEaId: 54,
+              price: 1900
+            },
+            {
+              definitionId: 278340,
+              score: 90,
+              clubEaId: 54,
+              price: 1800
+            },
+            {
+              definitionId: 248564,
+              score: 35,
+              clubEaId: 54,
+              price: 550
+            },
+            {
+              definitionId: 269276,
+              score: 35,
+              clubEaId: 54,
+              price: 550
+            },
+            {
+              definitionId: 50607962,
+              score: 35,
+              clubEaId: 54,
+              price: 650
+            }
+          ]
+        }
+      },
+      {
+        id: 106,
+        categoryId: 3,
+        category: "serie-a",
+        name: "Udinese",
+        slug: "udinese",
+        description: "Requires 15 Udinese Mens players to complete.",
+        requiredCards: 15,
+        priority: 19,
+        clubEaId: 55,
+        totalTokens: 28,
+        grades: [
+          {
+            name: "D",
+            threshold: 10,
+            tokens: 0
+          },
+          {
+            name: "C",
+            threshold: 500,
+            tokens: 0
+          },
+          {
+            name: "B",
+            threshold: 700,
+            tokens: 5
+          },
+          {
+            name: "A",
+            threshold: 1200,
+            tokens: 8
+          },
+          {
+            name: "S",
+            threshold: 1700,
+            tokens: 15
+          }
+        ],
+        recommended: {
+          grade: "B",
+          tokens: 5,
+          baseScore: 1e3,
+          totalScore: 1162,
+          items: [
+            {
+              definitionId: 242238,
+              score: 140,
+              clubEaId: 55,
+              price: 650
+            },
+            {
+              definitionId: 228349,
+              score: 100,
+              clubEaId: 55,
+              price: 1900
+            },
+            {
+              definitionId: 231743,
+              score: 100,
+              clubEaId: 55,
+              price: 2400
+            },
+            {
+              definitionId: 238067,
+              score: 100,
+              clubEaId: 55,
+              price: 1900
+            },
+            {
+              definitionId: 257288,
+              score: 100,
+              clubEaId: 55,
+              price: 750
+            },
+            {
+              definitionId: 214658,
+              score: 90,
+              clubEaId: 55,
+              price: 1900
+            },
+            {
+              definitionId: 243249,
+              score: 90,
+              clubEaId: 55,
+              price: 2500
+            },
+            {
+              definitionId: 76411,
+              score: 35,
+              clubEaId: 55,
+              price: 550
+            },
+            {
+              definitionId: 190324,
+              score: 35,
+              clubEaId: 55,
+              price: 450
+            },
+            {
+              definitionId: 220421,
+              score: 35,
+              clubEaId: 55,
+              price: 600
+            },
+            {
+              definitionId: 223866,
+              score: 35,
+              clubEaId: 55,
+              price: 550
+            },
+            {
+              definitionId: 229973,
+              score: 35,
+              clubEaId: 55,
+              price: 500
+            },
+            {
+              definitionId: 241168,
+              score: 35,
+              clubEaId: 55,
+              price: 500
+            },
+            {
+              definitionId: 268656,
+              score: 35,
+              clubEaId: 55,
+              price: 600
+            },
+            {
+              definitionId: 277708,
+              score: 35,
+              clubEaId: 55,
+              price: 600
+            }
+          ]
+        }
+      },
+      {
+        id: 101,
+        categoryId: 3,
+        category: "serie-a",
+        name: "Venezia",
+        slug: "venezia",
+        description: "Requires 15 Venezia Mens players to complete.",
+        requiredCards: 15,
+        priority: 20,
+        clubEaId: 205,
+        totalTokens: 28,
+        grades: [
+          {
+            name: "D",
+            threshold: 10,
+            tokens: 0
+          },
+          {
+            name: "C",
+            threshold: 500,
+            tokens: 0
+          },
+          {
+            name: "B",
+            threshold: 600,
+            tokens: 5
+          },
+          {
+            name: "A",
+            threshold: 1e3,
+            tokens: 8
+          },
+          {
+            name: "S",
+            threshold: 1500,
+            tokens: 15
+          }
+        ],
+        recommended: {
+          grade: "A",
+          tokens: 13,
+          baseScore: 895,
+          totalScore: 1046,
+          items: [
+            {
+              definitionId: 277565,
+              score: 120,
+              clubEaId: 205,
+              price: 1900
+            },
+            {
+              definitionId: 215363,
+              score: 100,
+              clubEaId: 205,
+              price: 900
+            },
+            {
+              definitionId: 236760,
+              score: 90,
+              clubEaId: 205,
+              price: 4e3
+            },
+            {
+              definitionId: 242332,
+              score: 90,
+              clubEaId: 205,
+              price: 1800
+            },
+            {
+              definitionId: 245275,
+              score: 90,
+              clubEaId: 205,
+              price: 1800
+            },
+            {
+              definitionId: 266256,
+              score: 90,
+              clubEaId: 205,
+              price: 3800
+            },
+            {
+              definitionId: 210384,
+              score: 35,
+              clubEaId: 205,
+              price: 500
+            },
+            {
+              definitionId: 242755,
+              score: 35,
+              clubEaId: 205,
+              price: 550
+            },
+            {
+              definitionId: 244634,
+              score: 35,
+              clubEaId: 205,
+              price: 650
+            },
+            {
+              definitionId: 247832,
+              score: 35,
+              clubEaId: 205,
+              price: 750
+            },
+            {
+              definitionId: 263657,
+              score: 35,
+              clubEaId: 205,
+              price: 600
+            },
+            {
+              definitionId: 271856,
+              score: 35,
+              clubEaId: 205,
+              price: 550
+            },
+            {
+              definitionId: 275087,
+              score: 35,
+              clubEaId: 205,
+              price: 600
+            },
+            {
+              definitionId: 50406804,
+              score: 35,
+              clubEaId: 205,
+              price: 550
+            },
+            {
+              definitionId: 50571327,
+              score: 35,
+              clubEaId: 205,
+              price: 600
+            }
+          ]
+        }
+      },
+      {
+        id: 108,
+        categoryId: 6,
+        category: "leagues",
+        name: "Premier League",
+        slug: "premier-league",
+        description: "Requires 30 Premier League players to complete.",
+        requiredCards: 30,
+        priority: 1,
+        clubEaId: null,
+        totalTokens: 265,
+        grades: [
+          {
+            name: "D",
+            threshold: 10,
+            tokens: 10
+          },
+          {
+            name: "C",
+            threshold: 4e5,
+            tokens: 35
+          },
+          {
+            name: "B",
+            threshold: 8e5,
+            tokens: 50
+          },
+          {
+            name: "A",
+            threshold: 19e5,
+            tokens: 70
+          },
+          {
+            name: "S",
+            threshold: 4e6,
+            tokens: 100
+          }
+        ],
+        recommended: {
+          grade: "D",
+          tokens: 10,
+          baseScore: 197600,
+          totalScore: 304059,
+          items: [
+            {
+              definitionId: 67292141,
+              score: 20625,
+              clubEaId: 114605,
+              price: null
+            },
+            {
+              definitionId: 67360347,
+              score: 15563,
+              clubEaId: 114605,
+              price: 803e3
+            },
+            {
+              definitionId: 67329765,
+              score: 13750,
+              clubEaId: 1,
+              price: 233e3
+            },
+            {
+              definitionId: 230621,
+              score: 11e3,
+              clubEaId: 10,
+              price: 40500
+            },
+            {
+              definitionId: 67108891,
+              score: 10313,
+              clubEaId: 114605,
+              price: 35e4
+            },
+            {
+              definitionId: 67110065,
+              score: 10313,
+              clubEaId: 114605,
+              price: 593e3
+            },
+            {
+              definitionId: 67156254,
+              score: 10313,
+              clubEaId: 114605,
+              price: 831e3
+            },
+            {
+              definitionId: 67369111,
+              score: 10313,
+              clubEaId: 5,
+              price: 75e4
+            },
+            {
+              definitionId: 67114331,
+              score: 7688,
+              clubEaId: 114605,
+              price: 75500
+            },
+            {
+              definitionId: 67153761,
+              score: 7688,
+              clubEaId: 114605,
+              price: 76e3
+            },
+            {
+              definitionId: 67159616,
+              score: 7688,
+              clubEaId: 114605,
+              price: 39e4
+            },
+            {
+              definitionId: 67293807,
+              score: 7688,
+              clubEaId: 114605,
+              price: 1395e3
+            },
+            {
+              definitionId: 67336542,
+              score: 7688,
+              clubEaId: 1,
+              price: 207e3
+            },
+            {
+              definitionId: 67350100,
+              score: 7688,
+              clubEaId: 10,
+              price: 144e3
+            },
+            {
+              definitionId: 67375337,
+              score: 7688,
+              clubEaId: 114605,
+              price: 25e4
+            },
+            {
+              definitionId: 67383831,
+              score: 7688,
+              clubEaId: 114605,
+              price: 163e3
+            },
+            {
+              definitionId: 266801,
+              score: 6875,
+              clubEaId: 114605,
+              price: 268e3
+            },
+            {
+              definitionId: 239818,
+              score: 5500,
+              clubEaId: 10,
+              price: 5600
+            },
+            {
+              definitionId: 1845,
+              score: 5125,
+              clubEaId: 114605,
+              price: 115e3
+            },
+            {
+              definitionId: 251570,
+              score: 4100,
+              clubEaId: 10,
+              price: 6e4
+            },
+            {
+              definitionId: 67125118,
+              score: 3938,
+              clubEaId: 114605,
+              price: 83e3
+            },
+            {
+              definitionId: 241159,
+              score: 2100,
+              clubEaId: 10,
+              price: 2700
+            },
+            {
+              definitionId: 251517,
+              score: 2100,
+              clubEaId: 10,
+              price: 7600
+            },
+            {
+              definitionId: 50596300,
+              score: 2100,
+              clubEaId: 9,
+              price: 82500
+            },
+            {
+              definitionId: 179527,
+              score: 830,
+              clubEaId: 132794,
+              price: null
+            },
+            {
+              definitionId: 67299629,
+              score: 525,
+              clubEaId: 1808,
+              price: 13750
+            },
+            {
+              definitionId: 50531563,
+              score: 338,
+              clubEaId: 1808,
+              price: 14e3
+            },
+            {
+              definitionId: 235152,
+              score: 180,
+              clubEaId: 1808,
+              price: 750
+            },
+            {
+              definitionId: 192563,
+              score: 160,
+              clubEaId: 144,
+              price: 900
+            },
+            {
+              definitionId: 172203,
+              score: 35,
+              clubEaId: 1943,
+              price: 850
+            }
+          ]
+        }
+      },
+      {
+        id: 100,
+        categoryId: 6,
+        category: "leagues",
+        name: "Barclays WSL",
+        slug: "barclays-wsl",
+        description: "Requires 30 Barclays WSL players to complete.",
+        requiredCards: 30,
+        priority: 2,
+        clubEaId: null,
+        totalTokens: 265,
+        grades: [
+          {
+            name: "D",
+            threshold: 10,
+            tokens: 10
+          },
+          {
+            name: "C",
+            threshold: 2e5,
+            tokens: 35
+          },
+          {
+            name: "B",
+            threshold: 725e3,
+            tokens: 50
+          },
+          {
+            name: "A",
+            threshold: 19e5,
+            tokens: 70
+          },
+          {
+            name: "S",
+            threshold: 4e6,
+            tokens: 100
+          }
+        ],
+        recommended: {
+          grade: "C",
+          tokens: 45,
+          baseScore: 161125,
+          totalScore: 213996,
+          items: [
+            {
+              definitionId: 227203,
+              score: 19e3,
+              clubEaId: 132176,
+              price: 1129e3
+            },
+            {
+              definitionId: 246219,
+              score: 14e3,
+              clubEaId: 116017,
+              price: 23750
+            },
+            {
+              definitionId: 237288,
+              score: 11e3,
+              clubEaId: 116009,
+              price: 93500
+            },
+            {
+              definitionId: 236479,
+              score: 8300,
+              clubEaId: 132176,
+              price: 8900
+            },
+            {
+              definitionId: 245830,
+              score: 8300,
+              clubEaId: 116017,
+              price: 8400
+            },
+            {
+              definitionId: 258980,
+              score: 8300,
+              clubEaId: 116009,
+              price: 15750
+            },
+            {
+              definitionId: 50558894,
+              score: 7688,
+              clubEaId: 116010,
+              price: 45e3
+            },
+            {
+              definitionId: 67336135,
+              score: 7688,
+              clubEaId: 114605,
+              price: 81e3
+            },
+            {
+              definitionId: 227361,
+              score: 5500,
+              clubEaId: 132176,
+              price: 62e3
+            },
+            {
+              definitionId: 233746,
+              score: 5500,
+              clubEaId: 116017,
+              price: 5800
+            },
+            {
+              definitionId: 253436,
+              score: 5500,
+              clubEaId: 116009,
+              price: 6700
+            },
+            {
+              definitionId: 257008,
+              score: 5500,
+              clubEaId: 116017,
+              price: 6100
+            },
+            {
+              definitionId: 263009,
+              score: 5500,
+              clubEaId: 116010,
+              price: 6e3
+            },
+            {
+              definitionId: 227271,
+              score: 5125,
+              clubEaId: 114605,
+              price: 57500
+            },
+            {
+              definitionId: 67336110,
+              score: 5125,
+              clubEaId: 116010,
+              price: 2e4
+            },
+            {
+              definitionId: 243404,
+              score: 4100,
+              clubEaId: 116009,
+              price: 25e3
+            },
+            {
+              definitionId: 257001,
+              score: 4100,
+              clubEaId: 116009,
+              price: 16e3
+            },
+            {
+              definitionId: 265239,
+              score: 4100,
+              clubEaId: 116010,
+              price: 3900
+            },
+            {
+              definitionId: 67336125,
+              score: 3938,
+              clubEaId: 114605,
+              price: 123e3
+            },
+            {
+              definitionId: 67336126,
+              score: 3938,
+              clubEaId: 114605,
+              price: 11e4
+            },
+            {
+              definitionId: 227261,
+              score: 2625,
+              clubEaId: 114605,
+              price: 84e3
+            },
+            {
+              definitionId: 227262,
+              score: 2625,
+              clubEaId: 114605,
+              price: 99500
+            },
+            {
+              definitionId: 227110,
+              score: 2100,
+              clubEaId: 116009,
+              price: 2100
+            },
+            {
+              definitionId: 227246,
+              score: 2100,
+              clubEaId: 116010,
+              price: 2100
+            },
+            {
+              definitionId: 227254,
+              score: 2100,
+              clubEaId: 116017,
+              price: 2e3
+            },
+            {
+              definitionId: 232202,
+              score: 2100,
+              clubEaId: 132176,
+              price: 3100
+            },
+            {
+              definitionId: 244302,
+              score: 2100,
+              clubEaId: 116012,
+              price: 2200
+            },
+            {
+              definitionId: 265249,
+              score: 2100,
+              clubEaId: 116010,
+              price: 43250
+            },
+            {
+              definitionId: 50596595,
+              score: 1038,
+              clubEaId: 132176,
+              price: null
+            },
+            {
+              definitionId: 273171,
+              score: 35,
+              clubEaId: 132176,
+              price: 750
+            }
+          ]
+        }
+      },
+      {
+        id: 111,
+        categoryId: 6,
+        category: "leagues",
+        name: "Ligue 1 McDonald's",
+        slug: "ligue-1-mcdonald-s",
+        description: "Requires 30 Ligue 1 McDonald's players to complete.",
+        requiredCards: 30,
+        priority: 3,
+        clubEaId: null,
+        totalTokens: 265,
+        grades: [
+          {
+            name: "D",
+            threshold: 10,
+            tokens: 10
+          },
+          {
+            name: "C",
+            threshold: 75e3,
+            tokens: 35
+          },
+          {
+            name: "B",
+            threshold: 275e3,
+            tokens: 50
+          },
+          {
+            name: "A",
+            threshold: 16e5,
+            tokens: 70
+          },
+          {
+            name: "S",
+            threshold: 4e6,
+            tokens: 100
+          }
+        ],
+        recommended: {
+          grade: "B",
+          tokens: 95,
+          baseScore: 279718,
+          totalScore: 414056,
+          items: [
+            {
+              definitionId: 67276289,
+              score: 20625,
+              clubEaId: 114605,
+              price: 82e4
+            },
+            {
+              definitionId: 67300836,
+              score: 20625,
+              clubEaId: 114605,
+              price: 2949e3
+            },
+            {
+              definitionId: 67361009,
+              score: 20625,
+              clubEaId: 73,
+              price: 285e4
+            },
+            {
+              definitionId: 67109434,
+              score: 15563,
+              clubEaId: 114605,
+              price: 574e3
+            },
+            {
+              definitionId: 67316729,
+              score: 15563,
+              clubEaId: 73,
+              price: 228e3
+            },
+            {
+              definitionId: 231443,
+              score: 14e3,
+              clubEaId: 73,
+              price: 1876e3
+            },
+            {
+              definitionId: 255253,
+              score: 14e3,
+              clubEaId: 73,
+              price: 105e3
+            },
+            {
+              definitionId: 167425,
+              score: 13750,
+              clubEaId: 114605,
+              price: 544e3
+            },
+            {
+              definitionId: 191972,
+              score: 13750,
+              clubEaId: 114605,
+              price: 29e5
+            },
+            {
+              definitionId: 50583793,
+              score: 13750,
+              clubEaId: 73,
+              price: 1323e3
+            },
+            {
+              definitionId: 247635,
+              score: 11e3,
+              clubEaId: 73,
+              price: 183e3
+            },
+            {
+              definitionId: 252145,
+              score: 11e3,
+              clubEaId: 73,
+              price: 39e4
+            },
+            {
+              definitionId: 256196,
+              score: 11e3,
+              clubEaId: 73,
+              price: 178e3
+            },
+            {
+              definitionId: 570,
+              score: 10375,
+              clubEaId: 114605,
+              price: 496e3
+            },
+            {
+              definitionId: 50539513,
+              score: 10375,
+              clubEaId: 73,
+              price: 174e3
+            },
+            {
+              definitionId: 235212,
+              score: 8300,
+              clubEaId: 73,
+              price: 178e3
+            },
+            {
+              definitionId: 272834,
+              score: 8300,
+              clubEaId: 73,
+              price: 32250
+            },
+            {
+              definitionId: 67110415,
+              score: 7688,
+              clubEaId: 114605,
+              price: 119e3
+            },
+            {
+              definitionId: 67279754,
+              score: 7688,
+              clubEaId: 114605,
+              price: 17e5
+            },
+            {
+              definitionId: 207865,
+              score: 5500,
+              clubEaId: 73,
+              price: 2e4
+            },
+            {
+              definitionId: 1551,
+              score: 5125,
+              clubEaId: 114605,
+              price: 85e3
+            },
+            {
+              definitionId: 170890,
+              score: 5125,
+              clubEaId: 114605,
+              price: 1199e3
+            },
+            {
+              definitionId: 226271,
+              score: 4100,
+              clubEaId: 73,
+              price: 3900
+            },
+            {
+              definitionId: 67355552,
+              score: 3938,
+              clubEaId: 64,
+              price: 62500
+            },
+            {
+              definitionId: 50578336,
+              score: 2625,
+              clubEaId: 64,
+              price: 52500
+            },
+            {
+              definitionId: 50571873,
+              score: 1556,
+              clubEaId: 73,
+              price: 37500
+            },
+            {
+              definitionId: 67328547,
+              score: 1556,
+              clubEaId: 66,
+              price: 29750
+            },
+            {
+              definitionId: 50551331,
+              score: 1038,
+              clubEaId: 66,
+              price: 16e3
+            },
+            {
+              definitionId: 50573109,
+              score: 1038,
+              clubEaId: 73,
+              price: null
+            },
+            {
+              definitionId: 269493,
+              score: 140,
+              clubEaId: 65,
+              price: 800
+            }
+          ]
+        }
+      },
+      {
+        id: 115,
+        categoryId: 6,
+        category: "leagues",
+        name: "Arkema PL",
+        slug: "arkema-pl",
+        description: "Requires 30 Arkema Premi\xE8re Ligue players to complete.",
+        requiredCards: 30,
+        priority: 4,
+        clubEaId: null,
+        totalTokens: 265,
+        grades: [
+          {
+            name: "D",
+            threshold: 10,
+            tokens: 10
+          },
+          {
+            name: "C",
+            threshold: 75e3,
+            tokens: 35
+          },
+          {
+            name: "B",
+            threshold: 575e3,
+            tokens: 50
+          },
+          {
+            name: "A",
+            threshold: 18e5,
+            tokens: 70
+          },
+          {
+            name: "S",
+            threshold: 4e6,
+            tokens: 100
+          }
+        ],
+        recommended: {
+          grade: "C",
+          tokens: 45,
+          baseScore: 124889,
+          totalScore: 182488,
+          items: [
+            {
+              definitionId: 50597546,
+              score: 20625,
+              clubEaId: 116033,
+              price: 2425e3
+            },
+            {
+              definitionId: 67374762,
+              score: 13750,
+              clubEaId: 116033,
+              price: 2255e3
+            },
+            {
+              definitionId: 67335226,
+              score: 10313,
+              clubEaId: 114605,
+              price: 36e4
+            },
+            {
+              definitionId: 67336179,
+              score: 10313,
+              clubEaId: 114605,
+              price: 279e3
+            },
+            {
+              definitionId: 265898,
+              score: 8300,
+              clubEaId: 116033,
+              price: 633e3
+            },
+            {
+              definitionId: 67383956,
+              score: 7688,
+              clubEaId: 114605,
+              price: 155e3
+            },
+            {
+              definitionId: 227315,
+              score: 6875,
+              clubEaId: 114605,
+              price: 177e3
+            },
+            {
+              definitionId: 233662,
+              score: 5500,
+              clubEaId: 116034,
+              price: 7e4
+            },
+            {
+              definitionId: 269404,
+              score: 5500,
+              clubEaId: 116033,
+              price: 23e4
+            },
+            {
+              definitionId: 278219,
+              score: 5500,
+              clubEaId: 116033,
+              price: 46500
+            },
+            {
+              definitionId: 275092,
+              score: 5125,
+              clubEaId: 114605,
+              price: 122e3
+            },
+            {
+              definitionId: 245879,
+              score: 4100,
+              clubEaId: 116033,
+              price: 4200
+            },
+            {
+              definitionId: 246272,
+              score: 4100,
+              clubEaId: 116033,
+              price: 3900
+            },
+            {
+              definitionId: 265674,
+              score: 4100,
+              clubEaId: 116033,
+              price: 19e3
+            },
+            {
+              definitionId: 227310,
+              score: 2100,
+              clubEaId: 116033,
+              price: 2e3
+            },
+            {
+              definitionId: 245697,
+              score: 2100,
+              clubEaId: 116035,
+              price: 4700
+            },
+            {
+              definitionId: 245956,
+              score: 2100,
+              clubEaId: 116033,
+              price: 2300
+            },
+            {
+              definitionId: 227316,
+              score: 830,
+              clubEaId: 116033,
+              price: 750
+            },
+            {
+              definitionId: 242896,
+              score: 830,
+              clubEaId: 116033,
+              price: 700
+            },
+            {
+              definitionId: 261740,
+              score: 830,
+              clubEaId: 116033,
+              price: 850
+            },
+            {
+              definitionId: 265536,
+              score: 830,
+              clubEaId: 116033,
+              price: 700
+            },
+            {
+              definitionId: 227346,
+              score: 410,
+              clubEaId: 116034,
+              price: 750
+            },
+            {
+              definitionId: 227392,
+              score: 410,
+              clubEaId: 116033,
+              price: 700
+            },
+            {
+              definitionId: 262457,
+              score: 410,
+              clubEaId: 116034,
+              price: 1400
+            },
+            {
+              definitionId: 265905,
+              score: 410,
+              clubEaId: 116033,
+              price: 750
+            },
+            {
+              definitionId: 267531,
+              score: 410,
+              clubEaId: 116034,
+              price: 650
+            },
+            {
+              definitionId: 273946,
+              score: 410,
+              clubEaId: 116033,
+              price: 700
+            },
+            {
+              definitionId: 241491,
+              score: 340,
+              clubEaId: 116033,
+              price: 650
+            },
+            {
+              definitionId: 264922,
+              score: 340,
+              clubEaId: 131724,
+              price: 650
+            },
+            {
+              definitionId: 265861,
+              score: 340,
+              clubEaId: 132370,
+              price: 650
+            }
+          ]
+        }
+      },
+      {
+        id: 109,
+        categoryId: 6,
+        category: "leagues",
+        name: "LALIGA EA SPORTS",
+        slug: "laliga-ea-sports",
+        description: "Requires 30 LALIGA EA SPORTS players to complete.",
+        requiredCards: 30,
+        priority: 5,
+        clubEaId: null,
+        totalTokens: 265,
+        grades: [
+          {
+            name: "D",
+            threshold: 10,
+            tokens: 10
+          },
+          {
+            name: "C",
+            threshold: 275e3,
+            tokens: 35
+          },
+          {
+            name: "B",
+            threshold: 725e3,
+            tokens: 50
+          },
+          {
+            name: "A",
+            threshold: 19e5,
+            tokens: 70
+          },
+          {
+            name: "S",
+            threshold: 4e6,
+            tokens: 100
+          }
+        ],
+        recommended: {
+          grade: "C",
+          tokens: 45,
+          baseScore: 416746,
+          totalScore: 618232,
+          items: [
+            {
+              definitionId: 50609291,
+              score: 35625,
+              clubEaId: 241,
+              price: 389e4
+            },
+            {
+              definitionId: 67340611,
+              score: 35625,
+              clubEaId: 243,
+              price: null
+            },
+            {
+              definitionId: 50563395,
+              score: 23750,
+              clubEaId: 243,
+              price: 124e5
+            },
+            {
+              definitionId: 67386507,
+              score: 23750,
+              clubEaId: 241,
+              price: 1492e3
+            },
+            {
+              definitionId: 67342283,
+              score: 20625,
+              clubEaId: 241,
+              price: 21e5
+            },
+            {
+              definitionId: 231747,
+              score: 19e3,
+              clubEaId: 243,
+              price: 3893e3
+            },
+            {
+              definitionId: 67135573,
+              score: 15563,
+              clubEaId: 114605,
+              price: 365e3
+            },
+            {
+              definitionId: 67186651,
+              score: 15563,
+              clubEaId: 114605,
+              price: 308e3
+            },
+            {
+              definitionId: 67251618,
+              score: 15563,
+              clubEaId: 114605,
+              price: 279e3
+            },
+            {
+              definitionId: 67322965,
+              score: 15563,
+              clubEaId: 114605,
+              price: 765e3
+            },
+            {
+              definitionId: 67375555,
+              score: 15563,
+              clubEaId: 114605,
+              price: 498e3
+            },
+            {
+              definitionId: 192119,
+              score: 14e3,
+              clubEaId: 243,
+              price: 68500
+            },
+            {
+              definitionId: 231866,
+              score: 14e3,
+              clubEaId: 241,
+              price: 26750
+            },
+            {
+              definitionId: 251854,
+              score: 14e3,
+              clubEaId: 241,
+              price: 217e3
+            },
+            {
+              definitionId: 252371,
+              score: 14e3,
+              clubEaId: 243,
+              price: 209e3
+            },
+            {
+              definitionId: 277643,
+              score: 14e3,
+              clubEaId: 241,
+              price: 381e3
+            },
+            {
+              definitionId: 50565067,
+              score: 13750,
+              clubEaId: 241,
+              price: 175e4
+            },
+            {
+              definitionId: 238794,
+              score: 11e3,
+              clubEaId: 243,
+              price: 979e3
+            },
+            {
+              definitionId: 26709,
+              score: 10375,
+              clubEaId: 114605,
+              price: 121e3
+            },
+            {
+              definitionId: 142754,
+              score: 10375,
+              clubEaId: 114605,
+              price: 17e4
+            },
+            {
+              definitionId: 214101,
+              score: 10375,
+              clubEaId: 114605,
+              price: 679e3
+            },
+            {
+              definitionId: 67119823,
+              score: 10313,
+              clubEaId: 114605,
+              price: 182e3
+            },
+            {
+              definitionId: 67347288,
+              score: 10313,
+              clubEaId: 114605,
+              price: 114e3
+            },
+            {
+              definitionId: 200389,
+              score: 8300,
+              clubEaId: 240,
+              price: 13500
+            },
+            {
+              definitionId: 233419,
+              score: 8300,
+              clubEaId: 241,
+              price: 714e3
+            },
+            {
+              definitionId: 10959,
+              score: 6875,
+              clubEaId: 114605,
+              price: 122e3
+            },
+            {
+              definitionId: 228702,
+              score: 4100,
+              clubEaId: 241,
+              price: 107e3
+            },
+            {
+              definitionId: 246191,
+              score: 4100,
+              clubEaId: 240,
+              price: 94500
+            },
+            {
+              definitionId: 241486,
+              score: 2100,
+              clubEaId: 241,
+              price: 35e3
+            },
+            {
+              definitionId: 186153,
+              score: 280,
+              clubEaId: 241,
+              price: 700
+            }
+          ]
+        }
+      },
+      {
+        id: 121,
+        categoryId: 6,
+        category: "leagues",
+        name: "Liga F Moeve",
+        slug: "liga-f-moeve",
+        description: "Requires 30 Liga F Moeve players to complete.",
+        requiredCards: 30,
+        priority: 6,
+        clubEaId: null,
+        totalTokens: 265,
+        grades: [
+          {
+            name: "D",
+            threshold: 10,
+            tokens: 10
+          },
+          {
+            name: "C",
+            threshold: 125e3,
+            tokens: 35
+          },
+          {
+            name: "B",
+            threshold: 625e3,
+            tokens: 50
+          },
+          {
+            name: "A",
+            threshold: 18e5,
+            tokens: 70
+          },
+          {
+            name: "S",
+            threshold: 4e6,
+            tokens: 100
+          }
+        ],
+        recommended: {
+          grade: "C",
+          tokens: 45,
+          baseScore: 94877,
+          totalScore: 129942,
+          items: [
+            {
+              definitionId: 241667,
+              score: 14e3,
+              clubEaId: 116325,
+              price: 264e3
+            },
+            {
+              definitionId: 227102,
+              score: 11e3,
+              clubEaId: 116325,
+              price: 417e3
+            },
+            {
+              definitionId: 241846,
+              score: 11e3,
+              clubEaId: 116325,
+              price: 15e4
+            },
+            {
+              definitionId: 262531,
+              score: 11e3,
+              clubEaId: 116325,
+              price: 121e4
+            },
+            {
+              definitionId: 237289,
+              score: 8300,
+              clubEaId: 116325,
+              price: 202e3
+            },
+            {
+              definitionId: 67370719,
+              score: 7688,
+              clubEaId: 116325,
+              price: 1318e3
+            },
+            {
+              definitionId: 227190,
+              score: 5500,
+              clubEaId: 116325,
+              price: 6100
+            },
+            {
+              definitionId: 50593503,
+              score: 5125,
+              clubEaId: 116325,
+              price: 122e4
+            },
+            {
+              definitionId: 50599178,
+              score: 3938,
+              clubEaId: 116325,
+              price: 112e3
+            },
+            {
+              definitionId: 67376394,
+              score: 2625,
+              clubEaId: 116325,
+              price: 84e3
+            },
+            {
+              definitionId: 267234,
+              score: 2100,
+              clubEaId: 116325,
+              price: 2500
+            },
+            {
+              definitionId: 268942,
+              score: 2100,
+              clubEaId: 116325,
+              price: 2700
+            },
+            {
+              definitionId: 273153,
+              score: 2100,
+              clubEaId: 116326,
+              price: 16250
+            },
+            {
+              definitionId: 259372,
+              score: 830,
+              clubEaId: 116326,
+              price: 4800
+            },
+            {
+              definitionId: 267530,
+              score: 830,
+              clubEaId: 116325,
+              price: 1900
+            },
+            {
+              definitionId: 271446,
+              score: 830,
+              clubEaId: 116325,
+              price: 18e3
+            },
+            {
+              definitionId: 272094,
+              score: 830,
+              clubEaId: 116327,
+              price: 800
+            },
+            {
+              definitionId: 50596683,
+              score: 513,
+              clubEaId: 116326,
+              price: null
+            },
+            {
+              definitionId: 227327,
+              score: 410,
+              clubEaId: 116326,
+              price: 700
+            },
+            {
+              definitionId: 240717,
+              score: 410,
+              clubEaId: 116326,
+              price: 6300
+            },
+            {
+              definitionId: 261855,
+              score: 410,
+              clubEaId: 116325,
+              price: 67e3
+            },
+            {
+              definitionId: 265035,
+              score: 410,
+              clubEaId: 116326,
+              price: 700
+            },
+            {
+              definitionId: 271944,
+              score: 410,
+              clubEaId: 116326,
+              price: 750
+            },
+            {
+              definitionId: 272163,
+              score: 410,
+              clubEaId: 131125,
+              price: 850
+            },
+            {
+              definitionId: 50598581,
+              score: 410,
+              clubEaId: 116326,
+              price: 750
+            },
+            {
+              definitionId: 261843,
+              score: 340,
+              clubEaId: 116326,
+              price: 650
+            },
+            {
+              definitionId: 264725,
+              score: 340,
+              clubEaId: 116326,
+              price: 2400
+            },
+            {
+              definitionId: 272007,
+              score: 340,
+              clubEaId: 116336,
+              price: 800
+            },
+            {
+              definitionId: 274780,
+              score: 340,
+              clubEaId: 116327,
+              price: 700
+            },
+            {
+              definitionId: 67189094,
+              score: 338,
+              clubEaId: 116326,
+              price: 13e3
+            }
+          ]
+        }
+      },
+      {
+        id: 103,
+        categoryId: 6,
+        category: "leagues",
+        name: "Serie A Enilive",
+        slug: "serie-a-enilive",
+        description: "Requires 30 Serie A Enilive players to complete.",
+        requiredCards: 30,
+        priority: 7,
+        clubEaId: null,
+        totalTokens: 265,
+        grades: [
+          {
+            name: "D",
+            threshold: 10,
+            tokens: 10
+          },
+          {
+            name: "C",
+            threshold: 1e5,
+            tokens: 35
+          },
+          {
+            name: "B",
+            threshold: 425e3,
+            tokens: 50
+          },
+          {
+            name: "A",
+            threshold: 15e5,
+            tokens: 70
+          },
+          {
+            name: "S",
+            threshold: 35e5,
+            tokens: 100
+          }
+        ],
+        recommended: {
+          grade: "C",
+          tokens: 45,
+          baseScore: 163084,
+          totalScore: 248216,
+          items: [
+            {
+              definitionId: 67383830,
+              score: 15563,
+              clubEaId: 114605,
+              price: 25e5
+            },
+            {
+              definitionId: 120274,
+              score: 10375,
+              clubEaId: 114605,
+              price: 1249e3
+            },
+            {
+              definitionId: 262271,
+              score: 10375,
+              clubEaId: 114605,
+              price: 84500
+            },
+            {
+              definitionId: 274966,
+              score: 10375,
+              clubEaId: 114605,
+              price: 448e3
+            },
+            {
+              definitionId: 67109889,
+              score: 10313,
+              clubEaId: 114605,
+              price: 171e3
+            },
+            {
+              definitionId: 67162166,
+              score: 10313,
+              clubEaId: 114605,
+              price: 588e3
+            },
+            {
+              definitionId: 67246050,
+              score: 10313,
+              clubEaId: 114605,
+              price: 756e3
+            },
+            {
+              definitionId: 67280741,
+              score: 10313,
+              clubEaId: 114605,
+              price: 71e4
+            },
+            {
+              definitionId: 67351489,
+              score: 10313,
+              clubEaId: 114605,
+              price: 124e3
+            },
+            {
+              definitionId: 67246987,
+              score: 7688,
+              clubEaId: 114605,
+              price: 242e3
+            },
+            {
+              definitionId: 1025,
+              score: 6875,
+              clubEaId: 114605,
+              price: 14e4
+            },
+            {
+              definitionId: 53302,
+              score: 6875,
+              clubEaId: 114605,
+              price: null
+            },
+            {
+              definitionId: 137186,
+              score: 6875,
+              clubEaId: 114605,
+              price: 48e4
+            },
+            {
+              definitionId: 173210,
+              score: 6875,
+              clubEaId: 114605,
+              price: 323e3
+            },
+            {
+              definitionId: 138123,
+              score: 5125,
+              clubEaId: 114605,
+              price: 196e3
+            },
+            {
+              definitionId: 226268,
+              score: 4100,
+              clubEaId: 131682,
+              price: 3700
+            },
+            {
+              definitionId: 252154,
+              score: 4100,
+              clubEaId: 115845,
+              price: 4e3
+            },
+            {
+              definitionId: 67350600,
+              score: 3938,
+              clubEaId: 131682,
+              price: 15e4
+            },
+            {
+              definitionId: 177003,
+              score: 2100,
+              clubEaId: 131681,
+              price: 2700
+            },
+            {
+              definitionId: 180175,
+              score: 2100,
+              clubEaId: 132794,
+              price: null
+            },
+            {
+              definitionId: 192985,
+              score: 2100,
+              clubEaId: 48,
+              price: 2400
+            },
+            {
+              definitionId: 208128,
+              score: 2100,
+              clubEaId: 131682,
+              price: 2400
+            },
+            {
+              definitionId: 170733,
+              score: 830,
+              clubEaId: 132794,
+              price: null
+            },
+            {
+              definitionId: 188428,
+              score: 830,
+              clubEaId: 132794,
+              price: null
+            },
+            {
+              definitionId: 204550,
+              score: 830,
+              clubEaId: 132794,
+              price: null
+            },
+            {
+              definitionId: 229582,
+              score: 830,
+              clubEaId: 52,
+              price: 900
+            },
+            {
+              definitionId: 247246,
+              score: 280,
+              clubEaId: 45,
+              price: 3200
+            },
+            {
+              definitionId: 243702,
+              score: 180,
+              clubEaId: 131682,
+              price: 1200
+            },
+            {
+              definitionId: 210719,
+              score: 100,
+              clubEaId: 1745,
+              price: 3400
+            },
+            {
+              definitionId: 268703,
+              score: 100,
+              clubEaId: 189,
+              price: 650
+            }
+          ]
+        }
+      },
+      {
+        id: 122,
+        categoryId: 6,
+        category: "leagues",
+        name: "Bundesliga",
+        slug: "bundesliga",
+        description: "Requires 30 Bundesliga players to complete.",
+        requiredCards: 30,
+        priority: 8,
+        clubEaId: null,
+        totalTokens: 265,
+        grades: [
+          {
+            name: "D",
+            threshold: 10,
+            tokens: 10
+          },
+          {
+            name: "C",
+            threshold: 1e5,
+            tokens: 35
+          },
+          {
+            name: "B",
+            threshold: 4e5,
+            tokens: 50
+          },
+          {
+            name: "A",
+            threshold: 15e5,
+            tokens: 70
+          },
+          {
+            name: "S",
+            threshold: 35e5,
+            tokens: 100
+          }
+        ],
+        recommended: {
+          grade: "B",
+          tokens: 95,
+          baseScore: 331855,
+          totalScore: 518766,
+          items: [
+            {
+              definitionId: 67356691,
+              score: 35625,
+              clubEaId: 21,
+              price: 25e5
+            },
+            {
+              definitionId: 50579475,
+              score: 23750,
+              clubEaId: 21,
+              price: 1445e3
+            },
+            {
+              definitionId: 67275540,
+              score: 20625,
+              clubEaId: 114605,
+              price: 618e3
+            },
+            {
+              definitionId: 67370457,
+              score: 20625,
+              clubEaId: 114605,
+              price: 296e3
+            },
+            {
+              definitionId: 67114318,
+              score: 15563,
+              clubEaId: 114605,
+              price: 343e3
+            },
+            {
+              definitionId: 202126,
+              score: 14e3,
+              clubEaId: 21,
+              price: 26500
+            },
+            {
+              definitionId: 247827,
+              score: 14e3,
+              clubEaId: 21,
+              price: 369e3
+            },
+            {
+              definitionId: 166676,
+              score: 13750,
+              clubEaId: 114605,
+              price: 485e3
+            },
+            {
+              definitionId: 261593,
+              score: 13750,
+              clubEaId: 114605,
+              price: 92500
+            },
+            {
+              definitionId: 5454,
+              score: 10375,
+              clubEaId: 114605,
+              price: 31e4
+            },
+            {
+              definitionId: 67119568,
+              score: 10313,
+              clubEaId: 114605,
+              price: 175e3
+            },
+            {
+              definitionId: 67137629,
+              score: 10313,
+              clubEaId: 114605,
+              price: 699e3
+            },
+            {
+              definitionId: 67259282,
+              score: 10313,
+              clubEaId: 114605,
+              price: 144e3
+            },
+            {
+              definitionId: 67353040,
+              score: 10313,
+              clubEaId: 36,
+              price: 127e3
+            },
+            {
+              definitionId: 212622,
+              score: 8300,
+              clubEaId: 21,
+              price: 8400
+            },
+            {
+              definitionId: 241084,
+              score: 8300,
+              clubEaId: 21,
+              price: 1e4
+            },
+            {
+              definitionId: 50578511,
+              score: 7688,
+              clubEaId: 22,
+              price: 299e3
+            },
+            {
+              definitionId: 67117337,
+              score: 7688,
+              clubEaId: 114605,
+              price: 96e3
+            },
+            {
+              definitionId: 67134284,
+              score: 7688,
+              clubEaId: 114605,
+              price: 71500
+            },
+            {
+              definitionId: 67190508,
+              score: 7688,
+              clubEaId: 114605,
+              price: 575e3
+            },
+            {
+              definitionId: 67290647,
+              score: 7688,
+              clubEaId: 114605,
+              price: 71500
+            },
+            {
+              definitionId: 10704,
+              score: 6875,
+              clubEaId: 114605,
+              price: 148e3
+            },
+            {
+              definitionId: 28765,
+              score: 6875,
+              clubEaId: 114605,
+              price: 49e4
+            },
+            {
+              definitionId: 150418,
+              score: 6875,
+              clubEaId: 114605,
+              price: 62e3
+            },
+            {
+              definitionId: 50575824,
+              score: 6875,
+              clubEaId: 36,
+              price: 94500
+            },
+            {
+              definitionId: 256790,
+              score: 5500,
+              clubEaId: 21,
+              price: 15500
+            },
+            {
+              definitionId: 8473,
+              score: 5125,
+              clubEaId: 114605,
+              price: 6e4
+            },
+            {
+              definitionId: 25420,
+              score: 5125,
+              clubEaId: 114605,
+              price: 36500
+            },
+            {
+              definitionId: 81644,
+              score: 5125,
+              clubEaId: 114605,
+              price: null
+            },
+            {
+              definitionId: 181783,
+              score: 5125,
+              clubEaId: 114605,
+              price: 46e3
+            }
+          ]
+        }
+      },
+      {
+        id: 120,
+        categoryId: 6,
+        category: "leagues",
+        name: "Frauen-Bundesliga",
+        slug: "frauen-bundesliga",
+        description: "Requires 30 Google Pixel Frauen-Bundesliga players to complete.",
+        requiredCards: 30,
+        priority: 9,
+        clubEaId: null,
+        totalTokens: 265,
+        grades: [
+          {
+            name: "D",
+            threshold: 10,
+            tokens: 10
+          },
+          {
+            name: "C",
+            threshold: 5e4,
+            tokens: 35
+          },
+          {
+            name: "B",
+            threshold: 2e5,
+            tokens: 50
+          },
+          {
+            name: "A",
+            threshold: 14e5,
+            tokens: 70
+          },
+          {
+            name: "S",
+            threshold: 35e5,
+            tokens: 100
+          }
+        ],
+        recommended: {
+          grade: "B",
+          tokens: 95,
+          baseScore: 139631,
+          totalScore: 214386,
+          items: [
+            {
+              definitionId: 67335170,
+              score: 20625,
+              clubEaId: 114605,
+              price: 27e4
+            },
+            {
+              definitionId: 67335171,
+              score: 15563,
+              clubEaId: 114605,
+              price: 37e4
+            },
+            {
+              definitionId: 67335237,
+              score: 15563,
+              clubEaId: 114605,
+              price: 42e4
+            },
+            {
+              definitionId: 67368151,
+              score: 15563,
+              clubEaId: 115995,
+              price: 467e3
+            },
+            {
+              definitionId: 226306,
+              score: 13750,
+              clubEaId: 114605,
+              price: 50500
+            },
+            {
+              definitionId: 226307,
+              score: 10375,
+              clubEaId: 114605,
+              price: 122e3
+            },
+            {
+              definitionId: 226373,
+              score: 10375,
+              clubEaId: 114605,
+              price: 105e3
+            },
+            {
+              definitionId: 50590935,
+              score: 10375,
+              clubEaId: 115995,
+              price: 173e3
+            },
+            {
+              definitionId: 248822,
+              score: 8300,
+              clubEaId: 115995,
+              price: 8700
+            },
+            {
+              definitionId: 259287,
+              score: 5500,
+              clubEaId: 115995,
+              price: 5900
+            },
+            {
+              definitionId: 227337,
+              score: 2100,
+              clubEaId: 115998,
+              price: 2e3
+            },
+            {
+              definitionId: 50596706,
+              score: 1556,
+              clubEaId: 115997,
+              price: 2e4
+            },
+            {
+              definitionId: 67373922,
+              score: 1038,
+              clubEaId: 115997,
+              price: 12500
+            },
+            {
+              definitionId: 239345,
+              score: 830,
+              clubEaId: 115995,
+              price: 750
+            },
+            {
+              definitionId: 247513,
+              score: 830,
+              clubEaId: 115995,
+              price: 750
+            },
+            {
+              definitionId: 247788,
+              score: 830,
+              clubEaId: 115995,
+              price: 750
+            },
+            {
+              definitionId: 248717,
+              score: 830,
+              clubEaId: 115995,
+              price: 750
+            },
+            {
+              definitionId: 261773,
+              score: 830,
+              clubEaId: 115997,
+              price: 900
+            },
+            {
+              definitionId: 264886,
+              score: 830,
+              clubEaId: 115995,
+              price: 800
+            },
+            {
+              definitionId: 265063,
+              score: 830,
+              clubEaId: 115998,
+              price: 700
+            },
+            {
+              definitionId: 226998,
+              score: 410,
+              clubEaId: 115995,
+              price: 750
+            },
+            {
+              definitionId: 264864,
+              score: 410,
+              clubEaId: 115998,
+              price: 750
+            },
+            {
+              definitionId: 265377,
+              score: 410,
+              clubEaId: 115996,
+              price: 650
+            },
+            {
+              definitionId: 277452,
+              score: 410,
+              clubEaId: 115995,
+              price: 700
+            },
+            {
+              definitionId: 238470,
+              score: 340,
+              clubEaId: 115997,
+              price: 700
+            },
+            {
+              definitionId: 239344,
+              score: 340,
+              clubEaId: 115996,
+              price: 700
+            },
+            {
+              definitionId: 264939,
+              score: 340,
+              clubEaId: 115998,
+              price: 650
+            },
+            {
+              definitionId: 67382431,
+              score: 338,
+              clubEaId: 115999,
+              price: 13e3
+            },
+            {
+              definitionId: 265703,
+              score: 120,
+              clubEaId: 115999,
+              price: 1100
+            },
+            {
+              definitionId: 82177,
+              score: 20,
+              clubEaId: 116002,
+              price: 200
+            }
+          ]
+        }
+      },
+      {
+        id: 99,
+        categoryId: 7,
+        category: "rarities",
+        name: "TOTW",
+        slug: "totw",
+        description: "Requires Team of the Week players to complete.",
+        requiredCards: 20,
+        priority: 1,
+        clubEaId: null,
+        totalTokens: 175,
+        grades: [
+          {
+            name: "D",
+            threshold: 10,
+            tokens: 5
+          },
+          {
+            name: "C",
+            threshold: 125e3,
+            tokens: 15
+          },
+          {
+            name: "B",
+            threshold: 175e3,
+            tokens: 30
+          },
+          {
+            name: "A",
+            threshold: 3e5,
+            tokens: 50
+          },
+          {
+            name: "S",
+            threshold: 55e4,
+            tokens: 75
+          }
+        ],
+        recommended: {
+          grade: "A",
+          tokens: 100,
+          baseScore: 335128,
+          totalScore: 516182,
+          items: [
+            {
+              definitionId: 50609291,
+              score: 35625,
+              clubEaId: 241,
+              price: 379e4
+            },
+            {
+              definitionId: 67356691,
+              score: 35625,
+              clubEaId: 21,
+              price: 2e6
+            },
+            {
+              definitionId: 50579475,
+              score: 23750,
+              clubEaId: 21,
+              price: 139e4
+            },
+            {
+              definitionId: 67386507,
+              score: 23750,
+              clubEaId: 241,
+              price: 1495e3
+            },
+            {
+              definitionId: 50552549,
+              score: 20625,
+              clubEaId: 1,
+              price: 518e3
+            },
+            {
+              definitionId: 50597546,
+              score: 20625,
+              clubEaId: 116033,
+              price: 2385e3
+            },
+            {
+              definitionId: 67342283,
+              score: 20625,
+              clubEaId: 241,
+              price: 21e5
+            },
+            {
+              definitionId: 67372876,
+              score: 20625,
+              clubEaId: 116302,
+              price: 124e4
+            },
+            {
+              definitionId: 67316729,
+              score: 15563,
+              clubEaId: 73,
+              price: 232e3
+            },
+            {
+              definitionId: 67318195,
+              score: 15563,
+              clubEaId: 436,
+              price: 382e3
+            },
+            {
+              definitionId: 50565067,
+              score: 13750,
+              clubEaId: 241,
+              price: 174e4
+            },
+            {
+              definitionId: 50595660,
+              score: 13750,
+              clubEaId: 116302,
+              price: 807e3
+            },
+            {
+              definitionId: 67329765,
+              score: 13750,
+              clubEaId: 1,
+              price: 23e4
+            },
+            {
+              definitionId: 67374762,
+              score: 13750,
+              clubEaId: 116033,
+              price: 2041e3
+            },
+            {
+              definitionId: 50539513,
+              score: 10375,
+              clubEaId: 73,
+              price: 174e3
+            },
+            {
+              definitionId: 50540979,
+              score: 10375,
+              clubEaId: 436,
+              price: 196e3
+            },
+            {
+              definitionId: 50558894,
+              score: 7688,
+              clubEaId: 116010,
+              price: 45e3
+            },
+            {
+              definitionId: 50559741,
+              score: 7688,
+              clubEaId: 131682,
+              price: 82500
+            },
+            {
+              definitionId: 67350100,
+              score: 7688,
+              clubEaId: 10,
+              price: 14e4
+            },
+            {
+              definitionId: 50599178,
+              score: 3938,
+              clubEaId: 116325,
+              price: 113e3
+            }
+          ]
+        }
+      },
+      {
+        id: 102,
+        categoryId: 7,
+        category: "rarities",
+        name: "Heroes",
+        slug: "heroes",
+        description: "Requires Heroes players to complete.",
+        requiredCards: 5,
+        priority: 2,
+        clubEaId: null,
+        totalTokens: 175,
+        grades: [
+          {
+            name: "D",
+            threshold: 10,
+            tokens: 5
+          },
+          {
+            name: "C",
+            threshold: 5e4,
+            tokens: 15
+          },
+          {
+            name: "B",
+            threshold: 75e3,
+            tokens: 30
+          },
+          {
+            name: "A",
+            threshold: 1e5,
+            tokens: 50
+          },
+          {
+            name: "S",
+            threshold: 2e5,
+            tokens: 75
+          }
+        ],
+        recommended: {
+          grade: "A",
+          tokens: 100,
+          baseScore: 103125,
+          totalScore: 134061,
+          items: [
+            {
+              definitionId: 67275540,
+              score: 20625,
+              clubEaId: 114605,
+              price: 575e3
+            },
+            {
+              definitionId: 67292141,
+              score: 20625,
+              clubEaId: 114605,
+              price: 15e6
+            },
+            {
+              definitionId: 67300836,
+              score: 20625,
+              clubEaId: 114605,
+              price: 31e5
+            },
+            {
+              definitionId: 67335170,
+              score: 20625,
+              clubEaId: 114605,
+              price: 27e4
+            },
+            {
+              definitionId: 67342564,
+              score: 20625,
+              clubEaId: 114605,
+              price: 314e3
+            }
+          ]
+        }
+      },
+      {
+        id: 113,
+        categoryId: 7,
+        category: "rarities",
+        name: "Holographics",
+        slug: "holographics",
+        description: "Requires Holographic players to complete.",
+        requiredCards: 5,
+        priority: 3,
+        clubEaId: null,
+        totalTokens: 175,
+        grades: [
+          {
+            name: "D",
+            threshold: 10,
+            tokens: 5
+          },
+          {
+            name: "C",
+            threshold: 75e3,
+            tokens: 15
+          },
+          {
+            name: "B",
+            threshold: 15e4,
+            tokens: 30
+          },
+          {
+            name: "A",
+            threshold: 2e5,
+            tokens: 50
+          },
+          {
+            name: "S",
+            threshold: 25e4,
+            tokens: 75
+          }
+        ],
+        recommended: {
+          grade: "S",
+          tokens: 175,
+          baseScore: 371250,
+          totalScore: 510635,
+          items: [
+            {
+              definitionId: 67298906,
+              score: 9e4,
+              clubEaId: 112658,
+              price: 5089e3
+            },
+            {
+              definitionId: 67345931,
+              score: 9e4,
+              clubEaId: 112658,
+              price: 82e5
+            },
+            {
+              definitionId: 67146440,
+              score: 67500,
+              clubEaId: 112658,
+              price: 145e5
+            },
+            {
+              definitionId: 100664693,
+              score: 67500,
+              clubEaId: 112658,
+              price: 3995e3
+            },
+            {
+              definitionId: 67298909,
+              score: 56250,
+              clubEaId: 112658,
+              price: null
+            }
+          ]
+        }
+      },
+      {
+        id: 114,
+        categoryId: 7,
+        category: "rarities",
+        name: "Squad Foundations",
+        slug: "squad-foundations",
+        description: "Requires Squad Foundations players to complete.",
+        requiredCards: 4,
+        priority: 4,
+        clubEaId: null,
+        totalTokens: 10,
+        grades: [
+          {
+            name: "D",
+            threshold: 10,
+            tokens: 0
+          },
+          {
+            name: "C",
+            threshold: 500,
+            tokens: 0
+          },
+          {
+            name: "B",
+            threshold: 750,
+            tokens: 0
+          },
+          {
+            name: "A",
+            threshold: 1e3,
+            tokens: 0
+          },
+          {
+            name: "S",
+            threshold: 1250,
+            tokens: 10
+          }
+        ],
+        recommended: {
+          grade: "S",
+          tokens: 10,
+          baseScore: 2825,
+          totalScore: 2825,
+          items: [
+            {
+              definitionId: 50524813,
+              score: 1245,
+              clubEaId: 1032,
+              price: null
+            },
+            {
+              definitionId: 50592897,
+              score: 830,
+              clubEaId: 634,
+              price: null
+            },
+            {
+              definitionId: 50611456,
+              score: 410,
+              clubEaId: 100646,
+              price: null
+            },
+            {
+              definitionId: 50568180,
+              score: 340,
+              clubEaId: 1824,
+              price: null
+            }
+          ]
+        }
+      },
+      {
+        id: 116,
+        categoryId: 7,
+        category: "rarities",
+        name: "Starter Set",
+        slug: "starter-set",
+        description: "Requires Bronze, Silver or Gold players to complete.",
+        requiredCards: 5,
+        priority: 5,
+        clubEaId: null,
+        totalTokens: 5,
+        grades: [
+          {
+            name: "D",
+            threshold: 10,
+            tokens: 0
+          },
+          {
+            name: "C",
+            threshold: 250,
+            tokens: 0
+          },
+          {
+            name: "B",
+            threshold: 500,
+            tokens: 0
+          },
+          {
+            name: "A",
+            threshold: 1e3,
+            tokens: 0
+          },
+          {
+            name: "S",
+            threshold: 2e3,
+            tokens: 5
+          }
+        ],
+        recommended: {
+          grade: "S",
+          tokens: 5,
+          baseScore: 85e3,
+          totalScore: 90520,
+          items: [
+            {
+              definitionId: 227203,
+              score: 19e3,
+              clubEaId: 132176,
+              price: 1007e3
+            },
+            {
+              definitionId: 231747,
+              score: 19e3,
+              clubEaId: 243,
+              price: 396e4
+            },
+            {
+              definitionId: 239085,
+              score: 19e3,
+              clubEaId: 10,
+              price: 156e3
+            },
+            {
+              definitionId: 231443,
+              score: 14e3,
+              clubEaId: 73,
+              price: 184e4
+            },
+            {
+              definitionId: 241667,
+              score: 14e3,
+              clubEaId: 116325,
+              price: 269e3
+            }
+          ]
+        }
+      }
+    ]
+  };
+
   // src/gallery/catalog.ts
   var CATEGORIES = [
     { id: "eng", name: "Premier League / Barclays WSL", leagues: [13, 2216] },
@@ -5092,25 +22864,75 @@ Consume las cartas que use. Esto NO se puede deshacer.
     if (found.size !== requested.size) throw new Error(`EA devolvi\xF3 ${found.size}/${requested.size} cartas del conjunto`);
     return ids.map((id) => found.get(id));
   }
-  function metadata() {
-    return getGlobal("repositories")?.TeamConfig ?? {};
-  }
-  function buildSets(category, cards) {
-    if (category.rarities) {
-      return category.rarities.map((r) => ({
-        id: `rarity:${r.id}`,
-        name: r.name,
-        cards: cards.filter((c) => c.rarityId === r.id).sort(byRating).slice(0, r.size)
-      }));
+  async function conceptCardsByIdsPartial(ids) {
+    const unique = [...new Set(ids)].filter((id) => Number.isSafeInteger(id) && id > 0);
+    const Item = itemService3();
+    if (!Item.searchConceptItems) throw new Error("EA no expone searchConceptItems");
+    const result = /* @__PURE__ */ new Map();
+    for (let i = 0; i < unique.length; i += 100) {
+      const batch = unique.slice(i, i + 100);
+      const c = criteria();
+      c["count"] = 100;
+      c["defId"] = batch;
+      const res = await toPromise(Item.searchConceptItems(c));
+      if (res.success === false || !Array.isArray(res.data?.items)) throw new Error("EA no devolvi\xF3 las cartas recomendadas");
+      for (const raw of res.data.items) {
+        const card = mapCard(raw);
+        if (card && batch.includes(card.definitionId)) result.set(card.definitionId, card);
+      }
+      if (i + 100 < unique.length) await delay(350);
     }
-    const meta = metadata();
-    const base = cards.filter((c) => c.definitionId < 1e6);
-    const ids = [...new Set(base.map((c) => category.leagueSets ? c.leagueId : c.teamId))];
-    return ids.map((id) => ({
-      id: `${category.leagueSets ? "league" : "team"}:${id}`,
-      name: category.leagueSets ? meta.leagues?.get?.(id)?.name ?? `Liga ${id}` : meta.teams?.get?.(id)?.name ?? `Equipo ${id}`,
-      cards: base.filter((c) => (category.leagueSets ? c.leagueId : c.teamId) === id).sort(byRating).slice(0, category.leagueSets ? 30 : 20)
-    })).filter((set) => set.cards.length > 0).sort((a, b) => a.name.localeCompare(b.name, "es"));
+    return [...result.values()];
+  }
+  var CATEGORY_SLUG = {
+    eng: "premier-league",
+    esp: "laliga",
+    ger: "bundesliga",
+    fra: "ligue-1",
+    ita: "serie-a",
+    leagues: "leagues",
+    rarities: "rarities"
+  };
+  var LEAGUE_SET_IDS = {
+    "Premier League": 13,
+    "Barclays WSL": 2216,
+    "Ligue 1 McDonald's": 16,
+    "Arkema PL": 2218,
+    "LALIGA EA SPORTS": 53,
+    "Liga F Moeve": 2222,
+    "Serie A Enilive": 31,
+    "Bundesliga": 19,
+    "Frauen-Bundesliga": 2215
+  };
+  var RARITY_SET_IDS = {
+    TOTW: 3,
+    Heroes: 72,
+    Holographics: 12,
+    "Squad Foundations": 87,
+    "Starter Set": 1
+  };
+  var GALLERY_SNAPSHOT_AT = catalog_snapshot_default.updatedAt;
+  function buildSets(category, cards) {
+    const slug = CATEGORY_SLUG[category.id];
+    if (!slug) return [];
+    return catalog_snapshot_default.sets.filter((raw) => raw.category === slug).map((raw) => {
+      const recommended = "recommended" in raw ? raw.recommended : void 0;
+      const recommendedIds = new Set(recommended?.items.map((item) => item.definitionId) ?? []);
+      const clubIds = /* @__PURE__ */ new Set([raw.clubEaId, ...recommended?.items.map((item) => item.clubEaId) ?? []]);
+      const leagueId = LEAGUE_SET_IDS[raw.name];
+      const rarityId = RARITY_SET_IDS[raw.name];
+      const eligible = cards.filter((card) => recommendedIds.has(card.definitionId) || (category.leagueSets ? card.leagueId === leagueId : category.rarities ? card.rarityId === rarityId : clubIds.has(card.teamId)));
+      return {
+        catalogId: raw.id,
+        id: category.leagueSets ? `league:${leagueId}` : category.rarities ? `rarity:${rarityId}` : `team:${raw.clubEaId}`,
+        name: raw.name,
+        cards: eligible.sort(byRating),
+        requiredCards: raw.requiredCards,
+        grades: raw.grades,
+        totalTokens: raw.totalTokens,
+        recommended
+      };
+    }).sort((a, b) => a.name.localeCompare(b.name, "es"));
   }
   function byRating(a, b) {
     return b.rating - a.rating || a.definitionId - b.definitionId;
@@ -5437,7 +23259,9 @@ Consume las cartas que use. Esto NO se puede deshacer.
     },
     collectionFilter: "all",
     collectionSort: "most",
-    advancedTradeOpen: false
+    advancedTradeOpen: false,
+    galleryTokenBalance: 0,
+    claimedGrades: {}
   };
   function record(value) {
     return value !== null && typeof value === "object" && !Array.isArray(value) ? value : {};
@@ -5462,7 +23286,9 @@ Consume las cartas que use. Esto NO se puede deshacer.
       },
       collectionFilter: ["all", "missing", "complete", "near"].includes(String(raw.collectionFilter)) ? raw.collectionFilter : DEFAULT_GALLERY_PREFERENCES.collectionFilter,
       collectionSort: ["most", "least", "name"].includes(String(raw.collectionSort)) ? raw.collectionSort : DEFAULT_GALLERY_PREFERENCES.collectionSort,
-      advancedTradeOpen: raw.advancedTradeOpen === true
+      advancedTradeOpen: raw.advancedTradeOpen === true,
+      galleryTokenBalance: integer(raw.galleryTokenBalance, 0, 1e6, 0),
+      claimedGrades: Object.fromEntries(Object.entries(record(raw.claimedGrades)).filter(([id, grade]) => /^\d+$/.test(id) && ["D", "C", "B", "A", "S"].includes(String(grade))))
     };
   }
   function loadGalleryPreferences(storage3) {
@@ -5482,14 +23308,14 @@ Consume las cartas que use. Esto NO se puede deshacer.
 
   // src/gallery/set-view.ts
   function setProgress(set, owned) {
-    return set.cards.filter((card) => owned.has(card.definitionId)).length;
+    return Math.min(set.requiredCards, set.cards.filter((card) => owned.has(card.definitionId)).length);
   }
   function normalized(value) {
     return value.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLocaleLowerCase("es").trim();
   }
   function visibleSets(sets, owned, query, filter, sort, leagueId = null) {
     const needle = normalized(query);
-    const rows = sets.map((set) => ({ set, got: setProgress(set, owned), total: set.cards.length }));
+    const rows = sets.map((set) => ({ set, got: setProgress(set, owned), total: set.requiredCards }));
     return rows.filter(({ set, got, total }) => {
       if (needle && !normalized(set.name).includes(needle)) return false;
       if (leagueId !== null && set.cards[0]?.leagueId !== leagueId) return false;
@@ -5510,6 +23336,54 @@ Consume las cartas que use. Esto NO se puede deshacer.
       if (aMissing !== bMissing) return sort === "most" ? aMissing - bMissing : bMissing - aMissing;
       return byName;
     }).map(({ set }) => set);
+  }
+
+  // src/gallery/token-plan.ts
+  function tokenOpportunities(owned, claimedGrades) {
+    return catalog_snapshot_default.sets.flatMap((set) => {
+      if (!("recommended" in set) || !set.recommended || set.recommended.tokens <= 0) return [];
+      const claimedIndex = set.grades.findIndex((grade) => grade.name === claimedGrades[String(set.id)]);
+      const claimedTokens = set.grades.slice(0, claimedIndex + 1).reduce((total, grade) => total + grade.tokens, 0);
+      const tokens = Math.max(0, set.recommended.tokens - claimedTokens);
+      if (!tokens) return [];
+      const missing = set.recommended.items.filter((item) => !owned.has(item.definitionId));
+      return [{
+        setId: set.id,
+        name: set.name,
+        category: set.category,
+        grade: set.recommended.grade,
+        tokens,
+        missingCards: missing.length,
+        knownCost: missing.reduce((total, item) => total + (item.price ?? 0), 0),
+        unpricedCards: missing.filter((item) => item.price === null).length
+      }];
+    }).sort((a, b) => {
+      if (a.unpricedCards !== b.unpricedCards) return a.unpricedCards - b.unpricedCards;
+      const aRate = a.knownCost / a.tokens;
+      const bRate = b.knownCost / b.tokens;
+      return aRate - bRate || b.tokens - a.tokens;
+    });
+  }
+  function tokenRoute(owned, claimedGrades, balance, target = 750) {
+    const required = Math.max(0, target - balance);
+    const sets = [];
+    const missingIds = /* @__PURE__ */ new Set();
+    let projectedTokens = 0;
+    let knownCost = 0;
+    let unpricedCards = 0;
+    for (const opportunity of tokenOpportunities(owned, claimedGrades)) {
+      if (projectedTokens >= required) break;
+      sets.push(opportunity);
+      projectedTokens += opportunity.tokens;
+      const recommendation = catalog_snapshot_default.sets.find((set) => set.id === opportunity.setId)?.recommended;
+      for (const item of recommendation?.items ?? []) {
+        if (owned.has(item.definitionId) || missingIds.has(item.definitionId)) continue;
+        missingIds.add(item.definitionId);
+        if (item.price === null) unpricedCards++;
+        else knownCost += item.price;
+      }
+    }
+    return { sets, projectedTokens, knownCost, unpricedCards, reachesGoal: projectedTokens >= required };
   }
 
   // src/gallery/verified-sets.ts
@@ -5550,11 +23424,13 @@ Consume las cartas que use. Esto NO se puede deshacer.
   async function loadVerifiedSets(category) {
     if (category.id !== "eng") return [];
     const cards = await conceptCardsByIds(IPSWICH_IDS);
-    return [{ id: "team:94", name: "Ipswich Town", cards, verified: true }];
+    const definition = buildSets(category, cards).find((set) => set.id === "team:94");
+    if (!definition) throw new Error("Ipswich no est\xE1 en el cat\xE1logo de referencia");
+    return [{ ...definition, cards, verified: true }];
   }
   function mergeVerifiedSets(approximate, verified) {
     const byId = new Map(approximate.map((set) => [set.id, set]));
-    for (const set of verified) byId.set(set.id, set);
+    for (const set of verified) byId.set(set.id, { ...byId.get(set.id), ...set, cards: set.cards, verified: true });
     return [...byId.values()].sort((a, b) => a.name.localeCompare(b.name, "es"));
   }
 
@@ -5851,6 +23727,8 @@ button:disabled { opacity:.5; cursor:default; }
     let filter = "";
     let collectionFilter = savedPreferences.collectionFilter;
     let collectionSort = savedPreferences.collectionSort;
+    let galleryTokenBalance = savedPreferences.galleryTokenBalance;
+    let claimedGrades = savedPreferences.claimedGrades;
     let leagueFilter = null;
     let busy = false;
     let tradeView = false;
@@ -5874,7 +23752,7 @@ button:disabled { opacity:.5; cursor:default; }
     let status = "Sincroniza el club para registrar las cartas que tienes ahora. El historial queda guardado en este navegador.";
     let error = false;
     function persistPreferences() {
-      const safe = decodeGalleryPreferences({ trade: tradeSettings, collectionFilter, collectionSort, advancedTradeOpen });
+      const safe = decodeGalleryPreferences({ trade: tradeSettings, collectionFilter, collectionSort, advancedTradeOpen, galleryTokenBalance, claimedGrades });
       tradeSettings = { ...tradeSettings, ...safe.trade };
       saveGalleryPreferences(safe);
     }
@@ -5971,6 +23849,17 @@ button:disabled { opacity:.5; cursor:default; }
             cards.push(...await conceptCards({ rarity: rarity.id }, force));
           }
         }
+        const published = buildSets(next, cards);
+        const known = new Set(cards.map((card) => card.definitionId));
+        const extraIds = published.flatMap((set) => set.recommended?.items.map((item) => item.definitionId) ?? []).filter((id) => !known.has(id));
+        if (extraIds.length) {
+          status = `Verificando ${new Set(extraIds).size} cartas de alineaciones de referencia en EA\u2026`;
+          render();
+          try {
+            cards.push(...await conceptCardsByIdsPartial(extraIds));
+          } catch {
+          }
+        }
         let verified = [];
         let warning = "";
         try {
@@ -5983,7 +23872,7 @@ button:disabled { opacity:.5; cursor:default; }
           if (card.isCollected) owned.add(card.definitionId);
         }
         saveLedger(owned);
-        setStatus(`${fmt(sets.length)} colecciones cargadas. EA confirm\xF3 el historial de cartas disponibles${verified.length ? "; Ipswich usa la lista exacta de Enhancer" : ""}.${warning}`, !!warning);
+        setStatus(`${fmt(sets.length)} colecciones del cat\xE1logo p\xFAblico. Las cartas elegibles son aproximadas${verified.length ? "; Ipswich usa la lista exacta de Enhancer" : ""}.${warning}`, !!warning);
       } catch (cause) {
         setStatus(`No se pudo cargar ${next.name}: ${cause instanceof Error ? cause.message : String(cause)}`, true);
       } finally {
@@ -5997,6 +23886,14 @@ button:disabled { opacity:.5; cursor:default; }
       const price = manualPrices.get(id);
       if (price === void 0 || manualSalePrices.get(id) === void 0) return void 0;
       return manualTradeReference(id, price);
+    }
+    function referenceCards(set) {
+      const byId = new Map(set.cards.map((card) => [card.definitionId, card]));
+      if (set.recommended) return set.recommended.items.flatMap((item) => {
+        const card = byId.get(item.definitionId);
+        return card ? [card] : [];
+      });
+      return set.cards.slice(0, set.requiredCards);
     }
     function settingsForQuote(ids) {
       const manualIds = ids.filter((id) => !prices.has(id) && manualPrices.has(id));
@@ -6018,10 +23915,11 @@ button:disabled { opacity:.5; cursor:default; }
       const requestId = ++priceRequestId;
       render();
       try {
-        const found = await fetchEnhancerPrices(set.cards.map((card) => card.definitionId));
+        const referenceIds = set.recommended?.items.map((item) => item.definitionId) ?? set.cards.slice(0, set.requiredCards).map((card) => card.definitionId);
+        const found = await fetchEnhancerPrices([...referenceIds]);
         if (requestId !== priceRequestId || selected !== set) return;
         prices = found;
-        status = `${found.size}/${set.cards.length} precios recibidos de Enhancer.`;
+        status = `${found.size}/${referenceIds.length} precios de la alineaci\xF3n de referencia recibidos de Enhancer.`;
         error = false;
       } catch (cause) {
         if (requestId !== priceRequestId || selected !== set) return;
@@ -6390,7 +24288,36 @@ button:disabled { opacity:.5; cursor:default; }
       body.append(tools);
       body.append(el("p", status, `status${error ? " error" : ""}`));
       if (!category) {
-        body.append(el("p", "El progreso combina el historial que devuelve EA con tus marcas locales. Ipswich usa el conjunto exacto observado en Enhancer; los dem\xE1s conjuntos siguen siendo aproximaciones locales.", "note"));
+        const goal = el("div", void 0, "gallery-cost");
+        goal.append(el("strong", `Meta Pato \xB7 750 fichas \xB7 faltan ${fmt(Math.max(0, 750 - galleryTokenBalance))}`));
+        const label = el("label", "Fichas actuales (ingresa el saldo que muestra EA): ");
+        const balance = el("input");
+        balance.type = "number";
+        balance.min = "0";
+        balance.step = "1";
+        balance.value = String(galleryTokenBalance);
+        balance.style.width = "105px";
+        balance.addEventListener("change", () => {
+          galleryTokenBalance = Math.max(0, Math.trunc(Number(balance.value) || 0));
+          persistPreferences();
+          render();
+        });
+        label.append(balance);
+        goal.append(label);
+        body.append(goal);
+        const opportunities = tokenOpportunities(owned, claimedGrades);
+        const route = tokenRoute(owned, claimedGrades, galleryTokenBalance);
+        const plan = el("div", void 0, "gallery-cost");
+        plan.append(el("strong", route.reachesGoal ? `Ruta orientativa: ${route.sets.length} sets \xB7 +${fmt(route.projectedTokens)} fichas \xB7 ${fmt(route.knownCost)} monedas de referencia${route.unpricedCards ? ` + ${route.unpricedCards} cartas sin precio` : ""}` : `El cat\xE1logo de referencia solo proyecta +${fmt(route.projectedTokens)} fichas pendientes; no alcanza las 750 con este saldo.`));
+        plan.append(el("small", "Primeros sets de la ruta, ordenados por monedas estimadas por ficha:", "metric"));
+        for (const item of opportunities.slice(0, 5)) {
+          const row = el("p", `${item.name} \xB7 grado ${item.grade} \xB7 +${item.tokens} fichas pendientes \xB7 ${item.missingCards} cartas de la alineaci\xF3n \xB7 ${fmt(item.knownCost)} monedas${item.unpricedCards ? ` + ${item.unpricedCards} sin precio` : ""}`, "note");
+          plan.append(row);
+        }
+        if (!opportunities.length) plan.append(el("p", "No quedan alineaciones con fichas pendientes en este cat\xE1logo de referencia.", "note"));
+        body.append(plan);
+        body.append(el("p", "Orden calculado con precios FUTGG del cat\xE1logo, no con precios actuales de Enhancer. Un grado puede variar y la venta posterior no garantiza recuperar monedas. Marca abajo los grados ya reclamados para que la lista descuente esas fichas.", "note"));
+        body.append(el("p", `Sets y fichas: copia p\xFAblica de FUTGG del ${new Date(GALLERY_SNAPSHOT_AT).toLocaleDateString("es-CL")}. EA confirma las cartas pose\xEDdas; solo Ipswich tiene una lista de elegibles verificada con Enhancer. Completar cartas no garantiza una nota ni entrega fichas: hay que confirmar el set en Gallery.`, "note"));
         const grid = el("div", void 0, "grid");
         for (const c of CATEGORIES) {
           const card = el("div", void 0, "card");
@@ -6485,12 +24412,15 @@ button:disabled { opacity:.5; cursor:default; }
         const grid = el("div", void 0, "grid");
         for (const set of shown) {
           const got2 = setProgress(set, owned);
-          const pct = set.cards.length ? Math.round(got2 / set.cards.length * 100) : 0;
+          const pct = set.requiredCards ? Math.round(got2 / set.requiredCards * 100) : 0;
           const card = el("div", void 0, "card");
           card.append(el("strong", set.name));
           const leagueId = set.cards[0]?.leagueId;
           if (!category.rarities && leagueId && LEAGUE_NAMES[leagueId]) card.append(el("small", LEAGUE_NAMES[leagueId], "set-league"));
-          card.append(el("span", `${got2}/${set.cards.length} obtenidas \xB7 ${pct}%${set.verified ? " \xB7 conjunto verificado" : " \xB7 aproximado"}`, "metric"));
+          card.append(el("span", `${got2}/${set.requiredCards} obtenidas \xB7 ${pct}%${set.verified ? " \xB7 elegibles verificados" : " \xB7 elegibles aproximados"}`, "metric"));
+          const rewards = set.grades.filter((grade) => grade.tokens > 0).map((grade) => `${grade.name} +${grade.tokens}`).join(" \xB7 ");
+          card.append(el("small", `Fichas por grado: ${rewards || "sin fichas"}`, "metric"));
+          if (set.recommended) card.append(el("small", `Alineaci\xF3n de referencia: ${set.recommended.grade} \xB7 hasta ${set.recommended.tokens} fichas acumuladas`, "metric"));
           const bar = el("div", void 0, "bar");
           const fill = el("span");
           fill.style.width = `${pct}%`;
@@ -6516,9 +24446,30 @@ button:disabled { opacity:.5; cursor:default; }
         return;
       }
       const got = setProgress(selected, owned);
-      body.append(el("p", `${got}/${selected.cards.length} obtenidas \xB7 ${selected.cards.length - got} faltantes`, "metric"));
+      body.append(el("p", `${got}/${selected.requiredCards} obtenidas \xB7 ${Math.max(0, selected.requiredCards - got)} faltantes para la cantidad requerida${selected.verified ? "" : " (elegibilidad aproximada)"}`, "metric"));
+      body.append(el("p", `Fichas por grado: ${selected.grades.map((grade) => `${grade.name} +${grade.tokens}`).join(" \xB7 ")}. Se obtienen al confirmar el set en Gallery.`, "note"));
+      const claimed = el("label", "Grado ya reclamado en EA: ");
+      const gradeSelect = el("select");
+      const none = el("option", "Ninguno");
+      none.value = "";
+      gradeSelect.append(none);
+      for (const grade of selected.grades) {
+        const option = el("option", grade.name);
+        option.value = grade.name;
+        gradeSelect.append(option);
+      }
+      gradeSelect.value = claimedGrades[String(selected.catalogId)] ?? "";
+      gradeSelect.addEventListener("change", () => {
+        if (gradeSelect.value) claimedGrades[String(selected.catalogId)] = gradeSelect.value;
+        else delete claimedGrades[String(selected.catalogId)];
+        persistPreferences();
+        render();
+      });
+      claimed.append(gradeSelect);
+      body.append(claimed);
+      if (selected.recommended) body.append(el("p", `La alineaci\xF3n p\xFAblica de referencia alcanza grado ${selected.recommended.grade} (${selected.recommended.tokens} fichas acumuladas). Sus precios y puntuaci\xF3n pueden cambiar; revisa el grado en EA antes de comprar.`, "note"));
       if (tab === "missing") {
-        const missing = selected.cards.filter((card) => !owned.has(card.definitionId));
+        const missing = referenceCards(selected).filter((card) => !owned.has(card.definitionId));
         const selectedCards = missing.filter((card) => chosen.has(card.definitionId));
         const actions = el("div", void 0, "trade-actions");
         if (missing.length) {
@@ -6533,7 +24484,7 @@ button:disabled { opacity:.5; cursor:default; }
         const costs = el("div", void 0, "gallery-costs");
         const total = referenceTotal(missing, prices);
         const cost = el("div", void 0, "gallery-cost");
-        cost.append(el("strong", `Completar esta colecci\xF3n \xB7 ${playerCount(missing.length)}`));
+        cost.append(el("strong", `Alineaci\xF3n de referencia \xB7 ${playerCount(missing.length)} sin registrar`));
         cost.append(el("span", priceLoading ? "Consultando precios\u2026" : total.priced === 0 && missing.length > 0 ? "Sin precios de referencia" : `${fmt(total.amount)} monedas de referencia`));
         if (!priceLoading && total.priced < missing.length)
           cost.append(el("small", `Subtotal de ${total.priced}/${missing.length} cartas con precio.`));
@@ -6559,7 +24510,7 @@ button:disabled { opacity:.5; cursor:default; }
         tabs.append(b);
       }
       body.append(tabs);
-      const cards = selected.cards.filter((card) => owned.has(card.definitionId) === (tab === "collected"));
+      const cards = (tab === "collected" ? selected.cards : referenceCards(selected)).filter((card) => owned.has(card.definitionId) === (tab === "collected"));
       body.append(cardRows(cards));
     }
     void syncClub();
