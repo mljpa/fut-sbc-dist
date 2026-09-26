@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         FUT SBC Solver v2
 // @namespace    https://github.com/mljpa/fut-sbc-solver-v2
-// @version      0.2.7
+// @version      0.2.8
 // @description  Userscript to solve EA SPORTS FC 26 SBCs with your own club
 // @match        https://www.ea.com/*/ea-sports-fc/ultimate-team/web-app*
 // @match        https://www.ea.com/ea-sports-fc/ultimate-team/web-app*
@@ -5424,6 +5424,38 @@ Consume las cartas que use. Esto NO se puede deshacer.
     return results;
   }
 
+  // src/gallery/set-view.ts
+  function setProgress(set, owned) {
+    return set.cards.filter((card) => owned.has(card.definitionId)).length;
+  }
+  function normalized(value) {
+    return value.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLocaleLowerCase("es").trim();
+  }
+  function visibleSets(sets, owned, query, filter, sort, leagueId = null) {
+    const needle = normalized(query);
+    const rows = sets.map((set) => ({ set, got: setProgress(set, owned), total: set.cards.length }));
+    return rows.filter(({ set, got, total }) => {
+      if (needle && !normalized(set.name).includes(needle)) return false;
+      if (leagueId !== null && set.cards[0]?.leagueId !== leagueId) return false;
+      const missing = total - got;
+      if (filter === "complete") return total > 0 && missing === 0;
+      if (filter === "missing") return total > 0 && missing > 0;
+      if (filter === "near") return total > 0 && missing >= 1 && missing <= 3;
+      return true;
+    }).sort((a, b) => {
+      const byName = a.set.name.localeCompare(b.set.name, "es") || a.set.id.localeCompare(b.set.id, "es");
+      if (sort === "name") return byName;
+      if (!a.total || !b.total) return a.total ? -1 : b.total ? 1 : byName;
+      const aRatio = a.got / a.total;
+      const bRatio = b.got / b.total;
+      if (aRatio !== bRatio) return sort === "most" ? bRatio - aRatio : aRatio - bRatio;
+      const aMissing = a.total - a.got;
+      const bMissing = b.total - b.got;
+      if (aMissing !== bMissing) return sort === "most" ? aMissing - bMissing : bMissing - aMissing;
+      return byName;
+    }).map(({ set }) => set);
+  }
+
   // src/gallery/verified-sets.ts
   var IPSWICH_IDS = [
     50563169,
@@ -5473,6 +5505,17 @@ Consume las cartas que use. Esto NO se puede deshacer.
   // src/gallery/index.ts
   var LEDGER_KEY = "fut-sbc-gallery:owned:fc27";
   var LAUNCHER_POSITION_KEY = "fut-sbc-gallery:launcher-position";
+  var LEAGUE_NAMES = {
+    13: "Premier League",
+    2216: "Barclays WSL",
+    53: "LALIGA EA SPORTS",
+    2222: "Liga F Moeve",
+    19: "Bundesliga",
+    2215: "Frauen-Bundesliga",
+    16: "Ligue 1",
+    2218: "Arkema PL",
+    31: "Serie A Enilive"
+  };
   var CSS2 = `
 :host { all: initial; font: 14px/1.45 -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif; color:var(--fg); --bg:#fff;--fg:#1d2329;--muted:#606d78;--line:#d8dfe5;--soft:#f3f6f8;--accent:#176d50;--accent-fg:#fff;--warning:#9a5a16; }
 @media (prefers-color-scheme:dark) { :host { --bg:#1d2228;--fg:#f1f4f6;--muted:#aeb7bf;--line:#39424b;--soft:#293039;--accent:#29a477;--warning:#e3aa6c; } }
@@ -5502,6 +5545,16 @@ button:disabled { opacity:.5; cursor:default; }
 .tools { display:flex; flex-wrap:wrap; align-items:center; gap:8px; margin-bottom:14px; }
 .tools .spacer { flex:1; }
 .tools input { min-width:180px; padding:6px 9px; color:var(--fg); background:var(--bg); border:1px solid var(--line); border-radius:5px; }
+.set-controls { display:flex; flex-wrap:wrap; align-items:end; gap:9px; margin:12px 0 5px; }
+.set-controls label { display:flex; flex-direction:column; gap:3px; color:var(--muted); font-size:12px; }
+.set-controls .set-search { flex:1 1 220px; }
+.set-controls input,.set-controls select { height:38px; min-width:0; border:1px solid var(--line); border-radius:5px; padding:7px 9px; background:var(--bg); color:var(--fg); font-size:14px; }
+.set-controls input { width:100%; }
+.set-controls select { min-width:175px; }
+.set-controls input:focus-visible,.set-controls select:focus-visible { outline:2px solid var(--accent); outline-offset:2px; }
+.set-count { margin:0 0 12px; color:var(--muted); font-size:12px; }
+.set-league { display:block; color:var(--muted); margin-top:-6px; }
+.empty button { display:block; margin:10px auto 0; border:1px solid var(--line); border-radius:5px; padding:7px 10px; background:var(--soft); color:var(--fg); }
 .note,.status { color:var(--muted); font-size:12px; }
 .status { margin:0 0 14px; }
 .status.error { color:#c64242; }
@@ -5739,6 +5792,9 @@ button:disabled { opacity:.5; cursor:default; }
     let selected = null;
     let tab = "missing";
     let filter = "";
+    let collectionFilter = "all";
+    let collectionSort = "most";
+    let leagueFilter = null;
     let busy = false;
     let tradeView = false;
     let advancedTradeOpen = false;
@@ -5830,6 +5886,8 @@ button:disabled { opacity:.5; cursor:default; }
       priceRequestId++;
       priceLoading = false;
       category = next;
+      filter = "";
+      leagueFilter = null;
       selected = null;
       tradeView = false;
       chosen.clear();
@@ -5875,9 +5933,6 @@ button:disabled { opacity:.5; cursor:default; }
         busy = false;
         render();
       }
-    }
-    function progress(set) {
-      return set.cards.filter((card) => owned.has(card.definitionId)).length;
     }
     function tradeReference(id) {
       const enhancer = prices.get(id);
@@ -6013,8 +6068,8 @@ button:disabled { opacity:.5; cursor:default; }
             saveLedger(owned);
           }
           render();
-        }, (progress2) => {
-          tradeProgress.set(progress2.definitionId, progress2.message);
+        }, (progress) => {
+          tradeProgress.set(progress.definitionId, progress.message);
           render();
         });
         setStatus("Lote terminado. Revisa el estado de cada carta y la lista de transferibles.");
@@ -6288,24 +6343,89 @@ button:disabled { opacity:.5; cursor:default; }
         return;
       }
       if (!selected) {
+        const controls = el("div", void 0, "set-controls");
+        const searchLabel = el("label", "Buscar", "set-search");
         const search2 = el("input");
         search2.type = "search";
-        search2.placeholder = "Buscar equipo o liga";
+        search2.placeholder = "Equipo o liga";
         search2.value = filter;
         search2.addEventListener("input", () => {
           filter = search2.value;
           render();
-          const next = body.querySelector("input[type=search]");
+          const next = body.querySelector(".set-controls input[type=search]");
           next?.focus();
           next?.setSelectionRange(filter.length, filter.length);
         });
-        body.insertBefore(search2, body.children[2] ?? null);
+        searchLabel.append(search2);
+        controls.append(searchLabel);
+        const stateLabel = el("label", "Mostrar");
+        const stateSelect = el("select");
+        for (const [value, label] of [
+          ["all", "Todas"],
+          ["missing", "Por completar"],
+          ["complete", "Completas"],
+          ["near", "Faltan 1\u20133 cartas"]
+        ]) {
+          const option = el("option", label);
+          option.value = value;
+          stateSelect.append(option);
+        }
+        stateSelect.value = collectionFilter;
+        stateSelect.addEventListener("change", () => {
+          collectionFilter = stateSelect.value;
+          render();
+        });
+        stateLabel.append(stateSelect);
+        controls.append(stateLabel);
+        const leagues = category.rarities ? [] : [...new Set(sets.map((set) => set.cards[0]?.leagueId).filter((id) => typeof id === "number" && Number.isSafeInteger(id) && id > 0))];
+        if (leagues.length > 1) {
+          const leagueLabel = el("label", "Liga");
+          const leagueSelect = el("select");
+          const allLeagues = el("option", "Todas las ligas");
+          allLeagues.value = "";
+          leagueSelect.append(allLeagues);
+          for (const id of leagues) {
+            const option = el("option", LEAGUE_NAMES[id] ?? `Liga ${id}`);
+            option.value = String(id);
+            leagueSelect.append(option);
+          }
+          leagueSelect.value = leagueFilter === null ? "" : String(leagueFilter);
+          leagueSelect.addEventListener("change", () => {
+            leagueFilter = leagueSelect.value ? Number(leagueSelect.value) : null;
+            render();
+          });
+          leagueLabel.append(leagueSelect);
+          controls.append(leagueLabel);
+        }
+        const sortLabel = el("label", "Ordenar por");
+        const sortSelect = el("select");
+        for (const [value, label] of [
+          ["most", "M\xE1s completas primero"],
+          ["least", "Menos completas primero"],
+          ["name", "Nombre A\u2013Z"]
+        ]) {
+          const option = el("option", label);
+          option.value = value;
+          sortSelect.append(option);
+        }
+        sortSelect.value = collectionSort;
+        sortSelect.addEventListener("change", () => {
+          collectionSort = sortSelect.value;
+          render();
+        });
+        sortLabel.append(sortSelect);
+        controls.append(sortLabel);
+        body.append(controls);
+        const shown = visibleSets(sets, owned, filter, collectionFilter, collectionSort, leagueFilter);
+        body.append(el("p", `${shown.length} de ${sets.length} colecciones`, "set-count"));
         const grid = el("div", void 0, "grid");
-        for (const set of sets.filter((s) => s.name.toLocaleLowerCase().includes(filter.toLocaleLowerCase()))) {
-          const got2 = progress(set);
+        for (const set of shown) {
+          const got2 = setProgress(set, owned);
           const pct = set.cards.length ? Math.round(got2 / set.cards.length * 100) : 0;
           const card = el("div", void 0, "card");
           card.append(el("strong", set.name));
+          const leagueId = set.cards[0]?.leagueId;
+          if (!category.rarities && leagueId && LEAGUE_NAMES[leagueId]) card.append(el("small", LEAGUE_NAMES[leagueId], "set-league"));
           card.append(el("span", `${got2}/${set.cards.length} obtenidas \xB7 ${pct}%${set.verified ? " \xB7 conjunto verificado" : " \xB7 aproximado"}`, "metric"));
           const bar = el("div", void 0, "bar");
           const fill = el("span");
@@ -6318,10 +6438,19 @@ button:disabled { opacity:.5; cursor:default; }
           grid.append(card);
         }
         if (!sets.length) body.append(el("div", busy ? "Cargando cat\xE1logo\u2026" : "Sin colecciones disponibles.", "empty"));
-        else body.append(grid);
+        else if (!shown.length) {
+          const empty = el("div", "No hay colecciones con esos filtros.", "empty");
+          empty.append(button("Limpiar filtros", () => {
+            filter = "";
+            collectionFilter = "all";
+            leagueFilter = null;
+            render();
+          }));
+          body.append(empty);
+        } else body.append(grid);
         return;
       }
-      const got = progress(selected);
+      const got = setProgress(selected, owned);
       body.append(el("p", `${got}/${selected.cards.length} obtenidas \xB7 ${selected.cards.length - got} faltantes`, "metric"));
       if (tab === "missing") {
         const missing = selected.cards.filter((card) => !owned.has(card.definitionId));
