@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         FUT SBC Solver v2
 // @namespace    https://github.com/mljpa/fut-sbc-solver-v2
-// @version      0.2.4
+// @version      0.2.5
 // @description  Userscript to solve EA SPORTS FC 26 SBCs with your own club
 // @match        https://www.ea.com/*/ea-sports-fc/ultimate-team/web-app*
 // @match        https://www.ea.com/ea-sports-fc/ultimate-team/web-app*
@@ -5533,6 +5533,28 @@ button:disabled { opacity:.5; cursor:default; }
 .trade-state.done { color:#24966b; font-weight:600; }
 .trade-state.failed { color:#cf5555; font-weight:600; }
 .trade-state.active { color:var(--accent); }
+.confirm-backdrop { position:fixed; inset:0; z-index:2147483002; display:none; align-items:center; justify-content:center; padding:16px; background:#000b; }
+.confirm-backdrop.open { display:flex; }
+.confirm-panel { width:min(620px,100%); max-height:min(760px,92vh); display:flex; flex-direction:column; overflow:hidden; background:var(--bg); color:var(--fg); border:1px solid var(--line); border-radius:8px; box-shadow:0 16px 48px #0007; }
+.confirm-head { padding:18px 20px 12px; border-bottom:1px solid var(--line); }
+.confirm-head h2 { margin:0 0 4px; font-size:19px; }
+.confirm-head p { margin:0; color:var(--muted); }
+.confirm-content { overflow:auto; padding:16px 20px; }
+.confirm-total { display:flex; justify-content:space-between; align-items:baseline; gap:12px; padding:13px 15px; background:var(--soft); border:1px solid var(--line); border-radius:6px; }
+.confirm-total strong { font-size:20px; white-space:nowrap; }
+.confirm-list { margin:12px 0; border-top:1px solid var(--line); }
+.confirm-item { display:grid; grid-template-columns:minmax(100px,1fr) auto auto; gap:6px 16px; padding:11px 0; border-bottom:1px solid var(--line); }
+.confirm-item strong { overflow-wrap:anywhere; }
+.confirm-item small { display:block; color:var(--muted); font-weight:400; }
+.confirm-item span { white-space:nowrap; }
+.confirm-item .negative { color:#c64242; }
+.confirm-note { margin:10px 0 0; color:var(--muted); }
+.confirm-warning { margin:10px 0 0; padding:10px 12px; color:var(--fg); background:var(--soft); border-left:3px solid #d18b36; }
+.confirm-actions { display:flex; justify-content:flex-end; gap:8px; padding:14px 20px; border-top:1px solid var(--line); }
+.confirm-actions button { border:1px solid var(--line); border-radius:5px; padding:9px 13px; background:var(--soft); color:var(--fg); }
+.confirm-actions .primary { background:var(--accent); border-color:var(--accent); color:var(--accent-fg); font-weight:600; }
+.confirm-actions button:focus-visible { outline:2px solid var(--accent); outline-offset:2px; }
+@media (max-width:540px) { .confirm-item { grid-template-columns:1fr 1fr; } .confirm-item strong { grid-column:1/-1; } .confirm-total { align-items:flex-start; flex-direction:column; gap:2px; } .confirm-actions button { flex:1; } }
 .empty { padding:24px; text-align:center; color:var(--muted); }
 `;
   function loadLedger() {
@@ -5598,7 +5620,16 @@ button:disabled { opacity:.5; cursor:default; }
     backdrop.addEventListener("click", (event) => {
       if (event.target === backdrop) closeGallery();
     });
-    shadow.append(style, launcher, backdrop);
+    const confirmBackdrop = el("div", void 0, "confirm-backdrop");
+    const confirmPanel = el("section", void 0, "confirm-panel");
+    confirmPanel.setAttribute("role", "alertdialog");
+    confirmPanel.setAttribute("aria-modal", "true");
+    confirmPanel.setAttribute("aria-label", "Confirmar compra de Gallery");
+    confirmBackdrop.append(confirmPanel);
+    confirmBackdrop.addEventListener("click", (event) => {
+      if (event.target === confirmBackdrop) cancelTradeConfirmation();
+    });
+    shadow.append(style, launcher, backdrop, confirmBackdrop);
     document.body.append(host);
     let desiredPosition = null;
     let drag = null;
@@ -5684,6 +5715,8 @@ button:disabled { opacity:.5; cursor:default; }
     let tradeProgress = /* @__PURE__ */ new Map();
     let tradeResultState = /* @__PURE__ */ new Map();
     let activeTradeQuote = null;
+    let pendingTrade = null;
+    let confirmReturnFocus = null;
     let tradeSettings = {
       firstPercent: 85,
       lastPercent: 90,
@@ -5702,12 +5735,42 @@ button:disabled { opacity:.5; cursor:default; }
       render();
     }
     function closeGallery() {
+      cancelTradeConfirmation();
       backdrop.classList.remove("open");
     }
     function open() {
       backdrop.classList.add("open");
       render();
     }
+    function cancelTradeConfirmation() {
+      pendingTrade = null;
+      confirmBackdrop.classList.remove("open");
+      confirmPanel.replaceChildren();
+      confirmReturnFocus?.focus();
+      confirmReturnFocus = null;
+    }
+    function onConfirmationKeydown(event) {
+      if (!pendingTrade) return;
+      if (!(event instanceof KeyboardEvent)) return;
+      if (event.key === "Escape") {
+        event.preventDefault();
+        cancelTradeConfirmation();
+        return;
+      }
+      if (event.key !== "Tab") return;
+      const controls = [...confirmPanel.querySelectorAll("button:not(:disabled)")];
+      const first = controls[0];
+      const last = controls.at(-1);
+      if (!first || !last) return;
+      if (event.shiftKey && shadow.activeElement === first) {
+        event.preventDefault();
+        last.focus();
+      } else if (!event.shiftKey && shadow.activeElement === last) {
+        event.preventDefault();
+        first.focus();
+      }
+    }
+    shadow.addEventListener("keydown", onConfirmationKeydown);
     async function syncClub() {
       if (busy) return;
       busy = true;
@@ -5843,8 +5906,8 @@ button:disabled { opacity:.5; cursor:default; }
         render();
       }
     }
-    async function executeTrade() {
-      if (busy) return;
+    function requestTradeConfirmation() {
+      if (busy || pendingTrade) return;
       const ids = [...chosen].filter((id) => tradeReference(id) && !owned.has(id));
       if (!ids.length) return setStatus("Falta precio de compra y venta para las cartas seleccionadas.", true);
       let quote;
@@ -5854,8 +5917,51 @@ button:disabled { opacity:.5; cursor:default; }
         return setStatus(cause instanceof Error ? cause.message : String(cause), true);
       }
       const manualIds = ids.filter((id) => quote.settings.manualPriceById?.[id] !== void 0);
-      const accepted = window.confirm(`Comprar ${ids.length} carta(s) para Gallery. Gasto m\xE1ximo del lote: ${fmt(quote.settings.maxTotal)} monedas. ${ids.map((id) => `${selected?.cards.find((c) => c.definitionId === id)?.name ?? id}: compra hasta ${fmt(quote.settings.buyCapById?.[id] ?? 0)}, venta a ${fmt(quote.plans.get(id)?.salePrice ?? 0)}`).join("; ")}. ${manualIds.length ? `${manualIds.length} carta(s) usan precios ingresados manualmente; Enhancer no inform\xF3 su mercado y podr\xEDan ser recompensas no disponibles para compra. ` : ""}Si compras sobre el precio de venta, perder\xE1s monedas. EA cobra 5% si se vende; la venta no est\xE1 garantizada. \xBFConfirmas la compra?`);
-      if (!accepted) return;
+      pendingTrade = { ids, quote };
+      confirmReturnFocus = shadow.activeElement instanceof HTMLElement ? shadow.activeElement : null;
+      confirmPanel.replaceChildren();
+      const header = el("div", void 0, "confirm-head");
+      header.append(el("h2", `Confirmar ${playerCount(ids.length)}`), el("p", "Revisa el gasto m\xE1ximo y los precios de venta antes de continuar."));
+      const content = el("div", void 0, "confirm-content");
+      const total = el("div", void 0, "confirm-total");
+      total.append(el("span", "Gasto m\xE1ximo del lote"), el("strong", `${fmt(quote.settings.maxTotal)} monedas`));
+      content.append(total);
+      const list = el("div", void 0, "confirm-list");
+      for (const id of ids) {
+        const plan = quote.plans.get(id);
+        const item = el("div", void 0, "confirm-item");
+        const name = el("strong", selected?.cards.find((card) => card.definitionId === id)?.name ?? `Carta ${id}`);
+        name.append(el("small", `${quote.settings.manualPriceById?.[id] !== void 0 ? "Referencia manual" : "Referencia Enhancer"}: ${fmt(plan.reference.price)}`));
+        const buy = el("span", `Compra \u2264 ${fmt(quote.settings.buyCapById?.[id] ?? 0)}`);
+        const sale = el("span", `Venta ${fmt(plan.salePrice)}`);
+        item.append(name, buy, sale);
+        const net = el("small", `Diferencia tras 5%: ${plan.worstNet >= 0 ? "+" : ""}${fmt(plan.worstNet)}`);
+        if (plan.worstNet < 0) net.classList.add("negative");
+        item.append(net);
+        list.append(item);
+      }
+      content.append(list);
+      if (manualIds.length) content.append(el("p", `${manualIds.length} ${manualIds.length === 1 ? "carta usa" : "cartas usan"} precios manuales. Enhancer no inform\xF3 su mercado y podr\xEDan ser recompensas no disponibles para comprar.`, "confirm-warning"));
+      if ([...quote.plans.values()].some((plan) => plan.worstNet < 0)) content.append(el("p", "Algunas compras pueden costar m\xE1s que la venta despu\xE9s de la comisi\xF3n.", "confirm-warning"));
+      content.append(el("p", "EA cobra 5% si se vende. Publicar la carta no garantiza recuperar las monedas.", "confirm-note"));
+      const actions = el("div", void 0, "confirm-actions");
+      const cancel = button("Cancelar", cancelTradeConfirmation);
+      const accept = button(`Comprar ${playerCount(ids.length)}`, () => {
+        const confirmed = pendingTrade;
+        if (!confirmed) return;
+        pendingTrade = null;
+        confirmBackdrop.classList.remove("open");
+        confirmPanel.replaceChildren();
+        confirmReturnFocus = null;
+        void executeConfirmedTrade(confirmed.ids, confirmed.quote);
+      }, "primary");
+      actions.append(cancel, accept);
+      confirmPanel.append(header, content, actions);
+      confirmBackdrop.classList.add("open");
+      cancel.focus();
+    }
+    async function executeConfirmedTrade(ids, quote) {
+      if (busy) return;
       const settings = quote.settings;
       activeTradeQuote = quote;
       busy = true;
@@ -6029,9 +6135,7 @@ button:disabled { opacity:.5; cursor:default; }
       wrap.append(table);
       body.append(wrap);
       const remaining = [...chosen].filter((id) => tradeReference(id) && !owned.has(id)).length;
-      const submit = button(busy ? "Procesando\u2026" : `Comprar ${remaining} y publicar`, () => {
-        void executeTrade();
-      });
+      const submit = button(busy ? "Procesando\u2026" : `Comprar ${remaining} y publicar`, requestTradeConfirmation);
       submit.className = "primary";
       submit.disabled = busy || !quote || remaining === 0;
       const submitRow = el("div", void 0, "trade-actions");
