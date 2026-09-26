@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         FUT SBC Solver v2
 // @namespace    https://github.com/mljpa/fut-sbc-solver-v2
-// @version      0.1.0.1790389981
+// @version      0.1.0.1790390145
 // @description  Userscript to solve EA SPORTS FC 26 SBCs with your own club
 // @match        https://www.ea.com/*/ea-sports-fc/ultimate-team/web-app*
 // @match        https://www.ea.com/ea-sports-fc/ultimate-team/web-app*
@@ -5193,6 +5193,7 @@ Consume las cartas que use. Esto NO se puede deshacer.
     { min: 150, inc: 50 }
   ];
   var SOFT_BAN4 = /* @__PURE__ */ new Set([426, 429, 512, 521]);
+  var MAX_BUY_PERCENT = 300;
   function manualTradeReference(definitionId, price) {
     if (!Number.isSafeInteger(definitionId) || definitionId <= 0 || !Number.isSafeInteger(price) || price < 150 || price > 15e6)
       throw new Error("Precio manual inv\xE1lido");
@@ -5226,7 +5227,7 @@ Consume las cartas que use. Esto NO se puede deshacer.
   }
   function planTrade(reference, settings, grid = FALLBACK_TIERS) {
     if (!Number.isSafeInteger(reference.price) || reference.price < 150) throw new Error("Precio de referencia inv\xE1lido");
-    if (!Number.isSafeInteger(settings.retries) || settings.retries < 1 || settings.retries > 10 || settings.stepMode !== "percent" && settings.stepMode !== "coins" || !Number.isFinite(settings.firstPercent) || settings.firstPercent < 1 || settings.firstPercent > 200 || settings.stepMode === "percent" && (!Number.isFinite(settings.lastPercent) || settings.lastPercent < settings.firstPercent || settings.lastPercent > 200) || !Number.isSafeInteger(settings.saleDiscountPercent) || settings.saleDiscountPercent < 0 || settings.saleDiscountPercent > 10 || !Number.isSafeInteger(settings.stepCoins) || settings.stepCoins < 0 || !Number.isSafeInteger(settings.maxPerCard) || settings.maxPerCard < 150 || !Number.isSafeInteger(settings.maxTotal) || settings.maxTotal < 150) throw new Error("Ajustes de compra inv\xE1lidos");
+    if (!Number.isSafeInteger(settings.retries) || settings.retries < 1 || settings.retries > 10 || settings.stepMode !== "percent" && settings.stepMode !== "coins" || !Number.isFinite(settings.firstPercent) || settings.firstPercent < 1 || settings.firstPercent > MAX_BUY_PERCENT || settings.stepMode === "percent" && (!Number.isFinite(settings.lastPercent) || settings.lastPercent < settings.firstPercent || settings.lastPercent > MAX_BUY_PERCENT) || !Number.isSafeInteger(settings.saleDiscountPercent) || settings.saleDiscountPercent < 0 || settings.saleDiscountPercent > 10 || !Number.isSafeInteger(settings.stepCoins) || settings.stepCoins < 0 || !Number.isSafeInteger(settings.maxPerCard) || settings.maxPerCard < 150 || !Number.isSafeInteger(settings.maxTotal) || settings.maxTotal < 150) throw new Error("Ajustes de compra inv\xE1lidos");
     const buyCaps = [];
     for (let i = 0; i < settings.retries; i++) {
       const raw = reference.price * (settings.retries === 1 ? settings.firstPercent : settings.firstPercent + (settings.lastPercent - settings.firstPercent) * i / (settings.retries - 1)) / 100;
@@ -5829,11 +5830,11 @@ button:disabled { opacity:.5; cursor:default; }
       body.append(el("p", "Enhancer aporta los precios disponibles. Si una carta no tiene precio, puedes indicar manualmente una referencia de compra y otra de venta; puede tratarse de una recompensa que no aparece en el mercado.", "note"));
       const fields = el("div", void 0, "trade-fields");
       fields.append(tradeField("Intentos por jugador", "retries", 1, 10));
-      fields.append(tradeField("Comprar desde (% del mercado)", "firstPercent", 1, 200));
-      if (tradeSettings.stepMode === "percent") fields.append(tradeField("Comprar hasta (% del mercado)", "lastPercent", 1, 200));
+      fields.append(tradeField("Comprar desde (% del mercado)", "firstPercent", 1, MAX_BUY_PERCENT));
+      if (tradeSettings.stepMode === "percent") fields.append(tradeField("Comprar hasta (% del mercado)", "lastPercent", 1, MAX_BUY_PERCENT));
       fields.append(tradeField("Descuento de venta (%)", "saleDiscountPercent", 0, 10));
       body.append(fields);
-      body.append(el("p", "Puedes llegar hasta 200% del precio de referencia. Si compras por encima del precio de venta, la diferencia tras comisi\xF3n ser\xE1 negativa.", "note"));
+      body.append(el("p", `Puedes llegar hasta ${MAX_BUY_PERCENT}% del precio de referencia. Si compras por encima del precio de venta, la diferencia tras comisi\xF3n ser\xE1 negativa.`, "note"));
       const advanced = el("details", void 0, "trade-advanced");
       advanced.open = advancedTradeOpen;
       advanced.addEventListener("toggle", () => {
