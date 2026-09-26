@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         FUT SBC Solver v2
 // @namespace    https://github.com/mljpa/fut-sbc-solver-v2
-// @version      0.2.1
+// @version      0.2.2
 // @description  Userscript to solve EA SPORTS FC 26 SBCs with your own club
 // @match        https://www.ea.com/*/ea-sports-fc/ultimate-team/web-app*
 // @match        https://www.ea.com/ea-sports-fc/ultimate-team/web-app*
@@ -5505,6 +5505,7 @@ button:disabled { opacity:.5; cursor:default; }
 .ovr { font-size:16px; font-weight:700; width:32px; text-align:center; }
 .row .who { flex:1; min-width:0; }
 .row small { display:block; color:var(--muted); }
+.row .market-price { min-width:150px; color:var(--fg); }
 .row.chosen { border-color:var(--accent); }
 .trade-fields { display:grid; grid-template-columns:repeat(auto-fit,minmax(160px,1fr)); gap:10px; margin:12px 0; }
 .trade-fields label { display:flex; flex-direction:column; gap:3px; color:var(--muted); }
@@ -5589,6 +5590,8 @@ button:disabled { opacity:.5; cursor:default; }
     let advancedTradeOpen = false;
     let chosen = /* @__PURE__ */ new Set();
     let prices = /* @__PURE__ */ new Map();
+    let priceLoading = false;
+    let priceRequestId = 0;
     let manualPrices = /* @__PURE__ */ new Map();
     let manualSalePrices = /* @__PURE__ */ new Map();
     let tradeProgress = /* @__PURE__ */ new Map();
@@ -5638,6 +5641,8 @@ button:disabled { opacity:.5; cursor:default; }
     }
     async function loadCategory(next, force = false) {
       if (busy) return;
+      priceRequestId++;
+      priceLoading = false;
       category = next;
       selected = null;
       tradeView = false;
@@ -5703,18 +5708,47 @@ button:disabled { opacity:.5; cursor:default; }
         salePriceById: Object.fromEntries(manualIds.map((id) => [id, manualSalePrices.get(id)]))
       };
     }
+    async function openSet(set) {
+      selected = set;
+      tab = "missing";
+      tradeView = false;
+      chosen.clear();
+      prices.clear();
+      priceLoading = true;
+      status = `Consultando precios de ${set.name} en Enhancer\u2026`;
+      error = false;
+      const requestId = ++priceRequestId;
+      render();
+      try {
+        const found = await fetchEnhancerPrices(set.cards.map((card) => card.definitionId));
+        if (requestId !== priceRequestId || selected !== set) return;
+        prices = found;
+        status = `${found.size}/${set.cards.length} precios recibidos de Enhancer.`;
+        error = false;
+      } catch (cause) {
+        if (requestId !== priceRequestId || selected !== set) return;
+        status = `No se pudieron obtener precios: ${cause instanceof Error ? cause.message : String(cause)}`;
+        error = true;
+      } finally {
+        if (requestId === priceRequestId && selected === set) {
+          priceLoading = false;
+          render();
+        }
+      }
+    }
     async function showTrade(force = false) {
-      if (busy || chosen.size === 0) return;
+      if (busy || priceLoading || chosen.size === 0) return;
       busy = true;
       tradeView = true;
-      prices.clear();
       tradeProgress.clear();
       tradeResultState.clear();
       activeTradeQuote = null;
       setStatus(`Consultando ${chosen.size} precios en Enhancer\u2026`);
       try {
-        prices = await fetchEnhancerPrices([...chosen], force);
-        setStatus(`${prices.size}/${chosen.size} precios recibidos de Enhancer. Para las cartas sin precio puedes ingresar una referencia y venta manuales.`);
+        const found = await fetchEnhancerPrices([...chosen], force);
+        for (const id of chosen) prices.delete(id);
+        for (const [id, price] of found) prices.set(id, price);
+        setStatus(`${found.size}/${chosen.size} precios recibidos de Enhancer. Para las cartas sin precio puedes ingresar una referencia y venta manuales.`);
       } catch (cause) {
         setStatus(`No se pudieron obtener precios: ${cause instanceof Error ? cause.message : String(cause)}`, true);
       } finally {
@@ -5926,14 +5960,15 @@ button:disabled { opacity:.5; cursor:default; }
         const who = el("div", void 0, "who");
         who.append(el("strong", card.name), el("small", `ID ${card.definitionId}${current.has(card.definitionId) ? " \xB7 en tu club" : ""}`));
         row.append(who);
-        const history = button(card.isCollected ? "Obtenida seg\xFAn EA" : owned.has(card.definitionId) ? "Quitar del historial" : "Ya la tuve", () => {
-          if (owned.has(card.definitionId)) owned.delete(card.definitionId);
-          else owned.add(card.definitionId);
-          saveLedger(owned);
-          render();
-        });
-        history.disabled = card.isCollected === true;
-        row.append(history);
+        const market = prices.get(card.definitionId);
+        row.append(el("span", market ? `Precio: ${fmt(market.price)} monedas` : priceLoading ? "Consultando precio\u2026" : "Sin precio en Enhancer", "market-price"));
+        if (owned.has(card.definitionId) && card.isCollected !== true && !current.has(card.definitionId)) {
+          row.append(button("Quitar del historial", () => {
+            owned.delete(card.definitionId);
+            saveLedger(owned);
+            render();
+          }));
+        }
         if (!owned.has(card.definitionId)) {
           if (chosen.has(card.definitionId)) row.classList.add("chosen");
           row.append(button(chosen.has(card.definitionId) ? "\u2713 A\xF1adido" : "+ Comprar", () => {
@@ -5957,6 +5992,8 @@ button:disabled { opacity:.5; cursor:default; }
       }
       const tools = el("div", void 0, "tools");
       if (selected) tools.append(button("\u2190 Colecciones", () => {
+        priceRequestId++;
+        priceLoading = false;
         selected = null;
         tradeView = false;
         chosen.clear();
@@ -6024,12 +6061,7 @@ button:disabled { opacity:.5; cursor:default; }
           bar.append(fill);
           card.append(bar);
           card.append(button("Ver jugadores", () => {
-            selected = set;
-            tab = "missing";
-            tradeView = false;
-            chosen.clear();
-            prices.clear();
-            render();
+            void openSet(set);
           }));
           grid.append(card);
         }
@@ -6039,12 +6071,25 @@ button:disabled { opacity:.5; cursor:default; }
       }
       const got = progress(selected);
       body.append(el("p", `${got}/${selected.cards.length} obtenidas \xB7 ${selected.cards.length - got} faltantes`, "metric"));
-      if (tab === "missing" && chosen.size > 0) {
-        const buy = button(`Comprar ${playerCount(chosen.size)}`, () => {
-          void showTrade();
-        });
-        buy.disabled = busy;
-        body.append(buy);
+      if (tab === "missing") {
+        const missing = selected.cards.filter((card) => !owned.has(card.definitionId));
+        const actions = el("div", void 0, "trade-actions");
+        if (missing.length) {
+          const allSelected = missing.every((card) => chosen.has(card.definitionId));
+          actions.append(button(allSelected ? "Quitar selecci\xF3n" : `Seleccionar todos (${missing.length})`, () => {
+            if (allSelected) chosen.clear();
+            else for (const card of missing) chosen.add(card.definitionId);
+            render();
+          }));
+        }
+        if (chosen.size > 0) {
+          const buy = button(`Comprar ${playerCount(chosen.size)}`, () => {
+            void showTrade();
+          });
+          buy.disabled = busy || priceLoading;
+          actions.append(buy);
+        }
+        if (actions.childElementCount) body.append(actions);
       }
       const tabs = el("div", void 0, "tabs");
       for (const value of ["missing", "collected"]) {
