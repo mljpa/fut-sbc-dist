@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         FUT SBC Solver v2
 // @namespace    https://github.com/mljpa/fut-sbc-solver-v2
-// @version      0.1.0.1788623293
+// @version      0.1.0.1790389981
 // @description  Userscript to solve EA SPORTS FC 26 SBCs with your own club
 // @match        https://www.ea.com/*/ea-sports-fc/ultimate-team/web-app*
 // @match        https://www.ea.com/ea-sports-fc/ultimate-team/web-app*
@@ -100,8 +100,8 @@
   function isInDom(vc) {
     try {
       const view = vc.getView?.();
-      const el = view?.getRootElement?.();
-      return !!el && typeof document !== "undefined" && document.contains(el);
+      const el2 = view?.getRootElement?.();
+      return !!el2 && typeof document !== "undefined" && document.contains(el2);
     } catch {
       return false;
     }
@@ -116,7 +116,7 @@
       if (!node || typeof node !== "object" || seen.has(node)) continue;
       seen.add(node);
       if (Array.isArray(node)) {
-        for (const el of node) queue.push(el);
+        for (const el2 of node) queue.push(el2);
         continue;
       }
       const rec = node;
@@ -441,14 +441,14 @@
       if (club.getStats) await toPromise(club.getStats());
     } catch {
     }
-    const criteria = new VM().searchCriteria;
-    criteria["count"] = PAGE_SIZE;
-    criteria["offset"] = 0;
+    const criteria3 = new VM().searchCriteria;
+    criteria3["count"] = PAGE_SIZE;
+    criteria3["offset"] = 0;
     for (let page = 0; page < MAX_PAGES; page++) {
       let batch = [];
       let retrievedAll = false;
       try {
-        const res = await toPromise(club.search(criteria));
+        const res = await toPromise(club.search(criteria3));
         const data = res.data;
         batch = Array.isArray(data?.items) ? data.items : [];
         retrievedAll = data?.retrievedAll === true;
@@ -466,7 +466,7 @@
         added++;
       }
       if (retrievedAll || batch.length === 0 || added === 0) break;
-      criteria["offset"] = Number(criteria["offset"] ?? 0) + batch.length;
+      criteria3["offset"] = Number(criteria3["offset"] ?? 0) + batch.length;
     }
     markDuplicates(players);
     return { players, items };
@@ -629,20 +629,20 @@
   }
 
   // src/ea/tap.ts
-  function tapElement(el, mode2 = "touch") {
+  function tapElement(el2, mode2 = "touch") {
     try {
-      const r = el.getBoundingClientRect();
+      const r = el2.getBoundingClientRect();
       const clientX = Math.round(r.left + r.width / 2);
       const clientY = Math.round(r.top + r.height / 2);
       const base = { bubbles: true, cancelable: true, composed: true, clientX, clientY };
       if (mode2 === "mouse") {
-        el.dispatchEvent(new MouseEvent("mousedown", base));
-        el.dispatchEvent(new MouseEvent("mouseup", base));
+        el2.dispatchEvent(new MouseEvent("mousedown", base));
+        el2.dispatchEvent(new MouseEvent("mouseup", base));
         return;
       }
       const pointer = (type) => {
         try {
-          el.dispatchEvent(
+          el2.dispatchEvent(
             new PointerEvent(type, { ...base, pointerId: 1, isPrimary: true, pointerType: "touch" })
           );
         } catch {
@@ -650,8 +650,8 @@
       };
       pointer("pointerdown");
       try {
-        const touch = new Touch({ identifier: 1, target: el, clientX, clientY });
-        el.dispatchEvent(
+        const touch = new Touch({ identifier: 1, target: el2, clientX, clientY });
+        el2.dispatchEvent(
           new TouchEvent("touchstart", {
             ...base,
             touches: [touch],
@@ -659,7 +659,7 @@
             changedTouches: [touch]
           })
         );
-        el.dispatchEvent(
+        el2.dispatchEvent(
           new TouchEvent("touchend", {
             ...base,
             touches: [],
@@ -668,7 +668,7 @@
           })
         );
       } catch {
-        el.click();
+        el2.click();
       }
       pointer("pointerup");
     } catch {
@@ -1518,10 +1518,10 @@
         scope,
         ...Array.from(scope.querySelectorAll("button, .btn-standard, [role='button']"))
       ];
-      for (const el of candidates) {
-        const label = (el.textContent ?? "").trim();
+      for (const el2 of candidates) {
+        const label = (el2.textContent ?? "").trim();
         if (!DISMISS_LABEL.test(label)) continue;
-        el.click?.();
+        el2.click?.();
         return true;
       }
     }
@@ -2095,8 +2095,8 @@
 
   // src/ui/result-card.ts
   function cardShell(headingText, onClose) {
-    const el = document.createElement("div");
-    el.className = "card";
+    const el2 = document.createElement("div");
+    el2.className = "card";
     const head = document.createElement("div");
     head.className = "card-head";
     const heading = document.createElement("span");
@@ -2110,11 +2110,11 @@
     head.append(heading, close);
     const body = document.createElement("div");
     body.className = "card-body";
-    el.append(head, body);
-    return { el, body };
+    el2.append(head, body);
+    return { el: el2, body };
   }
   function createResultCard(solution, opts, unmet = [], notes = []) {
-    const { el, body } = cardShell(
+    const { el: el2, body } = cardShell(
       unmet.length > 0 ? "Soluci\xF3n parcial" : "Soluci\xF3n",
       opts.onClose
     );
@@ -2239,9 +2239,9 @@
     actions.append(applyBtn, closeBtn);
     body.append(actions);
     return {
-      el,
+      el: el2,
       destroy() {
-        el.remove();
+        el2.remove();
       }
     };
   }
@@ -2252,7 +2252,7 @@
     return String(Math.round(coins));
   }
   function createNoticeCard(message, opts) {
-    const { el, body } = cardShell("Listo", opts.onClose);
+    const { el: el2, body } = cardShell("Listo", opts.onClose);
     const msg = document.createElement("p");
     msg.className = "err-msg";
     msg.textContent = message;
@@ -2266,11 +2266,11 @@
     closeBtn.addEventListener("click", opts.onClose);
     actions.append(closeBtn);
     body.append(actions);
-    return { el, destroy: () => el.remove() };
+    return { el: el2, destroy: () => el2.remove() };
   }
   function createErrorCard(message, opts) {
-    const { el, body } = cardShell("Error", opts.onClose);
-    el.classList.add("card-error");
+    const { el: el2, body } = cardShell("Error", opts.onClose);
+    el2.classList.add("card-error");
     const msg = document.createElement("p");
     msg.className = "err-msg";
     msg.textContent = message;
@@ -2289,9 +2289,9 @@
     actions.append(closeBtn);
     body.append(actions);
     return {
-      el,
+      el: el2,
       destroy() {
-        el.remove();
+        el2.remove();
       }
     };
   }
@@ -2328,8 +2328,8 @@
     } catch {
     }
   }
-  function clampToViewport(el, p) {
-    const r = el.getBoundingClientRect();
+  function clampToViewport(el2, p) {
+    const r = el2.getBoundingClientRect();
     const maxX = Math.max(0, window.innerWidth - Math.max(40, r.width));
     const maxY = Math.max(0, window.innerHeight - Math.max(24, r.height));
     return {
@@ -2337,19 +2337,19 @@
       y: Math.min(Math.max(0, p.y), maxY)
     };
   }
-  function makeDraggable(el, handle, key) {
+  function makeDraggable(el2, handle, key) {
     let dragged = false;
     let active = false;
     let start = { x: 0, y: 0 };
     let origin = { x: 0, y: 0 };
     const applyPos = (p) => {
-      const safe = clampToViewport(el, p);
-      el.style.position = "fixed";
-      el.style.left = `${safe.x}px`;
-      el.style.top = `${safe.y}px`;
-      el.style.right = "auto";
-      el.style.bottom = "auto";
-      el.style.transform = "none";
+      const safe = clampToViewport(el2, p);
+      el2.style.position = "fixed";
+      el2.style.left = `${safe.x}px`;
+      el2.style.top = `${safe.y}px`;
+      el2.style.right = "auto";
+      el2.style.bottom = "auto";
+      el2.style.transform = "none";
     };
     const saved = readPos(key);
     if (saved) applyPos(saved);
@@ -2360,7 +2360,7 @@
       active = true;
       dragged = false;
       start = { x: e.clientX, y: e.clientY };
-      const r = el.getBoundingClientRect();
+      const r = el2.getBoundingClientRect();
       origin = { x: r.left, y: r.top };
       handle.style.cursor = "grabbing";
       try {
@@ -2387,7 +2387,7 @@
       } catch {
       }
       if (dragged) {
-        const r = el.getBoundingClientRect();
+        const r = el2.getBoundingClientRect();
         writePos(key, { x: r.left, y: r.top });
         e.preventDefault();
         e.stopPropagation();
@@ -2764,9 +2764,9 @@
         draining = true;
         try {
           while (queue.length) {
-            const el = queue.shift();
-            if (el?.isConnected) {
-              tapElement(el, "mouse");
+            const el2 = queue.shift();
+            if (el2?.isConnected) {
+              tapElement(el2, "mouse");
               ctx.log("popups.autoDismissRewards: recompensa despachada");
               await new Promise((r) => setTimeout(r, BETWEEN_MS));
             }
@@ -2910,10 +2910,10 @@
   var MODE_CONFIRM = "confirm";
   var CONFIRM_DELAY_MS = 400;
   function pickBest(items, factor) {
-    const byRating = [...items].sort((a, b) => (b.rating ?? 0) - (a.rating ?? 0));
-    if (factor !== BY_NON_DUPLICATE) return byRating[0];
-    const fresh = byRating.filter((i) => !(typeof i.duplicateId === "number" && i.duplicateId > 0));
-    return (fresh.length > 0 ? fresh : byRating)[0];
+    const byRating2 = [...items].sort((a, b) => (b.rating ?? 0) - (a.rating ?? 0));
+    if (factor !== BY_NON_DUPLICATE) return byRating2[0];
+    const fresh = byRating2.filter((i) => !(typeof i.duplicateId === "number" && i.duplicateId > 0));
+    return (fresh.length > 0 ? fresh : byRating2)[0];
   }
   function controllerOf(view) {
     const candidate = view.getController?.() ?? view._controller;
@@ -3292,7 +3292,7 @@
   }
   function unmountOwned(owner) {
     if (typeof document === "undefined") return;
-    document.querySelectorAll(`.${ROW_CLASS} [data-fut-owner="${owner}"]`).forEach((el) => el.remove());
+    document.querySelectorAll(`.${ROW_CLASS} [data-fut-owner="${owner}"]`).forEach((el2) => el2.remove());
     document.querySelectorAll(`.${ROW_CLASS}`).forEach((row) => {
       if (row.childElementCount === 0) row.remove();
     });
@@ -3353,10 +3353,10 @@
         const eventType = getGlobal("EventType")?.["TAP"] ?? "tap";
         b.addTarget?.(b, onClick, eventType);
         host.addSubview(b);
-        const el = b.getRootElement?.();
-        if (el instanceof HTMLElement) {
-          el.classList.add("primary", "mini");
-          return { el, setLabel: (s) => b.setText?.(s) };
+        const el2 = b.getRootElement?.();
+        if (el2 instanceof HTMLElement) {
+          el2.classList.add("primary", "mini");
+          return { el: el2, setLabel: (s) => b.setText?.(s) };
         }
       } catch (e) {
         ctx.log(
@@ -3394,8 +3394,8 @@
     const repos = getGlobal(
       "repositories"
     );
-    const cached = repos?.Item?.getUnassignedItems?.();
-    return Array.isArray(cached) ? cached : [];
+    const cached2 = repos?.Item?.getUnassignedItems?.();
+    return Array.isArray(cached2) ? cached2 : [];
   }
   function describeOutcome(action, r) {
     if (r.reason) return `${action}: ${r.moved} ok \xB7 ${r.reason}`;
@@ -3517,7 +3517,7 @@
       return;
     }
     for (const action of available) {
-      const button = makeBulkButton(
+      const button2 = makeBulkButton(
         action.label,
         () => {
           const vc = liveController();
@@ -3535,8 +3535,8 @@
         ctx,
         view
       );
-      button.el.dataset["futOwner"] = OWNER;
-      row.append(button.el);
+      button2.el.dataset["futOwner"] = OWNER;
+      row.append(button2.el);
     }
     ctx.log(`unassigned.eaActions: ${available.length}/${EA_ACTIONS.length} acciones disponibles`);
   }
@@ -3601,11 +3601,11 @@
     }
     const row = getActionRow(root);
     if (row.querySelector(`[data-fut-owner="${OWNER2}"]`)) return;
-    const button = makeBulkButton(IDLE_LABEL, () => onPress(ctx), ctx, view);
-    setLabel = button.setLabel;
+    const button2 = makeBulkButton(IDLE_LABEL, () => onPress(ctx), ctx, view);
+    setLabel = button2.setLabel;
     disarm();
-    button.el.dataset["futOwner"] = OWNER2;
-    row.append(button.el);
+    button2.el.dataset["futOwner"] = OWNER2;
+    row.append(button2.el);
   }
   function onPress(ctx) {
     if (!armed) {
@@ -3791,8 +3791,8 @@
     return group;
   }
   function createOptionsPanel(opts) {
-    const el = document.createElement("div");
-    el.className = "card opts";
+    const el2 = document.createElement("div");
+    el2.className = "card opts";
     const head = document.createElement("div");
     head.className = "card-head";
     const title = document.createElement("span");
@@ -3836,11 +3836,11 @@
       empty.textContent = "No hay opciones registradas.";
       body.append(empty);
     }
-    el.append(head, body);
+    el2.append(head, body);
     return {
-      el,
+      el: el2,
       destroy() {
-        el.remove();
+        el2.remove();
       }
     };
   }
@@ -3912,8 +3912,8 @@
   }
   function createSettingsPopover(opts) {
     let state2 = { ...opts.initial };
-    const el = document.createElement("div");
-    el.className = "card popover";
+    const el2 = document.createElement("div");
+    el2.className = "card popover";
     const head = document.createElement("div");
     head.className = "card-head";
     const title = document.createElement("span");
@@ -4001,11 +4001,11 @@
       countRow,
       dryRow.el
     );
-    el.append(head, body);
+    el2.append(head, body);
     return {
-      el,
+      el: el2,
       destroy() {
-        el.remove();
+        el2.remove();
       }
     };
   }
@@ -4968,6 +4968,1112 @@ Consume las cartas que use. Esto NO se puede deshacer.
     };
   }
 
+  // src/gallery/catalog.ts
+  var CATEGORIES = [
+    { id: "eng", name: "Premier League / Barclays WSL", leagues: [13, 2216] },
+    { id: "esp", name: "LALIGA EA SPORTS / Liga F Moeve", leagues: [53, 2222] },
+    { id: "ger", name: "Bundesliga / Frauen-Bundesliga", leagues: [19, 2215] },
+    { id: "fra", name: "Ligue 1 / Arkema PL", leagues: [16, 2218] },
+    { id: "ita", name: "Serie A Enilive", leagues: [31] },
+    { id: "leagues", name: "Ligas", leagues: [13, 2216, 16, 2218, 53, 2222, 31, 19, 2215], leagueSets: true },
+    { id: "rarities", name: "Rarezas", rarities: [
+      { id: 3, name: "TOTW", size: 20 },
+      { id: 72, name: "Heroes", size: 5 },
+      { id: 12, name: "Holographics", size: 5 },
+      { id: 87, name: "Squad Foundations", size: 4 },
+      { id: 1, name: "Starter Set", size: 5 }
+    ] }
+  ];
+  var PAGE_SIZE3 = 100;
+  var CACHE_PREFIX = "fut-sbc-gallery:catalog:fc27:v2:";
+  var CACHE_MS = 24 * 60 * 60 * 1e3;
+  function itemService3() {
+    return getGlobal("services")?.Item ?? {};
+  }
+  function criteria() {
+    const DTO = getGlobal("UTSearchCriteriaDTO");
+    if (!DTO) throw new Error("EA no expone UTSearchCriteriaDTO");
+    const c = new DTO();
+    c["type"] = "player";
+    c["count"] = PAGE_SIZE3;
+    return c;
+  }
+  function mapCard(raw) {
+    const definitionId = Number(raw.definitionId);
+    if (!Number.isSafeInteger(definitionId) || definitionId <= 0) return null;
+    let name = "";
+    try {
+      name = String(raw.getStaticData?.()?.name ?? raw.getName?.() ?? "");
+    } catch {
+    }
+    return {
+      definitionId,
+      name: name || `Carta #${definitionId}`,
+      rating: Number(raw.rating ?? 0),
+      teamId: Number(raw.teamId ?? 0),
+      leagueId: Number(raw.leagueId ?? 0),
+      rarityId: Number(raw.rareflag ?? 0),
+      isCollected: raw.isCollected === true,
+      gradingScore: Number(raw.gradingScore ?? 0)
+    };
+  }
+  function cached(key) {
+    try {
+      const value = JSON.parse(localStorage.getItem(CACHE_PREFIX + key) ?? "null");
+      if (value && Date.now() - value.at < CACHE_MS && Array.isArray(value.cards)) return value.cards;
+    } catch {
+    }
+    return null;
+  }
+  function save(key, cards) {
+    try {
+      localStorage.setItem(CACHE_PREFIX + key, JSON.stringify({ at: Date.now(), cards }));
+    } catch {
+    }
+  }
+  async function conceptCards(filter, force = false) {
+    const key = filter.league != null ? `league:${filter.league}` : `rarity:${filter.rarity}`;
+    if (!force) {
+      const hit = cached(key);
+      if (hit) return hit;
+    }
+    const Item = itemService3();
+    if (!Item.searchConceptItems) throw new Error("EA no expone searchConceptItems");
+    const cards = [];
+    const seen = /* @__PURE__ */ new Set();
+    const maxPages = filter.rarity != null ? 1 : 40;
+    let complete = false;
+    for (let page = 0; page < maxPages; page++) {
+      const c = criteria();
+      c["offset"] = page * PAGE_SIZE3;
+      if (filter.league != null) c["league"] = filter.league;
+      if (filter.rarity != null) c["rarities"] = [filter.rarity];
+      const res = await toPromise(Item.searchConceptItems(c));
+      const data = res.data;
+      if (res.success === false || !data || !Array.isArray(data.items)) {
+        throw new Error(`EA rechaz\xF3 la b\xFAsqueda de conceptos (${res.status ?? "sin estado"})`);
+      }
+      let added = 0;
+      for (const raw of data.items) {
+        const card = mapCard(raw);
+        if (!card || seen.has(card.definitionId)) continue;
+        if (filter.league != null && card.leagueId !== filter.league) continue;
+        if (filter.rarity != null && card.rarityId !== filter.rarity) continue;
+        seen.add(card.definitionId);
+        cards.push(card);
+        added++;
+      }
+      if (data.endOfList === true || data.items.length < PAGE_SIZE3) {
+        complete = true;
+        break;
+      }
+      if (added === 0) throw new Error("EA repiti\xF3 una p\xE1gina del cat\xE1logo");
+      await delay(350);
+    }
+    if (filter.league != null && !complete) throw new Error("El cat\xE1logo de la liga no termin\xF3 de cargar");
+    save(key, cards);
+    return cards;
+  }
+  async function conceptCardsByIds(ids) {
+    if (!ids.length || ids.length > 250 || ids.some((id) => !Number.isSafeInteger(id) || id <= 0)) throw new Error("IDs de Gallery inv\xE1lidos");
+    const Item = itemService3();
+    if (!Item.searchConceptItems) throw new Error("EA no expone searchConceptItems");
+    const c = criteria();
+    c["count"] = 250;
+    c["defId"] = [...ids];
+    const res = await toPromise(Item.searchConceptItems(c));
+    if (res.success === false || !Array.isArray(res.data?.items)) throw new Error(`EA rechaz\xF3 las cartas del conjunto (${res.status ?? "sin estado"})`);
+    const requested = new Set(ids);
+    const found = /* @__PURE__ */ new Map();
+    for (const raw of res.data.items) {
+      const card = mapCard(raw);
+      if (card && requested.has(card.definitionId)) found.set(card.definitionId, card);
+    }
+    if (found.size !== requested.size) throw new Error(`EA devolvi\xF3 ${found.size}/${requested.size} cartas del conjunto`);
+    return ids.map((id) => found.get(id));
+  }
+  function metadata() {
+    return getGlobal("repositories")?.TeamConfig ?? {};
+  }
+  function buildSets(category, cards) {
+    if (category.rarities) {
+      return category.rarities.map((r) => ({
+        id: `rarity:${r.id}`,
+        name: r.name,
+        cards: cards.filter((c) => c.rarityId === r.id).sort(byRating).slice(0, r.size)
+      }));
+    }
+    const meta = metadata();
+    const base = cards.filter((c) => c.definitionId < 1e6);
+    const ids = [...new Set(base.map((c) => category.leagueSets ? c.leagueId : c.teamId))];
+    return ids.map((id) => ({
+      id: `${category.leagueSets ? "league" : "team"}:${id}`,
+      name: category.leagueSets ? meta.leagues?.get?.(id)?.name ?? `Liga ${id}` : meta.teams?.get?.(id)?.name ?? `Equipo ${id}`,
+      cards: base.filter((c) => (category.leagueSets ? c.leagueId : c.teamId) === id).sort(byRating).slice(0, category.leagueSets ? 30 : 20)
+    })).filter((set) => set.cards.length > 0).sort((a, b) => a.name.localeCompare(b.name, "es"));
+  }
+  function byRating(a, b) {
+    return b.rating - a.rating || a.definitionId - b.definitionId;
+  }
+
+  // src/gallery/enhancer-prices.ts
+  var URL = "https://enhancer-api.futnext.com/players/v2/prices";
+  var CACHE_MS2 = 15 * 60 * 1e3;
+  var cache = /* @__PURE__ */ new Map();
+  function currentMarketPlatform() {
+    const services = globalThis;
+    const persona = services.services?.User?.getUser?.()?.getSelectedPersona?.();
+    if (!persona) throw new Error("No se pudo identificar la plataforma de EA");
+    return persona.isPC ? "pc" : "ps";
+  }
+  function parsePrice(raw) {
+    if (!raw || typeof raw !== "object") return null;
+    const v = raw;
+    const definitionId = Number(v.definitionId);
+    const price = Number(v.price);
+    if (!Number.isSafeInteger(definitionId) || definitionId <= 0 || !Number.isSafeInteger(price) || price < 150) return null;
+    return {
+      definitionId,
+      price,
+      avg: Number.isSafeInteger(v.avg) ? Number(v.avg) : null,
+      top5Cheapest: Array.isArray(v.top5Cheapest) ? v.top5Cheapest.map(Number).filter((n) => Number.isSafeInteger(n) && n >= 150) : [],
+      trackedAt: Number(v.trackedAt) || 0,
+      updatedAt: Number(v.updatedAt) || 0
+    };
+  }
+  async function fetchEnhancerPrices(ids, force = false) {
+    const platform = currentMarketPlatform();
+    const unique = [...new Set(ids)].filter((id) => Number.isSafeInteger(id) && id > 0);
+    const result = /* @__PURE__ */ new Map();
+    const missing = [];
+    for (const id of unique) {
+      const key = `${platform}:${id}`;
+      const hit = cache.get(key);
+      if (!force && hit && Date.now() - hit.at < CACHE_MS2) {
+        if (hit.value) result.set(id, hit.value);
+      } else missing.push(id);
+    }
+    for (let i = 0; i < missing.length; i += 50) {
+      const batch = missing.slice(i, i + 50);
+      const url = `${URL}?ids=${batch.join("_")}&platform=${platform}`;
+      const controller = new AbortController();
+      const timer = setTimeout(() => controller.abort(), 15e3);
+      let response;
+      let data;
+      try {
+        response = await fetch(url, { signal: controller.signal, credentials: "omit" });
+        if (!response.ok) throw new Error(`API de precios de Enhancer respondi\xF3 ${response.status}`);
+        data = await response.json();
+      } catch (cause) {
+        throw new Error(`No se pudo consultar el precio de Enhancer: ${cause instanceof Error ? cause.message : String(cause)}`);
+      } finally {
+        clearTimeout(timer);
+      }
+      if (!Array.isArray(data)) throw new Error("La API de Enhancer cambi\xF3 el formato de precios");
+      const map = /* @__PURE__ */ new Map();
+      for (const raw of data) {
+        const price = parsePrice(raw);
+        if (price && batch.includes(price.definitionId)) map.set(price.definitionId, price);
+      }
+      for (const id of batch) {
+        const value = map.get(id) ?? null;
+        cache.set(`${platform}:${id}`, { at: Date.now(), value });
+        if (value) result.set(id, value);
+      }
+    }
+    return result;
+  }
+
+  // src/gallery/trade.ts
+  var FALLBACK_TIERS = [
+    { min: 1e5, inc: 1e3 },
+    { min: 5e4, inc: 500 },
+    { min: 1e4, inc: 250 },
+    { min: 1e3, inc: 100 },
+    { min: 150, inc: 50 }
+  ];
+  var SOFT_BAN4 = /* @__PURE__ */ new Set([426, 429, 512, 521]);
+  function manualTradeReference(definitionId, price) {
+    if (!Number.isSafeInteger(definitionId) || definitionId <= 0 || !Number.isSafeInteger(price) || price < 150 || price > 15e6)
+      throw new Error("Precio manual inv\xE1lido");
+    return { definitionId, price, avg: null, top5Cheapest: [], trackedAt: 0, updatedAt: 0 };
+  }
+  function tiers() {
+    const live = getGlobal("UTCurrencyInputControl")?.PRICE_TIERS;
+    if (!Array.isArray(live) || live.length < 4 || !live.every((t) => Number.isFinite(t.min) && Number.isFinite(t.inc) && t.inc > 0)) return FALLBACK_TIERS;
+    return live.filter((t) => t.min >= 150).sort((a, b) => b.min - a.min);
+  }
+  function floorPrice(value, grid = FALLBACK_TIERS) {
+    if (!Number.isFinite(value) || value < 150) return 0;
+    const tier2 = grid.find((t) => value >= t.min);
+    return tier2 ? tier2.min + Math.floor((value - tier2.min) / tier2.inc) * tier2.inc : 0;
+  }
+  function ceilPrice(value, grid = FALLBACK_TIERS) {
+    if (!Number.isFinite(value) || value < 150) return 150;
+    const floor = floorPrice(value, grid);
+    if (floor >= value) return floor;
+    const tier2 = grid.find((t) => value >= t.min);
+    return tier2 ? floor + tier2.inc : 0;
+  }
+  function roundPrice(value, grid = FALLBACK_TIERS) {
+    if (!Number.isFinite(value) || value < 150) return 0;
+    const below = floorPrice(value, grid);
+    const above = ceilPrice(value, grid);
+    return value - below < above - value ? below : above;
+  }
+  function previousPrice(value, grid = FALLBACK_TIERS) {
+    return floorPrice(value - 1, grid);
+  }
+  function planTrade(reference, settings, grid = FALLBACK_TIERS) {
+    if (!Number.isSafeInteger(reference.price) || reference.price < 150) throw new Error("Precio de referencia inv\xE1lido");
+    if (!Number.isSafeInteger(settings.retries) || settings.retries < 1 || settings.retries > 10 || settings.stepMode !== "percent" && settings.stepMode !== "coins" || !Number.isFinite(settings.firstPercent) || settings.firstPercent < 1 || settings.firstPercent > 200 || settings.stepMode === "percent" && (!Number.isFinite(settings.lastPercent) || settings.lastPercent < settings.firstPercent || settings.lastPercent > 200) || !Number.isSafeInteger(settings.saleDiscountPercent) || settings.saleDiscountPercent < 0 || settings.saleDiscountPercent > 10 || !Number.isSafeInteger(settings.stepCoins) || settings.stepCoins < 0 || !Number.isSafeInteger(settings.maxPerCard) || settings.maxPerCard < 150 || !Number.isSafeInteger(settings.maxTotal) || settings.maxTotal < 150) throw new Error("Ajustes de compra inv\xE1lidos");
+    const buyCaps = [];
+    for (let i = 0; i < settings.retries; i++) {
+      const raw = reference.price * (settings.retries === 1 ? settings.firstPercent : settings.firstPercent + (settings.lastPercent - settings.firstPercent) * i / (settings.retries - 1)) / 100;
+      const stepped = settings.stepMode === "coins" && i > 0 ? ceilPrice((buyCaps.at(-1) ?? 0) + Math.max(1, settings.stepCoins), grid) : roundPrice(raw, grid);
+      const capped = Math.min(stepped, floorPrice(settings.maxPerCard, grid));
+      if (capped >= 150) buyCaps.push(capped);
+    }
+    const highestBuy = buyCaps.at(-1) ?? 0;
+    const manualSale = settings.salePriceById?.[reference.definitionId];
+    if (manualSale !== void 0 && (!Number.isSafeInteger(manualSale) || manualSale < 150 || manualSale > 15e6))
+      throw new Error("Precio de venta manual inv\xE1lido");
+    const salePrice = floorPrice(manualSale ?? reference.price * (100 - settings.saleDiscountPercent) / 100, grid);
+    if (salePrice < 150) throw new Error("El precio de venta queda fuera del rango de EA");
+    return { reference, buyCaps, salePrice, worstNet: Math.floor(salePrice * 0.95) - highestBuy };
+  }
+  function lockTradeQuote(references, settings, grid = FALLBACK_TIERS) {
+    if (!references.length) throw new Error("No hay cartas con precio de compra y venta");
+    const plans = /* @__PURE__ */ new Map();
+    const buyCapById = {};
+    let maxTotal = 0;
+    let maxPerCard = 0;
+    for (const reference of references) {
+      if (plans.has(reference.definitionId)) continue;
+      if (settings.manualPriceById?.[reference.definitionId] !== void 0 && settings.salePriceById?.[reference.definitionId] === void 0)
+        throw new Error(`Falta precio de venta manual para ${reference.definitionId}`);
+      const plan = planTrade(reference, settings, grid);
+      const cap = plan.buyCaps.at(-1);
+      if (!cap) throw new Error(`No hay precio de compra v\xE1lido para ${reference.definitionId}`);
+      plans.set(reference.definitionId, plan);
+      buyCapById[reference.definitionId] = cap;
+      maxPerCard = Math.max(maxPerCard, cap);
+      maxTotal += cap;
+    }
+    if (!Number.isSafeInteger(maxTotal) || maxTotal < 150) throw new Error("Tope total inv\xE1lido");
+    return { plans, settings: { ...settings, maxPerCard, maxTotal, buyCapById } };
+  }
+  function service() {
+    const Item = getGlobal("services")?.Item;
+    if (!Item) throw new Error("EA no expone services.Item");
+    return Item;
+  }
+  function okay(status, success) {
+    return success && status !== void 0 && (status >= 200 && status < 300 || status === 304);
+  }
+  function assertNotBanned(status) {
+    if (SOFT_BAN4.has(Number(status))) throw new Error(`EA detuvo el mercado (${status}); se par\xF3 el lote`);
+  }
+  function criteria2(definitionId, maxBuy) {
+    const DTO = getGlobal("UTSearchCriteriaDTO");
+    if (!DTO) throw new Error("EA no expone UTSearchCriteriaDTO");
+    const c = new DTO();
+    c["type"] = "player";
+    c["defId"] = [definitionId];
+    c["maxBuy"] = maxBuy;
+    c["count"] = 20;
+    c["offset"] = 0;
+    return c;
+  }
+  async function findListing(Item, definitionId, maxBuy) {
+    if (!Item.searchTransferMarket) throw new Error("EA no expone searchTransferMarket");
+    Item.clearTransferMarketCache?.();
+    const res = await toPromise(Item.searchTransferMarket(criteria2(definitionId, maxBuy), 1));
+    assertNotBanned(res.status);
+    if (!okay(res.status, res.success)) throw new Error(`EA rechaz\xF3 la b\xFAsqueda (${res.status ?? "sin estado"})`);
+    return (res.data?.items ?? []).filter((it) => it.definitionId === definitionId).map((item) => ({ item, price: Number(item.getAuctionData?.().buyNowPrice ?? 0) })).filter(({ price }) => Number.isSafeInteger(price) && price >= 150 && price <= maxBuy).sort((a, b) => a.price - b.price)[0] ?? null;
+  }
+  async function buyAndList(ids, settings, onResult, onProgress = () => {
+  }) {
+    const Item = service();
+    if (!Item.bid || !Item.move || !Item.list || !Item.requestMarketData) throw new Error("EA no expone compra y venta");
+    const clubPile = getGlobal("ItemPile")?.CLUB;
+    if (clubPile === void 0) throw new Error("EA no expone ItemPile.CLUB");
+    const results = [];
+    const emit = (r) => {
+      results.push(r);
+      onResult(r);
+    };
+    let spent = 0;
+    for (const definitionId of [...new Set(ids)]) {
+      const progress = (message, attempt, totalAttempts) => onProgress({ definitionId, message, attempt, totalAttempts });
+      const manualPrice = settings.manualPriceById?.[definitionId];
+      progress(manualPrice === void 0 ? "Consultando el precio de Enhancer\u2026" : "Usando referencia manual confirmada\u2026");
+      let plan;
+      try {
+        if (manualPrice !== void 0 && settings.salePriceById?.[definitionId] === void 0)
+          throw new Error("Falta precio de venta manual");
+        const reference = manualPrice === void 0 ? (await fetchEnhancerPrices([definitionId], true)).get(definitionId) : manualTradeReference(definitionId, manualPrice);
+        if (!reference) throw new Error("Enhancer no tiene precio para esta carta");
+        const lockedCap = settings.buyCapById?.[definitionId];
+        plan = planTrade(reference, {
+          ...settings,
+          maxPerCard: Math.min(settings.maxPerCard, lockedCap ?? settings.maxPerCard)
+        }, tiers());
+      } catch (cause) {
+        const message = cause instanceof Error ? cause.message : String(cause);
+        emit({ definitionId, state: "skipped", message });
+        if (message.includes("API de precios") || message.includes("No se pudo consultar el precio")) break;
+        continue;
+      }
+      if (!plan.buyCaps.length) {
+        emit({ definitionId, state: "skipped", message: "No hay un precio de compra v\xE1lido dentro del tope" });
+        continue;
+      }
+      let bought = null;
+      let stop = false;
+      for (const [index, cap] of plan.buyCaps.entries()) {
+        const attempt = index + 1;
+        const totalAttempts = plan.buyCaps.length;
+        if (spent + cap > settings.maxTotal) break;
+        progress(`${attempt === 1 ? "Intento" : "Reintento"} ${attempt}/${totalAttempts}: esperando entre b\xFAsquedas\u2026`, attempt, totalAttempts);
+        await delay(2e3 + Math.floor(Math.random() * 2001));
+        progress(`${attempt === 1 ? "Intento" : "Reintento"} ${attempt}/${totalAttempts}: buscando hasta ${cap} monedas\u2026`, attempt, totalAttempts);
+        let listing;
+        try {
+          listing = await findListing(Item, definitionId, cap);
+        } catch (cause) {
+          const message = cause instanceof Error ? cause.message : String(cause);
+          emit({ definitionId, state: message.includes("se par\xF3 el lote") ? "soft-ban" : "skipped", message });
+          stop = true;
+          break;
+        }
+        if (!listing) {
+          progress(attempt < totalAttempts ? `Sin anuncios hasta ${cap}; sigue reintento ${attempt + 1}/${totalAttempts}` : `Sin anuncios hasta ${cap}; intentos agotados`, attempt, totalAttempts);
+          continue;
+        }
+        progress(`Carta encontrada por ${listing.price}; comprando\u2026`, attempt, totalAttempts);
+        let bid;
+        try {
+          bid = await toPromise(Item.bid(listing.item, listing.price));
+        } catch (cause) {
+          emit({ definitionId, state: "skipped", message: `Compra sin respuesta: ${cause instanceof Error ? cause.message : String(cause)}. Revisa Transferencias antes de repetir.` });
+          stop = true;
+          break;
+        }
+        if (SOFT_BAN4.has(Number(bid.status))) {
+          emit({ definitionId, state: "soft-ban", message: `EA detuvo el mercado (${bid.status}); se par\xF3 el lote` });
+          stop = true;
+          break;
+        }
+        if (okay(bid.status, bid.success)) {
+          bought = listing;
+          break;
+        }
+        if (Number(bid.status) !== 461) {
+          emit({ definitionId, state: "skipped", message: `Compra rechazada (${bid.status ?? "sin estado"}); revisa Transferencias` });
+          stop = true;
+          break;
+        }
+        progress(attempt < totalAttempts ? `El anuncio ya no est\xE1 disponible; sigue reintento ${attempt + 1}/${totalAttempts}` : "El anuncio ya no est\xE1 disponible; intentos agotados", attempt, totalAttempts);
+      }
+      if (stop) {
+        if (results.at(-1)?.state === "soft-ban" || results.at(-1)?.message.includes("Compra sin respuesta")) break;
+        continue;
+      }
+      if (!bought) {
+        emit({ definitionId, state: "skipped", message: "No apareci\xF3 una carta dentro de los topes; intentos agotados" });
+        continue;
+      }
+      spent += bought.price;
+      emit({ definitionId, state: "bought", buyPrice: bought.price, message: `Comprada por ${bought.price}; registrada en Gallery y pendiente de publicar` });
+      try {
+        const sellPrice = plan.salePrice;
+        progress(`Comprada por ${bought.price}; moviendo al club\u2026`);
+        await delay(1200);
+        const moved = await toPromise(Item.move(bought.item, clubPile));
+        assertNotBanned(moved.status);
+        if (!okay(moved.status, moved.success)) throw new Error(`No se pudo mover al club (${moved.status ?? "sin estado"})`);
+        if (bought.item.isTradeable?.() === false) throw new Error("La carta comprada no es transferible");
+        if (!bought.item.hasPriceLimits?.()) {
+          const marketData = await toPromise(Item.requestMarketData(bought.item));
+          assertNotBanned(marketData.status);
+        }
+        const limits = bought.item.getPriceLimits?.();
+        const start = Math.max(limits?.minimum ?? 150, previousPrice(sellPrice, tiers()));
+        if (start > sellPrice || limits?.maximum != null && sellPrice > limits.maximum) throw new Error("Precio de venta fuera del rango permitido por EA");
+        progress(`Publicando a ${sellPrice} monedas\u2026`);
+        await delay(1200);
+        const listed = await toPromise(Item.list(bought.item, start, sellPrice, 3600));
+        assertNotBanned(listed.status);
+        if (!okay(listed.status, listed.success)) throw new Error(`EA rechaz\xF3 la publicaci\xF3n (${listed.status ?? "sin estado"})`);
+        emit({ definitionId, state: "listed", buyPrice: bought.price, listPrice: sellPrice, message: `Comprada por ${bought.price} y publicada a ${sellPrice} por 1 hora; EA cobra 5% si se vende` });
+      } catch (cause) {
+        const message = cause instanceof Error ? cause.message : String(cause);
+        emit({ definitionId, state: "bought", buyPrice: bought.price, message: `Comprada, sin publicar: ${message}` });
+        if (message.includes("se par\xF3 el lote")) break;
+      }
+    }
+    return results;
+  }
+
+  // src/gallery/verified-sets.ts
+  var IPSWICH_IDS = [
+    50563169,
+    236699,
+    246321,
+    255434,
+    234569,
+    50571021,
+    243675,
+    261336,
+    231633,
+    235405,
+    239356,
+    242908,
+    246685,
+    267680,
+    75318,
+    76803,
+    248602,
+    256051,
+    71110,
+    206561,
+    213418,
+    223877,
+    223909,
+    235458,
+    233851,
+    231005,
+    250816,
+    265801,
+    271150,
+    264200,
+    263376,
+    173533
+  ];
+  async function loadVerifiedSets(category) {
+    if (category.id !== "eng") return [];
+    const cards = await conceptCardsByIds(IPSWICH_IDS);
+    return [{ id: "team:94", name: "Ipswich Town", cards, verified: true }];
+  }
+  function mergeVerifiedSets(approximate, verified) {
+    const byId = new Map(approximate.map((set) => [set.id, set]));
+    for (const set of verified) byId.set(set.id, set);
+    return [...byId.values()].sort((a, b) => a.name.localeCompare(b.name, "es"));
+  }
+
+  // src/gallery/index.ts
+  var LEDGER_KEY = "fut-sbc-gallery:owned:fc27";
+  var CSS2 = `
+:host { all: initial; font: 13px/1.4 -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif; color:var(--fg); --bg:#fff;--fg:#1d2329;--muted:#65717d;--line:#d8dfe5;--soft:#f3f6f8;--accent:#176d50;--accent-fg:#fff; }
+@media (prefers-color-scheme:dark) { :host { --bg:#1d2228;--fg:#f1f4f6;--muted:#a4adb6;--line:#39424b;--soft:#293039;--accent:#29a477; } }
+* { box-sizing:border-box; }
+button,input,select { font:inherit; }
+button { cursor:pointer; }
+.launcher { position:fixed; left:160px; bottom:16px; z-index:2147483000; border:1px solid var(--line); border-radius:6px; padding:8px 12px; color:var(--fg); background:var(--bg); box-shadow:0 3px 12px #0004; }
+.backdrop { position:fixed; inset:0; z-index:2147483001; display:none; background:#0009; align-items:center; justify-content:center; padding:22px; }
+.backdrop.open { display:flex; }
+.panel { width:min(1100px,96vw); height:min(850px,93vh); display:flex; flex-direction:column; background:var(--bg); color:var(--fg); border:1px solid var(--line); border-radius:8px; box-shadow:0 12px 50px #0006; overflow:hidden; }
+.panel.trade-panel { width:min(1000px,96vw); height:auto; max-height:93vh; }
+.head { display:flex; align-items:center; gap:10px; padding:14px 18px; border-bottom:1px solid var(--line); }
+.head h2 { margin:0; font-size:18px; font-weight:700; flex:1; }
+.head button,.tools button,.back,.tabs button,.row button,.card button { border:1px solid var(--line); border-radius:5px; padding:6px 9px; background:var(--soft); color:var(--fg); }
+button:disabled { opacity:.5; cursor:default; }
+.head button:hover,.tools button:hover,.back:hover,.tabs button:hover,.row button:hover,.card button:hover { border-color:var(--accent); }
+.body { padding:16px 18px; overflow:auto; flex:1; }
+.tools { display:flex; flex-wrap:wrap; align-items:center; gap:8px; margin-bottom:14px; }
+.tools .spacer { flex:1; }
+.tools input { min-width:180px; padding:6px 9px; color:var(--fg); background:var(--bg); border:1px solid var(--line); border-radius:5px; }
+.note,.status { color:var(--muted); font-size:12px; }
+.status { margin:0 0 14px; }
+.status.error { color:#c64242; }
+.grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(250px,1fr)); gap:10px; }
+.card,.row { border:1px solid var(--line); border-radius:6px; background:var(--soft); padding:12px; }
+.card { display:flex; flex-direction:column; gap:8px; min-height:100px; }
+.card strong { font-size:14px; }
+.card button { align-self:flex-start; background:var(--bg); }
+.metric { color:var(--muted); }
+.bar { width:100%; height:7px; overflow:hidden; border-radius:4px; background:var(--line); }
+.bar span { display:block; height:100%; background:var(--accent); }
+.back { margin-bottom:12px; }
+.tabs { display:flex; gap:5px; margin-bottom:12px; }
+.tabs button.active { background:var(--accent); color:var(--accent-fg); border-color:var(--accent); }
+.list { display:flex; flex-direction:column; gap:6px; }
+.row { display:flex; align-items:center; gap:12px; }
+.ovr { font-size:16px; font-weight:700; width:32px; text-align:center; }
+.row .who { flex:1; min-width:0; }
+.row small { display:block; color:var(--muted); }
+.row.chosen { border-color:var(--accent); }
+.trade-fields { display:grid; grid-template-columns:repeat(auto-fit,minmax(160px,1fr)); gap:10px; margin:12px 0; }
+.trade-fields label { display:flex; flex-direction:column; gap:3px; color:var(--muted); }
+.trade-fields input,.trade-fields select { width:100%; padding:7px 8px; color:var(--fg); background:var(--bg); border:1px solid var(--line); border-radius:5px; }
+.trade-actions { display:flex; flex-wrap:wrap; gap:8px; margin:12px 0; }
+.trade-actions button { border:1px solid var(--line); border-radius:5px; padding:8px 11px; background:var(--soft); color:var(--fg); }
+.trade-actions button.primary { background:var(--accent); color:var(--accent-fg); border-color:var(--accent); }
+.trade-advanced { border:1px solid var(--line); border-radius:5px; padding:8px 11px; margin:10px 0; }
+.trade-advanced summary { cursor:pointer; font-weight:600; }
+.trade-summary { padding:10px 12px; background:var(--soft); border:1px solid var(--line); border-radius:5px; margin:12px 0; }
+.trade-table-wrap { overflow-x:auto; }
+.trade-table { width:100%; border-collapse:collapse; min-width:800px; }
+.trade-table th,.trade-table td { text-align:left; padding:9px 8px; border-bottom:1px solid var(--line); vertical-align:top; }
+.trade-table th { color:var(--muted); font-size:12px; }
+.trade-table small { display:block; color:var(--muted); }
+.trade-table input { width:105px; padding:6px 7px; color:var(--fg); background:var(--bg); border:1px solid var(--line); border-radius:5px; }
+.trade-state { min-width:160px; }
+.trade-state.done { color:#24966b; font-weight:600; }
+.trade-state.failed { color:#cf5555; font-weight:600; }
+.trade-state.active { color:var(--accent); }
+.trade-log { white-space:pre-wrap; }
+.empty { padding:24px; text-align:center; color:var(--muted); }
+`;
+  function loadLedger() {
+    try {
+      const ids = JSON.parse(localStorage.getItem(LEDGER_KEY) ?? "[]");
+      return new Set(ids.filter((id) => Number.isSafeInteger(id) && id > 0));
+    } catch {
+      return /* @__PURE__ */ new Set();
+    }
+  }
+  function saveLedger(ids) {
+    localStorage.setItem(LEDGER_KEY, JSON.stringify([...ids].sort((a, b) => a - b)));
+  }
+  function el(tag, text, cls) {
+    const node = document.createElement(tag);
+    if (text != null) node.textContent = text;
+    if (cls) node.className = cls;
+    return node;
+  }
+  function button(label, click, cls) {
+    const node = el("button", label, cls);
+    node.type = "button";
+    node.addEventListener("click", click);
+    return node;
+  }
+  var fmt = (n) => new Intl.NumberFormat("es-CL").format(n);
+  var playerCount = (n) => `${n} ${n === 1 ? "jugador" : "jugadores"}`;
+  function mountGallery() {
+    const host = el("div");
+    host.id = "fut-gallery-root";
+    const shadow = host.attachShadow({ mode: "open" });
+    const style = el("style");
+    style.textContent = CSS2;
+    const launcher = button("Mi Gallery", () => open());
+    launcher.className = "launcher";
+    const backdrop = el("div", void 0, "backdrop");
+    const panel = el("section", void 0, "panel");
+    panel.setAttribute("role", "dialog");
+    panel.setAttribute("aria-modal", "true");
+    panel.setAttribute("aria-label", "Mi Gallery");
+    const head = el("div", void 0, "head");
+    const title = el("h2", "Mi Gallery");
+    const close = button("Cerrar", () => closeGallery());
+    head.append(title, close);
+    const body = el("div", void 0, "body");
+    panel.append(head, body);
+    backdrop.append(panel);
+    backdrop.addEventListener("click", (event) => {
+      if (event.target === backdrop) closeGallery();
+    });
+    shadow.append(style, launcher, backdrop);
+    document.body.append(host);
+    let owned = loadLedger();
+    let current = /* @__PURE__ */ new Set();
+    let category = null;
+    let sets = [];
+    let selected = null;
+    let tab = "missing";
+    let filter = "";
+    let busy = false;
+    let tradeView = false;
+    let advancedTradeOpen = false;
+    let chosen = /* @__PURE__ */ new Set();
+    let prices = /* @__PURE__ */ new Map();
+    let manualPrices = /* @__PURE__ */ new Map();
+    let manualSalePrices = /* @__PURE__ */ new Map();
+    let tradeLog = [];
+    let tradeProgress = /* @__PURE__ */ new Map();
+    let tradeResultState = /* @__PURE__ */ new Map();
+    let activeTradeQuote = null;
+    let tradeSettings = {
+      firstPercent: 85,
+      lastPercent: 90,
+      retries: 3,
+      stepMode: "percent",
+      stepCoins: 100,
+      saleDiscountPercent: 0,
+      maxPerCard: 15e6,
+      maxTotal: 15e6
+    };
+    let status = "Sincroniza el club para registrar las cartas que tienes ahora. El historial queda guardado en este navegador.";
+    let error = false;
+    function setStatus(message, isError = false) {
+      status = message;
+      error = isError;
+      render();
+    }
+    function closeGallery() {
+      backdrop.classList.remove("open");
+    }
+    function open() {
+      backdrop.classList.add("open");
+      render();
+    }
+    async function syncClub() {
+      if (busy) return;
+      busy = true;
+      setStatus("Leyendo tu club desde EA\u2026");
+      try {
+        const { players } = await fetchClubPlayers();
+        if (players.length === 0) throw new Error("EA no devolvi\xF3 cartas del club");
+        current = new Set(players.map((p) => p.definitionId));
+        for (const id of current) owned.add(id);
+        saveLedger(owned);
+        setStatus(`${fmt(players.length)} cartas actuales; ${fmt(owned.size)} definiciones registradas en el historial local.`);
+      } catch (cause) {
+        setStatus(`No se pudo leer el club: ${cause instanceof Error ? cause.message : String(cause)}`, true);
+      } finally {
+        busy = false;
+        render();
+      }
+    }
+    async function loadCategory(next, force = false) {
+      if (busy) return;
+      category = next;
+      selected = null;
+      tradeView = false;
+      chosen.clear();
+      manualPrices.clear();
+      manualSalePrices.clear();
+      sets = [];
+      busy = true;
+      setStatus(`Leyendo ${next.name} desde EA\u2026`);
+      try {
+        const cards = [];
+        if (next.leagues) {
+          for (let i = 0; i < next.leagues.length; i++) {
+            const id = next.leagues[i];
+            status = `Leyendo ${next.name}: liga ${i + 1}/${next.leagues.length}\u2026`;
+            render();
+            cards.push(...await conceptCards({ league: id }, force));
+          }
+        }
+        if (next.rarities) {
+          for (let i = 0; i < next.rarities.length; i++) {
+            const rarity = next.rarities[i];
+            status = `Leyendo ${next.name}: ${rarity.name} (${i + 1}/${next.rarities.length})\u2026`;
+            render();
+            cards.push(...await conceptCards({ rarity: rarity.id }, force));
+          }
+        }
+        let verified = [];
+        let warning = "";
+        try {
+          verified = await loadVerifiedSets(next);
+        } catch (cause) {
+          warning = ` No se pudo verificar Ipswich: ${cause instanceof Error ? cause.message : String(cause)}.`;
+        }
+        sets = mergeVerifiedSets(buildSets(next, cards), verified);
+        for (const card of [...cards, ...verified.flatMap((set) => set.cards)]) {
+          if (card.isCollected) owned.add(card.definitionId);
+        }
+        saveLedger(owned);
+        setStatus(`${fmt(sets.length)} colecciones cargadas. EA confirm\xF3 el historial de cartas disponibles${verified.length ? "; Ipswich usa la lista exacta de Enhancer" : ""}.${warning}`, !!warning);
+      } catch (cause) {
+        setStatus(`No se pudo cargar ${next.name}: ${cause instanceof Error ? cause.message : String(cause)}`, true);
+      } finally {
+        busy = false;
+        render();
+      }
+    }
+    function progress(set) {
+      return set.cards.filter((card) => owned.has(card.definitionId)).length;
+    }
+    function tradeReference(id) {
+      const enhancer = prices.get(id);
+      if (enhancer) return enhancer;
+      const price = manualPrices.get(id);
+      if (price === void 0 || manualSalePrices.get(id) === void 0) return void 0;
+      return manualTradeReference(id, price);
+    }
+    function settingsForQuote(ids) {
+      const manualIds = ids.filter((id) => !prices.has(id) && manualPrices.has(id));
+      return {
+        ...tradeSettings,
+        manualPriceById: Object.fromEntries(manualIds.map((id) => [id, manualPrices.get(id)])),
+        salePriceById: Object.fromEntries(manualIds.map((id) => [id, manualSalePrices.get(id)]))
+      };
+    }
+    async function showTrade(force = false) {
+      if (busy || chosen.size === 0) return;
+      busy = true;
+      tradeView = true;
+      prices.clear();
+      tradeProgress.clear();
+      tradeResultState.clear();
+      activeTradeQuote = null;
+      tradeLog = [];
+      setStatus(`Consultando ${chosen.size} precios en Enhancer\u2026`);
+      try {
+        prices = await fetchEnhancerPrices([...chosen], force);
+        setStatus(`${prices.size}/${chosen.size} precios recibidos de Enhancer. Para las cartas sin precio puedes ingresar una referencia y venta manuales.`);
+      } catch (cause) {
+        setStatus(`No se pudieron obtener precios: ${cause instanceof Error ? cause.message : String(cause)}`, true);
+      } finally {
+        busy = false;
+        render();
+      }
+    }
+    async function executeTrade() {
+      if (busy) return;
+      const ids = [...chosen].filter((id) => tradeReference(id) && !owned.has(id));
+      if (!ids.length) return setStatus("Falta precio de compra y venta para las cartas seleccionadas.", true);
+      let quote;
+      try {
+        quote = lockTradeQuote(ids.map((id) => tradeReference(id)), settingsForQuote(ids));
+      } catch (cause) {
+        return setStatus(cause instanceof Error ? cause.message : String(cause), true);
+      }
+      const manualIds = ids.filter((id) => quote.settings.manualPriceById?.[id] !== void 0);
+      const accepted = window.confirm(`Comprar ${ids.length} carta(s) para Gallery. Gasto m\xE1ximo del lote: ${fmt(quote.settings.maxTotal)} monedas. ${ids.map((id) => `${selected?.cards.find((c) => c.definitionId === id)?.name ?? id}: compra hasta ${fmt(quote.settings.buyCapById?.[id] ?? 0)}, venta a ${fmt(quote.plans.get(id)?.salePrice ?? 0)}`).join("; ")}. ${manualIds.length ? `${manualIds.length} carta(s) usan precios ingresados manualmente; Enhancer no inform\xF3 su mercado y podr\xEDan ser recompensas no disponibles para compra. ` : ""}Si compras sobre el precio de venta, perder\xE1s monedas. EA cobra 5% si se vende; la venta no est\xE1 garantizada. \xBFConfirmas la compra?`);
+      if (!accepted) return;
+      const settings = quote.settings;
+      activeTradeQuote = quote;
+      busy = true;
+      tradeLog = [];
+      tradeProgress = new Map(ids.map((id) => [id, "Pendiente"]));
+      tradeResultState.clear();
+      setStatus("Buscando cartas con los topes confirmados\u2026");
+      try {
+        await buyAndList(ids, settings, (result) => {
+          const card = selected?.cards.find((c) => c.definitionId === result.definitionId);
+          tradeLog.push(`${card?.name ?? result.definitionId}: ${result.message}`);
+          tradeProgress.set(result.definitionId, result.message);
+          tradeResultState.set(result.definitionId, result.state);
+          if (result.state === "bought" || result.state === "listed") {
+            owned.add(result.definitionId);
+            saveLedger(owned);
+          }
+          status = tradeLog.at(-1) ?? "";
+          render();
+        }, (progress2) => {
+          const card = selected?.cards.find((c) => c.definitionId === progress2.definitionId);
+          tradeProgress.set(progress2.definitionId, progress2.message);
+          status = `${card?.name ?? progress2.definitionId}: ${progress2.message}`;
+          render();
+        });
+        setStatus("Lote terminado. Revisa el estado de cada carta y la lista de transferibles.");
+      } catch (cause) {
+        setStatus(`El lote se detuvo: ${cause instanceof Error ? cause.message : String(cause)}`, true);
+      } finally {
+        busy = false;
+        render();
+      }
+    }
+    function tradeField(label, key, min, max) {
+      const wrapper = el("label", label);
+      const input = el("input");
+      input.type = "number";
+      input.min = String(min);
+      input.max = String(max);
+      input.step = "1";
+      input.value = String(tradeSettings[key]);
+      input.disabled = busy;
+      input.addEventListener("change", () => {
+        tradeSettings[key] = Number(input.value);
+        activeTradeQuote = null;
+        if (key === "firstPercent" && tradeSettings.stepMode === "percent" && tradeSettings.firstPercent > tradeSettings.lastPercent)
+          tradeSettings.lastPercent = tradeSettings.firstPercent;
+        render();
+      });
+      wrapper.append(input);
+      return wrapper;
+    }
+    function manualField(id, kind) {
+      const input = el("input");
+      const values = kind === "reference" ? manualPrices : manualSalePrices;
+      input.type = "number";
+      input.min = "150";
+      input.max = "15000000";
+      input.step = "50";
+      input.placeholder = kind === "reference" ? "Precio manual" : "Venta manual";
+      input.setAttribute("aria-label", `${kind === "reference" ? "Precio de compra" : "Precio de venta"} manual para ${selected?.cards.find((card) => card.definitionId === id)?.name ?? id}`);
+      input.value = values.has(id) ? String(values.get(id)) : "";
+      input.disabled = busy;
+      input.addEventListener("change", () => {
+        const raw = input.value.trim();
+        const value = Number(raw);
+        if (raw && (!Number.isSafeInteger(value) || value < 150 || value > 15e6)) {
+          setStatus("El precio manual debe estar entre 150 y 15.000.000 monedas.", true);
+          return;
+        }
+        if (raw) values.set(id, value);
+        else values.delete(id);
+        activeTradeQuote = null;
+        setStatus(raw ? `Precio ${kind === "reference" ? "de compra" : "de venta"} manual registrado. Revisa el gasto m\xE1ximo antes de confirmar.` : "Precio manual eliminado; esa carta queda pendiente de cotizaci\xF3n.");
+      });
+      return input;
+    }
+    function renderTrade() {
+      const actions = el("div", void 0, "trade-actions");
+      actions.append(button("\u2190 Volver a jugadores", () => {
+        tradeView = false;
+        render();
+      }));
+      const refresh = button("Actualizar precios", () => {
+        void showTrade(true);
+      });
+      refresh.disabled = busy;
+      actions.append(refresh);
+      body.append(actions);
+      body.append(el("p", "Enhancer aporta los precios disponibles. Si una carta no tiene precio, puedes indicar manualmente una referencia de compra y otra de venta; puede tratarse de una recompensa que no aparece en el mercado.", "note"));
+      const fields = el("div", void 0, "trade-fields");
+      fields.append(tradeField("Intentos por jugador", "retries", 1, 10));
+      fields.append(tradeField("Comprar desde (% del mercado)", "firstPercent", 1, 200));
+      if (tradeSettings.stepMode === "percent") fields.append(tradeField("Comprar hasta (% del mercado)", "lastPercent", 1, 200));
+      fields.append(tradeField("Descuento de venta (%)", "saleDiscountPercent", 0, 10));
+      body.append(fields);
+      body.append(el("p", "Puedes llegar hasta 200% del precio de referencia. Si compras por encima del precio de venta, la diferencia tras comisi\xF3n ser\xE1 negativa.", "note"));
+      const advanced = el("details", void 0, "trade-advanced");
+      advanced.open = advancedTradeOpen;
+      advanced.addEventListener("toggle", () => {
+        advancedTradeOpen = advanced.open;
+      });
+      advanced.append(el("summary", "Opciones avanzadas"));
+      const advancedFields = el("div", void 0, "trade-fields");
+      const mode2 = el("label", "Subir en cada intento");
+      const select = el("select");
+      for (const [value, label] of [["percent", "Por porcentaje (por defecto)"], ["coins", "Por monedas"]]) {
+        const option = el("option", label);
+        option.value = value;
+        select.append(option);
+      }
+      select.value = tradeSettings.stepMode;
+      select.disabled = busy;
+      select.addEventListener("change", () => {
+        tradeSettings.stepMode = select.value;
+        activeTradeQuote = null;
+        render();
+      });
+      mode2.append(select);
+      advancedFields.append(mode2);
+      if (tradeSettings.stepMode === "coins") advancedFields.append(tradeField("Subir monedas por intento", "stepCoins", 1, 1e5));
+      advanced.append(advancedFields);
+      body.append(advanced);
+      body.append(el("p", "Espera entre b\xFAsquedas: 2\u20134 s. EA cobra 5% cuando se concrete una venta; publicar no garantiza recuperar las monedas.", "note"));
+      let quote = activeTradeQuote;
+      let quoteError = "";
+      if (!quote) {
+        try {
+          const ids = [...chosen].filter((id) => tradeReference(id) && !owned.has(id));
+          quote = lockTradeQuote(ids.map((id) => tradeReference(id)), settingsForQuote(ids));
+        } catch (cause) {
+          quoteError = cause instanceof Error ? cause.message : String(cause);
+        }
+      }
+      if (quote) body.append(el("div", `Gasto m\xE1ximo del lote: ${fmt(quote.settings.maxTotal)} monedas \xB7 ${playerCount(quote.plans.size)} con precio`, "trade-summary"));
+      else body.append(el("p", quoteError, "status error"));
+      const wrap = el("div", void 0, "trade-table-wrap");
+      const table = el("table", void 0, "trade-table");
+      const thead = el("thead");
+      const header = el("tr");
+      for (const label of ["Jugador", "Precio de referencia", "Topes de compra", "Venta", "Diferencia tras 5%", "Estado"])
+        header.append(el("th", label));
+      thead.append(header);
+      table.append(thead);
+      const tbody = el("tbody");
+      for (const id of chosen) {
+        const card = selected?.cards.find((c) => c.definitionId === id);
+        const reference = prices.get(id);
+        const plan = quote?.plans.get(id);
+        const row = el("tr");
+        row.append(el("td", card?.name ?? `Carta ${id}`));
+        const market = el("td");
+        if (reference) {
+          market.append(el("span", fmt(reference.price)), el("small", "Enhancer"));
+          if (reference.updatedAt) market.append(el("small", new Date(reference.updatedAt).toLocaleString("es-CL")));
+        } else {
+          market.append(el("small", "Enhancer: sin precio \xB7 posible recompensa"), manualField(id, "reference"));
+        }
+        row.append(market);
+        row.append(el("td", plan ? plan.buyCaps.map(fmt).join(" \u2192 ") : "Pendiente de precio manual"));
+        const sale = el("td");
+        if (reference) sale.textContent = plan ? fmt(plan.salePrice) : "\u2014";
+        else sale.append(manualField(id, "sale"));
+        row.append(sale);
+        row.append(el("td", plan ? `${plan.worstNet >= 0 ? "+" : ""}${fmt(plan.worstNet)}` : "\u2014"));
+        const missingLabel = !manualPrices.has(id) ? "Ingresa referencia manual" : "Ingresa venta manual";
+        const state2 = el("td", tradeProgress.get(id) ?? (plan ? "Pendiente" : missingLabel), "trade-state");
+        const resultState = tradeResultState.get(id);
+        if (resultState === "listed" || resultState === "bought") state2.classList.add("done");
+        else if (resultState === "skipped" || resultState === "soft-ban") state2.classList.add("failed");
+        else if (tradeProgress.has(id) && tradeProgress.get(id) !== "Pendiente") state2.classList.add("active");
+        state2.setAttribute("aria-live", "polite");
+        row.append(state2);
+        tbody.append(row);
+      }
+      table.append(tbody);
+      wrap.append(table);
+      body.append(wrap);
+      const remaining = [...chosen].filter((id) => tradeReference(id) && !owned.has(id)).length;
+      const submit = button(busy ? "Procesando\u2026" : `Comprar ${remaining} y publicar`, () => {
+        void executeTrade();
+      });
+      submit.className = "primary";
+      submit.disabled = busy || !quote || remaining === 0;
+      const submitRow = el("div", void 0, "trade-actions");
+      submitRow.append(submit);
+      body.append(submitRow);
+      if (tradeLog.length) body.append(el("p", tradeLog.join("\n"), "status trade-log"));
+    }
+    function cardRows(cards) {
+      const list = el("div", void 0, "list");
+      if (cards.length === 0) list.append(el("div", "No hay cartas en esta vista.", "empty"));
+      for (const card of cards) {
+        const row = el("div", void 0, "row");
+        row.append(el("span", String(card.rating), "ovr"));
+        const who = el("div", void 0, "who");
+        who.append(el("strong", card.name), el("small", `ID ${card.definitionId}${current.has(card.definitionId) ? " \xB7 en tu club" : ""}`));
+        row.append(who);
+        const history = button(card.isCollected ? "Obtenida seg\xFAn EA" : owned.has(card.definitionId) ? "Quitar del historial" : "Ya la tuve", () => {
+          if (owned.has(card.definitionId)) owned.delete(card.definitionId);
+          else owned.add(card.definitionId);
+          saveLedger(owned);
+          render();
+        });
+        history.disabled = card.isCollected === true;
+        row.append(history);
+        if (!owned.has(card.definitionId)) {
+          if (chosen.has(card.definitionId)) row.classList.add("chosen");
+          row.append(button(chosen.has(card.definitionId) ? "\u2713 A\xF1adido" : "+ Comprar", () => {
+            if (chosen.has(card.definitionId)) chosen.delete(card.definitionId);
+            else chosen.add(card.definitionId);
+            render();
+          }));
+        }
+        list.append(row);
+      }
+      return list;
+    }
+    function render() {
+      body.replaceChildren();
+      panel.classList.toggle("trade-panel", tradeView);
+      title.textContent = tradeView ? `Comprar ${playerCount(chosen.size)}` : selected?.name ?? category?.name ?? "Mi Gallery";
+      if (tradeView) {
+        body.append(el("p", status, `status${error ? " error" : ""}`));
+        renderTrade();
+        return;
+      }
+      const tools = el("div", void 0, "tools");
+      if (selected) tools.append(button("\u2190 Colecciones", () => {
+        selected = null;
+        tradeView = false;
+        chosen.clear();
+        prices.clear();
+        render();
+      }, "back"));
+      else if (category) tools.append(button("\u2190 Categor\xEDas", () => {
+        category = null;
+        sets = [];
+        render();
+      }, "back"));
+      tools.append(el("span", void 0, "spacer"));
+      const sync = button(busy ? "Cargando\u2026" : "Sincronizar club", () => {
+        void syncClub();
+      });
+      sync.disabled = busy;
+      tools.append(sync);
+      if (category && !selected) {
+        const refresh = button("Actualizar cat\xE1logo", () => {
+          void loadCategory(category, true);
+        });
+        refresh.disabled = busy;
+        tools.append(refresh);
+      }
+      body.append(tools);
+      body.append(el("p", status, `status${error ? " error" : ""}`));
+      if (!category) {
+        body.append(el("p", "El progreso combina el historial que devuelve EA con tus marcas locales. Ipswich usa el conjunto exacto observado en Enhancer; los dem\xE1s conjuntos siguen siendo aproximaciones locales.", "note"));
+        const grid = el("div", void 0, "grid");
+        for (const c of CATEGORIES) {
+          const card = el("div", void 0, "card");
+          card.append(el("strong", c.name));
+          card.append(el("span", c.rarities ? `${c.rarities.length} colecciones` : `${c.leagues?.length ?? 0} ligas`, "metric"));
+          card.append(button("Ver colecciones", () => {
+            void loadCategory(c);
+          }));
+          grid.append(card);
+        }
+        body.append(grid);
+        return;
+      }
+      if (!selected) {
+        const search2 = el("input");
+        search2.type = "search";
+        search2.placeholder = "Buscar equipo o liga";
+        search2.value = filter;
+        search2.addEventListener("input", () => {
+          filter = search2.value;
+          render();
+          const next = body.querySelector("input[type=search]");
+          next?.focus();
+          next?.setSelectionRange(filter.length, filter.length);
+        });
+        body.insertBefore(search2, body.children[2] ?? null);
+        const grid = el("div", void 0, "grid");
+        for (const set of sets.filter((s) => s.name.toLocaleLowerCase().includes(filter.toLocaleLowerCase()))) {
+          const got2 = progress(set);
+          const pct = set.cards.length ? Math.round(got2 / set.cards.length * 100) : 0;
+          const card = el("div", void 0, "card");
+          card.append(el("strong", set.name));
+          card.append(el("span", `${got2}/${set.cards.length} obtenidas \xB7 ${pct}%${set.verified ? " \xB7 conjunto verificado" : " \xB7 aproximado"}`, "metric"));
+          const bar = el("div", void 0, "bar");
+          const fill = el("span");
+          fill.style.width = `${pct}%`;
+          bar.append(fill);
+          card.append(bar);
+          card.append(button("Ver jugadores", () => {
+            selected = set;
+            tab = "missing";
+            tradeView = false;
+            chosen.clear();
+            prices.clear();
+            render();
+          }));
+          grid.append(card);
+        }
+        if (!sets.length) body.append(el("div", busy ? "Cargando cat\xE1logo\u2026" : "Sin colecciones disponibles.", "empty"));
+        else body.append(grid);
+        return;
+      }
+      const got = progress(selected);
+      body.append(el("p", `${got}/${selected.cards.length} obtenidas \xB7 ${selected.cards.length - got} faltantes`, "metric"));
+      if (tab === "missing" && chosen.size > 0) {
+        const buy = button(`Comprar ${playerCount(chosen.size)}`, () => {
+          void showTrade();
+        });
+        buy.disabled = busy;
+        body.append(buy);
+      }
+      const tabs = el("div", void 0, "tabs");
+      for (const value of ["missing", "collected"]) {
+        const b = button(value === "missing" ? "Faltantes" : "Obtenidas", () => {
+          tab = value;
+          render();
+        });
+        if (tab === value) b.classList.add("active");
+        tabs.append(b);
+      }
+      body.append(tabs);
+      const cards = selected.cards.filter((card) => owned.has(card.definitionId) === (tab === "collected"));
+      body.append(cardRows(cards));
+    }
+    void syncClub();
+    return { open, destroy() {
+      host.remove();
+    } };
+  }
+
   // src/solver/rating.ts
   function squadRating(ratings) {
     const n = ratings.length;
@@ -5194,14 +6300,14 @@ Consume las cartas que use. Esto NO se puede deshacer.
     const coverage = allRatings.size === 0 ? 0 : cheapest.size / allRatings.size;
     return { byRating: cheapest, coverage, interpolated };
   }
-  function fillGaps(byRating, allRatings) {
-    const known = [...byRating.keys()].sort((a, b) => a - b);
+  function fillGaps(byRating2, allRatings) {
+    const known = [...byRating2.keys()].sort((a, b) => a - b);
     if (known.length < 2) return [];
     const lo = known[0];
     const hi = known[known.length - 1];
     const added = [];
     for (const rating of [...allRatings].sort((a, b) => a - b)) {
-      if (byRating.has(rating) || rating < lo || rating > hi) continue;
+      if (byRating2.has(rating) || rating < lo || rating > hi) continue;
       let below = lo;
       let above = hi;
       for (const k of known) {
@@ -5211,11 +6317,11 @@ Consume las cartas que use. Esto NO se puede deshacer.
           break;
         }
       }
-      const a = byRating.get(below);
-      const b = byRating.get(above);
+      const a = byRating2.get(below);
+      const b = byRating2.get(above);
       const t = (rating - below) / (above - below);
       const value = Math.exp(Math.log(a) + t * (Math.log(b) - Math.log(a)));
-      byRating.set(rating, Math.round(value));
+      byRating2.set(rating, Math.round(value));
       added.push(rating);
     }
     return added;
@@ -6413,6 +7519,7 @@ Total SBC enviados: ${submitted}`);
     await waitForServices();
     console.info(LOG, "services ready");
     applyAllTweaks();
+    const gallery = mountGallery();
     window.__fut = {
       getOpenChallenge,
       parseRequirements,
@@ -6438,6 +7545,7 @@ Total SBC enviados: ${submitted}`);
       setRepeatsRemaining,
       describeSetChallenges,
       getOpenSetId,
+      gallery,
       // Options, exposed so a misbehaving tweak can be flipped from the console
       // without rebuilding — the same handles the panel uses.
       tweaks: { allTweaks, isEnabled, setEnabled, getChoice, setChoice }
