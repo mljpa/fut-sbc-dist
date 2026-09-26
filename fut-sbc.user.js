@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         FUT SBC Solver v2
 // @namespace    https://github.com/mljpa/fut-sbc-solver-v2
-// @version      0.2.2
+// @version      0.2.3
 // @description  Userscript to solve EA SPORTS FC 26 SBCs with your own club
 // @match        https://www.ea.com/*/ea-sports-fc/ultimate-team/web-app*
 // @match        https://www.ea.com/ea-sports-fc/ultimate-team/web-app*
@@ -5513,6 +5513,11 @@ button:disabled { opacity:.5; cursor:default; }
 .trade-actions { display:flex; flex-wrap:wrap; gap:8px; margin:12px 0; }
 .trade-actions button { border:1px solid var(--line); border-radius:5px; padding:8px 11px; background:var(--soft); color:var(--fg); }
 .trade-actions button.primary { background:var(--accent); color:var(--accent-fg); border-color:var(--accent); }
+.gallery-costs { display:grid; grid-template-columns:repeat(auto-fit,minmax(240px,1fr)); gap:8px; margin:10px 0 14px; }
+.gallery-cost { padding:10px 12px; background:var(--soft); border:1px solid var(--line); border-radius:5px; }
+.gallery-cost strong,.gallery-cost span { display:block; }
+.gallery-cost span { margin-top:3px; font-size:16px; font-weight:600; }
+.gallery-cost small { display:block; margin-top:3px; color:var(--muted); }
 .trade-advanced { border:1px solid var(--line); border-radius:5px; padding:8px 11px; margin:10px 0; }
 .trade-advanced summary { cursor:pointer; font-weight:600; }
 .trade-summary { padding:10px 12px; background:var(--soft); border:1px solid var(--line); border-radius:5px; margin:12px 0; }
@@ -5553,6 +5558,17 @@ button:disabled { opacity:.5; cursor:default; }
   }
   var fmt = (n) => new Intl.NumberFormat("es-CL").format(n);
   var playerCount = (n) => `${n} ${n === 1 ? "jugador" : "jugadores"}`;
+  function referenceTotal(cards, prices) {
+    let amount = 0;
+    let priced = 0;
+    for (const card of cards) {
+      const price = prices.get(card.definitionId)?.price;
+      if (price === void 0) continue;
+      amount += price;
+      priced++;
+    }
+    return { amount, priced };
+  }
   function mountGallery() {
     const host = el("div");
     host.id = "fut-gallery-root";
@@ -6073,6 +6089,7 @@ button:disabled { opacity:.5; cursor:default; }
       body.append(el("p", `${got}/${selected.cards.length} obtenidas \xB7 ${selected.cards.length - got} faltantes`, "metric"));
       if (tab === "missing") {
         const missing = selected.cards.filter((card) => !owned.has(card.definitionId));
+        const selectedCards = missing.filter((card) => chosen.has(card.definitionId));
         const actions = el("div", void 0, "trade-actions");
         if (missing.length) {
           const allSelected = missing.every((card) => chosen.has(card.definitionId));
@@ -6090,6 +6107,19 @@ button:disabled { opacity:.5; cursor:default; }
           actions.append(buy);
         }
         if (actions.childElementCount) body.append(actions);
+        const costs = el("div", void 0, "gallery-costs");
+        for (const [label, cards2] of [["Seleccionados", selectedCards], ["Completar esta colecci\xF3n", missing]]) {
+          const total = referenceTotal(cards2, prices);
+          const cost = el("div", void 0, "gallery-cost");
+          cost.append(el("strong", `${label} \xB7 ${playerCount(cards2.length)}`));
+          const amountLabel = total.priced < cards2.length ? "Subtotal conocido" : "Referencia estimada";
+          cost.append(el("span", priceLoading ? "Consultando precios\u2026" : `${amountLabel}: ${fmt(total.amount)} monedas`));
+          if (!priceLoading && total.priced < cards2.length)
+            cost.append(el("small", `${total.priced}/${cards2.length} cartas con precio; faltan ${cards2.length - total.priced} por cotizar.`));
+          costs.append(cost);
+        }
+        body.append(costs);
+        body.append(el("p", "El gasto real depende de los topes de compra que elijas en el siguiente paso.", "note"));
       }
       const tabs = el("div", void 0, "tabs");
       for (const value of ["missing", "collected"]) {
