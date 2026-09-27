@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         FUT SBC Solver v2
 // @namespace    https://github.com/mljpa/fut-sbc-solver-v2
-// @version      0.2.13
+// @version      0.2.14
 // @description  Userscript to solve EA SPORTS FC 26 SBCs with your own club
 // @match        https://www.ea.com/*/ea-sports-fc/ultimate-team/web-app*
 // @match        https://www.ea.com/ea-sports-fc/ultimate-team/web-app*
@@ -57406,7 +57406,7 @@ Consume las cartas que use. Esto NO se puede deshacer.
       const pool = needsPurchase.length ? needsPurchase : priced;
       const affordable = coinBudget === null ? pool : pool.filter((item) => item.purchaseCoins <= coinBudget);
       const candidates = affordable.length ? affordable : pool;
-      const best = bestPerSet(candidates, (a, b) => a.missingCards - b.missingCards || compare(a, b))[0] ?? null;
+      const best = bestPerSet(candidates, (a, b) => Number(a.missingCards > 3) - Number(b.missingCards > 3) || compare(a, b) || a.missingCards - b.missingCards)[0] ?? null;
       return { category, item: best, affordable: best !== null && (coinBudget === null || best.purchaseCoins <= coinBudget) };
     });
     return { ready, near, byCategory };
