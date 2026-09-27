@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         FUT SBC Solver v2
 // @namespace    https://github.com/mljpa/fut-sbc-solver-v2
-// @version      0.2.14
+// @version      0.2.15
 // @description  Userscript to solve EA SPORTS FC 26 SBCs with your own club
 // @match        https://www.ea.com/*/ea-sports-fc/ultimate-team/web-app*
 // @match        https://www.ea.com/ea-sports-fc/ultimate-team/web-app*
@@ -58685,7 +58685,7 @@ button:disabled { opacity:.5; cursor:default; }
         return;
       }
       const got = setProgress(selected, owned);
-      body.append(el("p", `${got}/${selected.requiredCards} obtenidas \xB7 ${Math.max(0, selected.requiredCards - got)} faltantes para la cantidad requerida${selected.verified ? "" : " (elegibilidad aproximada)"}`, "metric"));
+      body.append(el("p", shortcutCategoryOnly ? `${got}/${selected.requiredCards} cartas de la alineaci\xF3n sugerida registradas \xB7 ${Math.max(0, selected.requiredCards - got)} faltantes en esta alineaci\xF3n. Para ver el progreso completo del set, abre la categor\xEDa.` : `${got}/${selected.requiredCards} obtenidas \xB7 ${Math.max(0, selected.requiredCards - got)} faltantes para la cantidad requerida${selected.verified ? "" : " (elegibilidad aproximada)"}`, "metric"));
       body.append(el("p", `Fichas por grado: ${selected.grades.map((grade) => `${grade.name} +${grade.tokens}`).join(" \xB7 ")}. Se obtienen al confirmar el set en Gallery.`, "note"));
       const claimed = el("label", "Grado ya reclamado en EA: ");
       const gradeSelect = el("select");
