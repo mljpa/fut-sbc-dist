@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         FUT SBC Solver v2
 // @namespace    https://github.com/mljpa/fut-sbc-solver-v2
-// @version      0.2.19
+// @version      0.2.20
 // @description  Userscript to solve EA SPORTS FC 26 SBCs with your own club
 // @match        https://www.ea.com/*/ea-sports-fc/ultimate-team/web-app*
 // @match        https://www.ea.com/ea-sports-fc/ultimate-team/web-app*
@@ -57338,6 +57338,20 @@ Consume las cartas que use. Esto NO se puede deshacer.
     }
     return [...set.cards].filter((card) => !owned.has(card.definitionId)).sort((a, b) => (referencePrices.get(a.definitionId) ?? Infinity) - (referencePrices.get(b.definitionId) ?? Infinity) || a.rating - b.rating || a.definitionId - b.definitionId).slice(0, missingSlots);
   }
+  function bestPublishedGrade(set) {
+    return [...set.costTiers].filter((tier2) => tier2.tokens > 0 && tier2.items.length === set.requiredCards).sort((a, b) => b.tokens - a.tokens || b.totalScore - a.totalScore)[0] ?? null;
+  }
+  function groupTargetCards(cards, scores) {
+    const gold = [];
+    const key = [];
+    const other = [];
+    for (const card of cards) {
+      if ((scores.get(card.definitionId) ?? 0) >= 1e3) key.push(card);
+      else if (card.rating >= 75) gold.push(card);
+      else other.push(card);
+    }
+    return { gold, key, other };
+  }
   function normalized(value) {
     return value.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLocaleLowerCase("es").trim();
   }
@@ -57499,6 +57513,10 @@ button:disabled { opacity:.5; cursor:default; }
 .row .market-price { min-width:150px; text-align:right; color:var(--fg); font-variant-numeric:tabular-nums; }
 .row.chosen { border-color:var(--accent); background:color-mix(in srgb,var(--accent) 9%,var(--bg)); }
 .row.chosen button { border-color:var(--accent); }
+.grade-target { display:flex; flex-wrap:wrap; align-items:baseline; gap:6px 14px; padding:11px 13px; margin:8px 0 12px; background:var(--soft); border:1px solid var(--line); border-radius:6px; }
+.grade-target strong { font-size:17px; }
+.grade-target small { color:var(--muted); }
+.card-group-title { margin:16px 0 7px; font-size:13px; color:var(--muted); }
 .trade-fields { display:grid; grid-template-columns:repeat(auto-fit,minmax(160px,1fr)); gap:10px; margin:12px 0; }
 .trade-fields label { display:flex; flex-direction:column; gap:3px; color:var(--muted); }
 .trade-fields input,.trade-fields select { width:100%; padding:7px 8px; color:var(--fg); background:var(--bg); border:1px solid var(--line); border-radius:5px; }
@@ -57623,7 +57641,7 @@ button:disabled { opacity:.5; cursor:default; }
     panel.setAttribute("aria-label", "Mi Gallery");
     const head = el("div", void 0, "head");
     const title = el("h2", "Mi Gallery");
-    const version = el("a", `v${"0.2.19"}`, "version");
+    const version = el("a", `v${"0.2.20"}`, "version");
     version.href = "https://raw.githubusercontent.com/mljpa/fut-sbc-dist/main/fut-sbc.user.js";
     version.target = "_blank";
     version.rel = "noopener noreferrer";
@@ -57915,9 +57933,9 @@ button:disabled { opacity:.5; cursor:default; }
         salePriceById: Object.fromEntries(manualIds.map((id) => [id, manualSalePrices.get(id)]))
       };
     }
-    async function openSet(set, grade = null) {
+    async function openSet(set, grade) {
       selected = set;
-      plannedGrade = grade;
+      plannedGrade = grade === void 0 ? bestPublishedGrade(set)?.grade ?? null : grade;
       tab = "missing";
       tradeView = false;
       chosen.clear();
@@ -58241,14 +58259,15 @@ button:disabled { opacity:.5; cursor:default; }
       footerCopy.append(el("small", `${remaining} con precio \xB7 ${chosen.size - remaining} pendientes o ya obtenidos`));
       footer.append(footerCopy, submit);
     }
-    function cardRows(cards) {
+    function cardRows(cards, scores) {
       const list = el("div", void 0, "list");
       if (cards.length === 0) list.append(el("div", "No hay cartas en esta vista.", "empty"));
       for (const card of cards) {
         const row = el("div", void 0, "row");
         row.append(el("span", String(card.rating), "ovr"));
         const who = el("div", void 0, "who");
-        who.append(el("strong", card.name), el("small", `ID ${card.definitionId}${current.has(card.definitionId) ? " \xB7 en tu club" : ""}`));
+        const score = scores?.get(card.definitionId);
+        who.append(el("strong", card.name), el("small", `${score ? `${fmt(score)} puntos \xB7 ` : ""}ID ${card.definitionId}${current.has(card.definitionId) ? " \xB7 en tu club" : ""}`));
         row.append(who);
         const market = prices.get(card.definitionId);
         row.append(el("span", market ? `Precio: ${fmt(market.price)} monedas` : priceLoading ? "Consultando precio\u2026" : "Sin precio en Enhancer", "market-price"));
@@ -58442,9 +58461,17 @@ button:disabled { opacity:.5; cursor:default; }
         const leagueSets = leaguesCategory ? buildSets(leaguesCategory, categoryCards).filter((set) => leagueIds.has(Number(set.id.split(":")[1]))) : [];
         for (const leagueSet of leagueSets) body.append(el("p", `${leagueSet.name}: ${setProgress(leagueSet, owned)}/${leagueSet.requiredCards} cartas registradas.`, "note"));
       }
+      const lineup = selected.costTiers.find((tier2) => tier2.grade === plannedGrade);
+      if (lineup && plannedGrade) {
+        const target = el("div", void 0, "grade-target");
+        const registered = lineup.items.filter((item) => owned.has(item.definitionId)).length;
+        const threshold = selected.grades.find((grade) => grade.name === plannedGrade)?.threshold;
+        target.append(el("strong", `Objetivo ${plannedGrade} \xB7 ${fmt(lineup.tokens)} fichas acumuladas`));
+        target.append(el("small", `${registered}/${lineup.items.length} cartas de FUT.GG registradas${threshold ? ` \xB7 ${fmt(lineup.totalScore)}/${fmt(threshold)} puntos en la alineaci\xF3n publicada` : ""}`));
+        body.append(target);
+      }
       const gradeDetails = el("details", void 0, "trade-advanced");
-      gradeDetails.open = plannedGrade !== null;
-      gradeDetails.append(el("summary", "Grados y mejoras"));
+      gradeDetails.append(el("summary", "Cambiar objetivo o ver grados"));
       gradeDetails.append(el("p", `Fichas por grado: ${selected.grades.map((grade) => `${grade.name} +${grade.tokens}`).join(" \xB7 ")}. EA confirma el grado y entrega las fichas.`, "note"));
       const claimed = el("label", "Grado ya reclamado en EA: ");
       const gradeSelect = el("select");
@@ -58465,7 +58492,6 @@ button:disabled { opacity:.5; cursor:default; }
       });
       claimed.append(gradeSelect);
       gradeDetails.append(claimed);
-      const lineup = selected.costTiers.find((tier2) => tier2.grade === plannedGrade);
       if (selected.costTiers.some((tier2) => tier2.tokens > 0 && tier2.items.length === selected.requiredCards)) {
         const target = el("label", "Modo: ");
         const grade = el("select");
@@ -58488,9 +58514,14 @@ button:disabled { opacity:.5; cursor:default; }
       body.append(gradeDetails);
       if (tab === "missing") {
         const missing = referenceCards(selected).filter((card) => !owned.has(card.definitionId));
+        const groups = lineup ? groupTargetCards(missing, new Map(lineup.items.map((item) => [item.definitionId, item.score]))) : null;
         const selectedCards = missing.filter((card) => chosen.has(card.definitionId));
         const actions = el("div", void 0, "trade-actions");
         if (missing.length) {
+          if (groups?.gold.length) actions.append(button(`Seleccionar oros (${groups.gold.length})`, () => {
+            for (const card of groups.gold) chosen.add(card.definitionId);
+            render();
+          }));
           const allSelected = missing.every((card) => chosen.has(card.definitionId));
           actions.append(button(allSelected ? "Quitar selecci\xF3n" : `Seleccionar todos (${missing.length})`, () => {
             if (allSelected) chosen.clear();
@@ -58509,6 +58540,7 @@ button:disabled { opacity:.5; cursor:default; }
           cost.append(el("span", priceLoading ? "Consultando precios\u2026" : total.priced === 0 ? "Sin precios de referencia" : `${fmt(total.amount)} monedas de referencia`));
           if (!priceLoading && total.priced < missing.length)
             cost.append(el("small", `Subtotal de ${total.priced}/${missing.length} cartas con precio.`));
+          if (groups?.key.length) cost.append(el("small", `Carta clave: ${groups.key.map((card) => `${card.name} (${prices.has(card.definitionId) ? fmt(prices.get(card.definitionId).price) : "precio pendiente"})`).join(" \xB7 ")}.`));
           costs.append(cost);
           body.append(costs);
         } else body.append(el("p", plannedGrade ? "Todas las cartas de esta alineaci\xF3n ya est\xE1n registradas." : got >= selected.requiredCards ? "Ya tienes suficientes cartas para llenar los cupos. Comprueba el grado en Gallery de EA; si quieres mejorarlo, abre \xABGrados y mejoras\xBB." : "No hay cartas candidatas para llenar los cupos pendientes. Actualiza el cat\xE1logo.", "note"));
@@ -58533,7 +58565,20 @@ button:disabled { opacity:.5; cursor:default; }
       }
       body.append(tabs);
       const cards = (tab === "collected" ? selected.cards : referenceCards(selected)).filter((card) => owned.has(card.definitionId) === (tab === "collected"));
-      body.append(cardRows(cards));
+      const scores = lineup ? new Map(lineup.items.map((item) => [item.definitionId, item.score])) : void 0;
+      if (tab === "missing" && lineup) {
+        const groups = groupTargetCards(cards, scores);
+        for (const [label, group] of [
+          ["Oros de la alineaci\xF3n", groups.gold],
+          ["Carta clave de puntaje", groups.key],
+          ["Platas y bronces", groups.other]
+        ]) {
+          if (!group.length) continue;
+          body.append(el("h3", `${label} \xB7 ${group.length}`, "card-group-title"));
+          body.append(cardRows(group, scores));
+        }
+        if (!cards.length) body.append(cardRows(cards, scores));
+      } else body.append(cardRows(cards, scores));
     }
     void syncClub();
     return { open, destroy() {
