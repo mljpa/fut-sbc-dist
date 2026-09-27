@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         FUT SBC Solver v2
 // @namespace    https://github.com/mljpa/fut-sbc-solver-v2
-// @version      0.2.29
+// @version      0.2.30
 // @description  Userscript to solve EA SPORTS FC 26 SBCs with your own club
 // @match        https://www.ea.com/*/ea-sports-fc/ultimate-team/web-app*
 // @match        https://www.ea.com/ea-sports-fc/ultimate-team/web-app*
@@ -58215,6 +58215,14 @@ Consume las cartas que use. Esto NO se puede deshacer.
       };
     });
   }
+  function matchesGalleryRouteFilter(row, claim, filter) {
+    if (filter === "all") return true;
+    if (filter === "complete") return Boolean(claim.calculatedGrade);
+    if (filter === "upgrade") return Boolean(claim.calculatedGrade && claim.nextGrade);
+    if (filter === "confirmed" || filter === "pending" || filter === "unverified") return claim.claimState === filter;
+    if (filter === "missing") return !claim.calculatedGrade && row.state === "missing" && row.tokens > 0;
+    return row.state === filter;
+  }
 
   // src/gallery/verified-sets.ts
   var IPSWICH_IDS = [
@@ -58523,7 +58531,7 @@ button:disabled { opacity:.5; cursor:default; }
     panel.setAttribute("aria-label", "Mi Gallery");
     const head = el("div", void 0, "head");
     const title = el("h2", "Mi Gallery");
-    const version = el("a", `v${"0.2.29"}`, "version");
+    const version = el("a", `v${"0.2.30"}`, "version");
     version.href = "https://raw.githubusercontent.com/mljpa/fut-sbc-dist/main/fut-sbc.user.js";
     version.target = "_blank";
     version.rel = "noopener noreferrer";
@@ -58656,7 +58664,7 @@ button:disabled { opacity:.5; cursor:default; }
     let leagueFilter = null;
     let busy = false;
     let lastNearbyRefreshAt = 0;
-    let lastFullRefreshAt = 0;
+    let nearbyBackoffUntil = 0;
     let routeSyncNote = "";
     let routeSyncGain = 0;
     let tradeView = false;
@@ -58771,49 +58779,59 @@ button:disabled { opacity:.5; cursor:default; }
     }
     async function refreshGalleryCollection() {
       if (busy) return;
-      lastFullRefreshAt = Date.now();
       lastNearbyRefreshAt = Date.now();
       const before = claimedGalleryTokens(completedGalleryGrades(owned, [...knownCards.values()]));
       busy = true;
-      let failures = 0;
       let added = 0;
-      const filters = CATEGORIES.flatMap((entry) => [
-        ...entry.leagues?.map((league) => ({ league })) ?? [],
-        ...entry.rarities?.map((rarity) => ({ rarity: rarity.id })) ?? []
-      ]);
-      const uniqueFilters = [...new Map(filters.map((filter2) => [JSON.stringify(filter2), filter2])).values()];
-      for (const [index, filter2] of uniqueFilters.entries()) {
-        status = `Actualizando cartas ${index + 1}/${uniqueFilters.length}\u2026`;
-        render();
-        try {
-          for (const card of await conceptCards(filter2, true)) {
-            rememberCard(card);
-            if (card.isCollected && !owned.has(card.definitionId)) {
-              owned.add(card.definitionId);
-              added++;
-            }
-          }
-        } catch {
-          failures++;
+      let clubError = "";
+      let conceptError = "";
+      status = "Actualizando cartas del club y sets cercanos\u2026";
+      render();
+      try {
+        const { players, items } = await fetchClubPlayers();
+        if (!players.length) throw new Error("EA no devolvi\xF3 cartas del club");
+        current = new Set(players.map((player) => player.definitionId));
+        for (const id of current) if (!owned.has(id)) {
+          owned.add(id);
+          added++;
         }
+        for (const raw of items.values()) {
+          const card = galleryCardFromRaw(raw);
+          if (card) rememberCard(card);
+        }
+      } catch (cause) {
+        clubError = cause instanceof Error ? cause.message : String(cause);
       }
-      saveLedger(owned);
+      try {
+        const ids = nearbyGalleryCardIds(owned, completedGalleryGrades(owned, [...knownCards.values()]), 5, 80);
+        for (const card of await conceptCardsByIdsPartial(ids)) {
+          rememberCard(card);
+          if (card.isCollected && !owned.has(card.definitionId)) {
+            owned.add(card.definitionId);
+            added++;
+          }
+        }
+        nearbyBackoffUntil = 0;
+      } catch (cause) {
+        conceptError = cause instanceof Error ? cause.message : String(cause);
+        nearbyBackoffUntil = Date.now() + 10 * 6e4;
+      }
+      if (added) saveLedger(owned);
       busy = false;
       const gain = claimedGalleryTokens(completedGalleryGrades(owned, [...knownCards.values()])) - before;
       routeSyncGain = Math.max(0, gain);
-      routeSyncNote = `${added} cartas nuevas \xB7 ${gain > 0 ? `+${fmt(gain)} fichas potenciales` : "sin nuevo grado estimado"}`;
-      setStatus(failures ? `Actualizaci\xF3n parcial: ${added} cartas nuevas; ${failures} b\xFAsquedas no respondieron.` : `Colecci\xF3n actualizada: ${added} cartas nuevas registradas.`, failures > 0);
+      routeSyncNote = conceptError ? "EA no respondi\xF3 a la revisi\xF3n de conceptos. La ruta usa datos anteriores; verifica un set antes de comprar." : `${added} cartas nuevas \xB7 ${gain > 0 ? `+${fmt(gain)} fichas potenciales` : "sin nuevo grado estimado"}`;
+      setStatus(clubError || conceptError ? `Revisi\xF3n parcial: ${[clubError, conceptError].filter(Boolean).join(" \xB7 ")}` : `Colecci\xF3n actualizada: ${added} cartas nuevas registradas.`, Boolean(clubError || conceptError));
     }
     function refreshRouteCollection() {
       if (busy || !plannerOpen || !backdrop.classList.contains("open") || selected || tradeView) return;
-      if (Date.now() - lastFullRefreshAt >= 12e4) void refreshGalleryCollection();
-      else void refreshNearbyCollection();
+      void refreshNearbyCollection();
     }
     async function refreshNearbyCollection() {
-      if (busy || !plannerOpen || !backdrop.classList.contains("open") || selected || tradeView || Date.now() - lastNearbyRefreshAt < 45e3) return;
+      if (busy || !plannerOpen || !backdrop.classList.contains("open") || selected || tradeView || Date.now() < nearbyBackoffUntil || Date.now() - lastNearbyRefreshAt < 18e4) return;
       lastNearbyRefreshAt = Date.now();
       const before = claimedGalleryTokens(completedGalleryGrades(owned, [...knownCards.values()]));
-      const ids = nearbyGalleryCardIds(owned, completedGalleryGrades(owned, [...knownCards.values()]));
+      const ids = nearbyGalleryCardIds(owned, completedGalleryGrades(owned, [...knownCards.values()]), 5, 80);
       if (!ids.length) return;
       busy = true;
       routeSyncGain = 0;
@@ -58833,7 +58851,8 @@ button:disabled { opacity:.5; cursor:default; }
         routeSyncGain = Math.max(0, gain);
         routeSyncNote = added || gain > 0 ? `${added} cartas nuevas \xB7 ${gain > 0 ? `+${fmt(gain)} fichas potenciales` : "grado pendiente de verificar"}` : "Colecci\xF3n revisada \xB7 sin cambios";
       } catch (cause) {
-        routeSyncNote = `No se pudo revisar la colecci\xF3n: ${cause instanceof Error ? cause.message : String(cause)}`;
+        nearbyBackoffUntil = Date.now() + 10 * 6e4;
+        routeSyncNote = "EA no respondi\xF3 a la revisi\xF3n de conceptos. La ruta usa datos anteriores; verifica un set antes de comprar.";
       } finally {
         busy = false;
         render();
@@ -59531,7 +59550,7 @@ button:disabled { opacity:.5; cursor:default; }
           body.append(balanceSource, updateCollection);
           if (currentTokenBalance > completedTotal) body.append(el(
             "p",
-            "La tienda supera el c\xE1lculo de cartas. Actualiza la colecci\xF3n para detectar m\xE1s grados.",
+            "El historial local de cartas est\xE1 incompleto frente a tu saldo. Verifica los sets antes de comprar.",
             "note"
           ));
           if (galleryPlannerMode === "coins" && galleryCoinBudget === null) {
@@ -59549,7 +59568,7 @@ button:disabled { opacity:.5; cursor:default; }
           const summary = el("div", void 0, "route-summary");
           const completeRows = routeRows.filter((row) => Boolean(row.completedGrade));
           summary.append(
-            el("span", `${fmt(routeRows.length)} colecciones \xB7 +${fmt(route.gainedTokens)} fichas en la ruta sugerida`),
+            el("span", `${fmt(routeRows.length)} colecciones \xB7 faltan ${fmt(remaining)} fichas`),
             button(`${fmt(completeRows.length)} grados calculados \xB7 ${fmt(completedTotal)} fichas seg\xFAn cartas`, () => {
               routeFilter = "complete";
               routeVisibleCount = 12;
@@ -59573,28 +59592,19 @@ button:disabled { opacity:.5; cursor:default; }
             }, "route-update")
           );
           body.append(summary);
-          if (galleryPlannerMode === "target" && !route.reachesGoal)
-            body.append(el("p", "Con esta ruta todav\xEDa no se llega a la meta.", "note"));
+          body.append(el("p", "Las alineaciones sugeridas son opciones para revisar. Algunas ya pueden estar completas o canjeadas; confirma el estado antes de comprar.", "note"));
           const details = el("details", void 0, "route-details");
           details.append(
             el("summary", "C\xF3mo se calcula"),
             el("p", `La meta usa las fichas disponibles en la tienda. Las fichas potenciales se estiman con las cartas registradas y las recompensas de FUT.GG; no prueban que el grado ya se haya canjeado. Comprueba el canje en Gallery de FC Enhancer.`),
-            el("p", `Las +${fmt(route.gainedTokens)} son una proyecci\xF3n de grados futuros. ${fmt(route.uniqueCards)} cartas por registrar \xB7 ${fmt(route.coinsNeeded)} monedas de referencia \xB7 ${fmt(route.tax)} de comisi\xF3n estimada \xB7 ${route.unpricedCards} sin precio. Precios de FUT.GG.`)
+            el("p", `Las alineaciones FUT.GG suman hasta +${fmt(route.gainedTokens)} fichas potenciales seg\xFAn el historial local. No equivalen a una ruta de compra confirmada. ${fmt(route.uniqueCards)} cartas sin registrar \xB7 ${fmt(route.coinsNeeded)} monedas de referencia \xB7 ${route.unpricedCards} sin precio.`)
           );
           body.append(details);
           const routeControls = el("div", void 0, "set-controls");
           const routeLabel = el("label", "Mostrar sets");
           const routeSelect = el("select");
-          const matchesRouteFilter = (row, value) => {
-            const claim = claimsById.get(row.setId);
-            if (value === "all") return true;
-            if (value === "complete") return Boolean(row.completedGrade);
-            if (value === "upgrade") return Boolean(claim?.calculatedGrade && claim.nextGrade);
-            if (value === "confirmed" || value === "pending" || value === "unverified") return claim?.claimState === value;
-            return row.state === value;
-          };
-          for (const [value, label] of [["all", "Todos"], ["unverified", "Canje por verificar"], ["pending", "Mejora por canjear"], ["confirmed", "Canje registrado"], ["upgrade", "Puede subir de grado"], ["missing", "Por completar"], ["complete", "Grado calculado"]]) {
-            const option = el("option", `${label} \xB7 ${routeRows.filter((row) => matchesRouteFilter(row, value)).length}`);
+          for (const [value, label] of [["all", "Todos"], ["unverified", "Canje por verificar"], ["pending", "Mejora por canjear"], ["confirmed", "Canje registrado"], ["upgrade", "Puede subir de grado"], ["missing", "Sin grado calculado"], ["complete", "Grado calculado"]]) {
+            const option = el("option", `${label} \xB7 ${routeRows.filter((row) => matchesGalleryRouteFilter(row, claimsById.get(row.setId), value)).length}`);
             option.value = value;
             routeSelect.append(option);
           }
@@ -59611,17 +59621,17 @@ button:disabled { opacity:.5; cursor:default; }
           routeControls.append(routeLabel);
           body.append(routeControls);
           const list = el("div", void 0, "plan-list");
-          const shownRoute = routeRows.filter((row) => matchesRouteFilter(row, routeFilter));
+          const shownRoute = routeRows.filter((row) => matchesGalleryRouteFilter(row, claimsById.get(row.setId), routeFilter));
           for (const item of shownRoute.slice(0, routeVisibleCount)) {
             const claim = claimsById.get(item.setId);
             const card = el("div", void 0, `plan-set ${item.state}`);
             const head2 = el("div", void 0, "plan-set-head");
             const summary2 = el("div");
-            const gradeText = item.state === "catalog" ? "sin alineaci\xF3n publicada" : item.state === "complete" ? `grado estimado ${item.grade} \xB7 ${fmt(item.readyTokens)} fichas potenciales` : `objetivo ${item.grade} \xB7 +${fmt(item.tokens)} fichas`;
+            const gradeText = item.state === "catalog" ? "sin alineaci\xF3n publicada" : item.state === "complete" ? `grado estimado ${item.grade} \xB7 ${fmt(item.readyTokens)} fichas potenciales` : item.completedGrade ? `grado ${item.completedGrade} calculado \xB7 posible mejora a ${item.grade} (+${fmt(item.tokens)})` : `objetivo ${item.grade} \xB7 +${fmt(item.tokens)} fichas potenciales`;
             summary2.append(el("strong", `${item.name} \xB7 ${gradeText}`));
-            const stateText = claim.claimState === "confirmed" ? `\u2713 Canje registrado: grado ${claim.confirmedGrade}` : claim.claimState === "pending" ? `Grado ${claim.calculatedGrade} calculado \xB7 +${fmt(claim.potentialTokens)} fichas por canjear` : claim.claimState === "unverified" ? `Grado ${claim.calculatedGrade} calculado \xB7 confirma si ya lo canjeaste` : item.state === "complete" ? "\u2713 Cartas completas \xB7 revisa el canje" : item.state === "catalog" ? "Colecci\xF3n disponible \xB7 abre el set para ver sus cartas" : item.state === "ready" ? "Cartas completas \xB7 revisa el canje en Gallery" : `${item.missingItems.length} cartas por registrar \xB7 ${fmt(item.purchaseCoins)} monedas ref.`;
+            const stateText = claim.claimState === "confirmed" ? `\u2713 Canje registrado: grado ${claim.confirmedGrade}` : claim.claimState === "pending" ? `Grado ${claim.calculatedGrade} calculado \xB7 +${fmt(claim.potentialTokens)} fichas por canjear` : claim.claimState === "unverified" ? `Grado ${claim.calculatedGrade} calculado \xB7 confirma si ya lo canjeaste` : item.state === "complete" ? "\u2713 Cartas completas \xB7 revisa el canje" : item.state === "catalog" ? "Colecci\xF3n disponible \xB7 abre el set para ver sus cartas" : item.state === "ready" ? "Cartas completas \xB7 revisa el canje en Gallery" : `${item.missingItems.length} cartas de la alineaci\xF3n FUT.GG sin registrar \xB7 verifica antes de comprar`;
             summary2.append(el("small", stateText, "plan-state"));
-            if (item.inPlan) summary2.append(el("small", "Ruta sugerida"));
+            if (item.inPlan) summary2.append(el("small", "Opci\xF3n FUT.GG por revisar"));
             if (item.completedGrade && item.state !== "complete") summary2.append(el("small", `Grado ${item.completedGrade} calculado \xB7 ${fmt(item.readyTokens)} fichas seg\xFAn cartas \xB7 revisa el canje en Gallery`));
             if (claim.calculatedGrade && claim.nextGrade) summary2.append(el("small", `Puede subir a ${claim.nextGrade}: ${fmt(claim.nextMissing ?? 0)} cartas de la alineaci\xF3n FUT.GG \xB7 +${fmt(claim.nextTokens)} fichas`));
             head2.append(summary2);
