@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         FUT SBC Solver v2
 // @namespace    https://github.com/mljpa/fut-sbc-solver-v2
-// @version      0.2.21
+// @version      0.2.22
 // @description  Userscript to solve EA SPORTS FC 26 SBCs with your own club
 // @match        https://www.ea.com/*/ea-sports-fc/ultimate-team/web-app*
 // @match        https://www.ea.com/ea-sports-fc/ultimate-team/web-app*
@@ -57271,6 +57271,7 @@ Consume las cartas que use. Esto NO se puede deshacer.
     },
     collectionFilter: "all",
     collectionSort: "most",
+    cardSort: "rating-desc",
     advancedTradeOpen: false,
     galleryTokenBalance: 0,
     galleryTokenTarget: 750,
@@ -57301,6 +57302,7 @@ Consume las cartas que use. Esto NO se puede deshacer.
       },
       collectionFilter: ["all", "missing", "complete", "near"].includes(String(raw.collectionFilter)) ? raw.collectionFilter : DEFAULT_GALLERY_PREFERENCES.collectionFilter,
       collectionSort: ["most", "least", "name"].includes(String(raw.collectionSort)) ? raw.collectionSort : DEFAULT_GALLERY_PREFERENCES.collectionSort,
+      cardSort: ["rating-desc", "rating-asc", "price-asc", "price-desc"].includes(String(raw.cardSort)) ? raw.cardSort : DEFAULT_GALLERY_PREFERENCES.cardSort,
       advancedTradeOpen: raw.advancedTradeOpen === true,
       galleryTokenBalance: integer(raw.galleryTokenBalance, 0, 1e6, 0),
       galleryTokenTarget: integer(raw.galleryTokenTarget, 1, 1e6, 750),
@@ -57325,6 +57327,19 @@ Consume las cartas que use. Esto NO se puede deshacer.
   }
 
   // src/gallery/set-view.ts
+  function sortGalleryCards(cards, sort, prices) {
+    return [...cards].sort((a, b) => {
+      if (sort.startsWith("price")) {
+        const aPrice = prices.get(a.definitionId);
+        const bPrice = prices.get(b.definitionId);
+        if (aPrice === void 0 || bPrice === void 0) {
+          if (aPrice !== void 0) return -1;
+          if (bPrice !== void 0) return 1;
+        } else if (aPrice !== bPrice) return sort === "price-asc" ? aPrice - bPrice : bPrice - aPrice;
+      }
+      return (sort === "rating-asc" ? a.rating - b.rating : b.rating - a.rating) || a.name.localeCompare(b.name, "es") || a.definitionId - b.definitionId;
+    });
+  }
   function setProgress(set, owned) {
     return Math.min(set.requiredCards, set.cards.filter((card) => owned.has(card.definitionId)).length);
   }
@@ -57616,7 +57631,8 @@ button:disabled { opacity:.5; cursor:default; }
 .grade-target { display:flex; flex-wrap:wrap; align-items:baseline; gap:6px 14px; padding:11px 13px; margin:8px 0 12px; background:var(--soft); border:1px solid var(--line); border-radius:6px; }
 .grade-target strong { font-size:17px; }
 .grade-target small { color:var(--muted); }
-.card-group-title { margin:16px 0 7px; font-size:13px; color:var(--muted); }
+.card-sort { display:flex; justify-content:flex-end; align-items:center; gap:8px; margin:0 0 9px; color:var(--muted); font-size:12px; }
+.card-sort select { min-width:185px; padding:6px 9px; color:var(--fg); background:var(--bg); border:1px solid var(--line); border-radius:5px; font-size:14px; }
 .trade-fields { display:grid; grid-template-columns:repeat(auto-fit,minmax(160px,1fr)); gap:10px; margin:12px 0; }
 .trade-fields label { display:flex; flex-direction:column; gap:3px; color:var(--muted); }
 .trade-fields input,.trade-fields select { width:100%; padding:7px 8px; color:var(--fg); background:var(--bg); border:1px solid var(--line); border-radius:5px; }
@@ -57633,29 +57649,26 @@ button:disabled { opacity:.5; cursor:default; }
 .trade-advanced summary { cursor:pointer; font-weight:600; }
 .trade-summary { display:flex; justify-content:space-between; align-items:baseline; gap:12px; padding:12px 14px; background:var(--soft); border:1px solid var(--line); border-radius:5px; margin:14px 0; }
 .trade-summary strong { font-size:20px; font-variant-numeric:tabular-nums; }
-.trade-summary small { color:var(--muted); }
-.trade-cards { display:flex; flex-direction:column; gap:8px; margin:14px 0; }
-.trade-card { border:1px solid var(--line); border-radius:6px; padding:13px 14px; background:var(--bg); }
+.trade-summary small { display:block; color:var(--muted); }
+.trade-cards { display:flex; flex-direction:column; margin:12px 0; border:1px solid var(--line); border-radius:6px; overflow:hidden; }
+.trade-card { border-bottom:1px solid var(--line); padding:8px 11px; background:var(--bg); }
+.trade-card:last-child { border-bottom:0; }
 .trade-card.done { border-color:var(--accent); }
 .trade-card.failed { border-color:#c64242; }
-.trade-card-head { display:flex; align-items:flex-start; gap:10px; }
+.trade-card-head { display:flex; align-items:center; gap:10px; }
 .trade-card-name { flex:1; min-width:0; }
 .trade-card-name strong,.trade-card-name small { display:block; }
-.trade-card-name strong { font-size:15px; }
+.trade-card-name strong { font-size:14px; }
 .trade-card-name small { color:var(--muted); }
 .trade-card-head button { border:1px solid var(--line); border-radius:5px; padding:5px 8px; background:var(--soft); color:var(--fg); }
-.trade-card-metrics { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:8px; margin-top:11px; }
-.trade-card-metrics div { min-width:0; padding:8px 10px; background:var(--soft); border-radius:4px; }
-.trade-card-metrics small,.trade-card-metrics strong { display:block; }
-.trade-card-metrics small { color:var(--muted); }
-.trade-card-metrics strong { font-size:15px; font-variant-numeric:tabular-nums; }
-.trade-card-metrics strong.negative { color:#c64242; }
+.trade-card-meta { display:flex; flex-wrap:wrap; gap:3px 14px; margin-top:2px; color:var(--muted); font-size:12px; font-variant-numeric:tabular-nums; }
+.trade-card-meta .negative { color:#cf5555; }
 .trade-card input { width:135px; max-width:100%; padding:6px 7px; color:var(--fg); background:var(--bg); border:1px solid var(--line); border-radius:5px; }
-.manual-fields { display:flex; flex-wrap:wrap; gap:10px; margin-top:11px; }
+.manual-fields { display:flex; flex-wrap:wrap; gap:10px; margin-top:7px; }
 .manual-fields label { display:flex; flex-direction:column; gap:4px; color:var(--muted); }
-.trade-card details { margin-top:9px; color:var(--muted); }
+.trade-card details { margin-top:3px; color:var(--muted); font-size:12px; }
 .trade-card details summary { cursor:pointer; }
-.trade-card .trade-state { display:block; margin-top:10px; min-width:0; overflow-wrap:anywhere; }
+.trade-card .trade-state { display:block; margin-top:3px; min-width:0; overflow-wrap:anywhere; font-size:12px; }
 .trade-state { min-width:160px; }
 .trade-state.done { color:#24966b; font-weight:600; }
 .trade-state.failed { color:#cf5555; font-weight:600; }
@@ -57663,6 +57676,20 @@ button:disabled { opacity:.5; cursor:default; }
 .confirm-backdrop { position:fixed; inset:0; z-index:2147483002; display:none; align-items:center; justify-content:center; padding:16px; background:#000b; }
 .confirm-backdrop.open { display:flex; }
 .confirm-panel { width:min(620px,100%); max-height:min(760px,92vh); display:flex; flex-direction:column; overflow:hidden; background:var(--bg); color:var(--fg); border:1px solid var(--line); border-radius:8px; box-shadow:0 16px 48px #0007; }
+.confirm-panel.progress-panel { width:min(780px,100%); height:min(760px,92vh); }
+.progress-summary { padding:12px 20px 10px; border-bottom:1px solid var(--line); }
+.progress-summary strong { display:block; }
+.progress-summary small { display:block; margin-top:3px; color:var(--muted); }
+.progress-track { height:5px; margin-top:9px; border-radius:3px; background:var(--line); overflow:hidden; }
+.progress-track span { display:block; height:100%; width:0; background:var(--accent); }
+.progress-list { flex:1; min-height:0; overflow:auto; padding:2px 20px; }
+.progress-row { display:grid; grid-template-columns:minmax(125px,1fr) minmax(0,2fr); gap:10px; align-items:center; padding:7px 2px; border-bottom:1px solid var(--line); min-height:44px; }
+.progress-row:last-child { border-bottom:0; }
+.progress-row strong { font-size:13px; }
+.progress-row span { font-size:12px; color:var(--muted); overflow-wrap:anywhere; }
+.progress-row.active span { color:var(--accent); }
+.progress-row.done span { color:#24966b; }
+.progress-row.failed span { color:#cf5555; }
 .confirm-head { padding:18px 20px 12px; border-bottom:1px solid var(--line); }
 .confirm-head h2 { margin:0 0 4px; font-size:19px; }
 .confirm-head p { margin:0; color:var(--muted); }
@@ -57670,7 +57697,7 @@ button:disabled { opacity:.5; cursor:default; }
 .confirm-total { display:flex; justify-content:space-between; align-items:baseline; gap:12px; padding:13px 15px; background:var(--soft); border:1px solid var(--line); border-radius:6px; }
 .confirm-total strong { font-size:20px; white-space:nowrap; }
 .confirm-list { margin:12px 0; border-top:1px solid var(--line); }
-.confirm-item { display:grid; grid-template-columns:minmax(100px,1fr) auto auto; gap:6px 16px; padding:11px 0; border-bottom:1px solid var(--line); }
+.confirm-item { display:grid; grid-template-columns:minmax(100px,1fr) auto auto auto; gap:4px 12px; align-items:center; padding:7px 0; border-bottom:1px solid var(--line); }
 .confirm-item strong { overflow-wrap:anywhere; }
 .confirm-item small { display:block; color:var(--muted); font-weight:400; }
 .confirm-item span { white-space:nowrap; }
@@ -57681,8 +57708,8 @@ button:disabled { opacity:.5; cursor:default; }
 .confirm-actions button { border:1px solid var(--line); border-radius:5px; padding:9px 13px; background:var(--soft); color:var(--fg); }
 .confirm-actions .primary { background:var(--accent); border-color:var(--accent); color:var(--accent-fg); font-weight:600; }
 .confirm-actions button:focus-visible { outline:2px solid var(--accent); outline-offset:2px; }
-@media (max-width:540px) { .confirm-item { grid-template-columns:1fr 1fr; } .confirm-item strong { grid-column:1/-1; } .confirm-total { align-items:flex-start; flex-direction:column; gap:2px; } .confirm-actions button { flex:1; } }
-@media (max-width:620px) { .backdrop { padding:6px; } .panel,.panel.trade-panel { width:100%; height:calc(100vh - 12px); max-height:none; } .row { flex-wrap:wrap; } .row .who { flex-basis:calc(100% - 50px); } .row .market-price { flex:1; text-align:left; } .panel-footer { align-items:stretch; flex-direction:column; } .panel-footer button { width:100%; } .trade-card-metrics { grid-template-columns:repeat(2,minmax(0,1fr)); } }
+@media (max-width:540px) { .confirm-item { grid-template-columns:1fr 1fr; } .confirm-item strong { grid-column:1/-1; } .confirm-item span,.confirm-item small { white-space:normal; } .confirm-total { align-items:flex-start; flex-direction:column; gap:2px; } .confirm-actions button { flex:1; } }
+@media (max-width:620px) { .backdrop { padding:6px; } .panel,.panel.trade-panel { width:100%; height:calc(100vh - 12px); max-height:none; } .row { flex-wrap:wrap; } .row .who { flex-basis:calc(100% - 50px); } .row .market-price { flex:1; text-align:left; } .panel-footer { align-items:stretch; flex-direction:column; } .panel-footer button { width:100%; } .progress-row { grid-template-columns:1fr; gap:1px; } }
 .empty { padding:24px; text-align:center; color:var(--muted); }
 `;
   function loadLedger() {
@@ -57741,7 +57768,7 @@ button:disabled { opacity:.5; cursor:default; }
     panel.setAttribute("aria-label", "Mi Gallery");
     const head = el("div", void 0, "head");
     const title = el("h2", "Mi Gallery");
-    const version = el("a", `v${"0.2.21"}`, "version");
+    const version = el("a", `v${"0.2.22"}`, "version");
     version.href = "https://raw.githubusercontent.com/mljpa/fut-sbc-dist/main/fut-sbc.user.js";
     version.target = "_blank";
     version.rel = "noopener noreferrer";
@@ -57847,6 +57874,7 @@ button:disabled { opacity:.5; cursor:default; }
     let filter = "";
     let collectionFilter = savedPreferences.collectionFilter;
     let collectionSort = savedPreferences.collectionSort;
+    let cardSort = savedPreferences.cardSort;
     let galleryTokenBalance = savedPreferences.galleryTokenBalance;
     let galleryTokenTarget = savedPreferences.galleryTokenTarget;
     let galleryPlannerMode = savedPreferences.galleryPlannerMode;
@@ -57864,8 +57892,10 @@ button:disabled { opacity:.5; cursor:default; }
     let manualSalePrices = /* @__PURE__ */ new Map();
     let tradeProgress = /* @__PURE__ */ new Map();
     let tradeResultState = /* @__PURE__ */ new Map();
+    let tradeActuals = /* @__PURE__ */ new Map();
     let activeTradeQuote = null;
     let pendingTrade = null;
+    let tradeDialog = null;
     let confirmReturnFocus = null;
     let tradeSettings = {
       ...savedPreferences.trade,
@@ -57875,7 +57905,7 @@ button:disabled { opacity:.5; cursor:default; }
     let status = "Sincroniza el club para registrar las cartas que tienes ahora. El historial queda guardado en este navegador.";
     let error = false;
     function persistPreferences() {
-      const safe = decodeGalleryPreferences({ trade: tradeSettings, collectionFilter, collectionSort, advancedTradeOpen, galleryTokenBalance, galleryTokenTarget, galleryPlannerMode, galleryCoinBudget, claimedGrades });
+      const safe = decodeGalleryPreferences({ trade: tradeSettings, collectionFilter, collectionSort, cardSort, advancedTradeOpen, galleryTokenBalance, galleryTokenTarget, galleryPlannerMode, galleryCoinBudget, claimedGrades });
       tradeSettings = { ...tradeSettings, ...safe.trade };
       saveGalleryPreferences(safe);
     }
@@ -57893,14 +57923,21 @@ button:disabled { opacity:.5; cursor:default; }
       render();
     }
     function cancelTradeConfirmation() {
+      if (tradeDialog?.running) {
+        confirmBackdrop.classList.remove("open");
+        body.querySelector("button:not(:disabled)")?.focus();
+        return;
+      }
       pendingTrade = null;
+      tradeDialog = null;
       confirmBackdrop.classList.remove("open");
+      confirmPanel.classList.remove("progress-panel");
       confirmPanel.replaceChildren();
       confirmReturnFocus?.focus();
       confirmReturnFocus = null;
     }
     function onConfirmationKeydown(event) {
-      if (!pendingTrade) return;
+      if (!pendingTrade && !tradeDialog) return;
       if (!(event instanceof KeyboardEvent)) return;
       if (event.key === "Escape") {
         event.preventDefault();
@@ -58084,6 +58121,7 @@ button:disabled { opacity:.5; cursor:default; }
       };
     }
     async function openSet(set, grade) {
+      if (tradeDialog && !tradeDialog.running) cancelTradeConfirmation();
       selected = set;
       plannedGrade = grade === void 0 ? bestPublishedGrade(set)?.grade ?? null : grade;
       tab = "missing";
@@ -58130,6 +58168,7 @@ button:disabled { opacity:.5; cursor:default; }
       tradeView = true;
       tradeProgress.clear();
       tradeResultState.clear();
+      tradeActuals.clear();
       activeTradeQuote = null;
       setStatus(`Consultando ${chosen.size} precios en Enhancer\u2026`);
       try {
@@ -58173,7 +58212,7 @@ button:disabled { opacity:.5; cursor:default; }
         const buy = el("span", `Compra \u2264 ${fmt(quote.settings.buyCapById?.[id] ?? 0)}`);
         const sale = el("span", `Venta ${saleRange(plan)}`);
         item.append(name, buy, sale);
-        const net = el("small", `Peor diferencia tras 5%: ${plan.worstNet >= 0 ? "+" : ""}${fmt(plan.worstNet)}`);
+        const net = el("small", `Neto m\xEDn. ${plan.worstNet >= 0 ? "+" : ""}${fmt(plan.worstNet)}`);
         if (plan.worstNet < 0) net.classList.add("negative");
         item.append(net);
         list.append(item);
@@ -58188,15 +58227,76 @@ button:disabled { opacity:.5; cursor:default; }
         const confirmed = pendingTrade;
         if (!confirmed) return;
         pendingTrade = null;
-        confirmBackdrop.classList.remove("open");
-        confirmPanel.replaceChildren();
         confirmReturnFocus = null;
+        showTradeProgressDialog(confirmed.ids);
         void executeConfirmedTrade(confirmed.ids, confirmed.quote);
       }, "primary");
       actions.append(cancel, accept);
       confirmPanel.append(header, content, actions);
       confirmBackdrop.classList.add("open");
       cancel.focus();
+    }
+    function showTradeProgressDialog(ids) {
+      confirmPanel.replaceChildren();
+      confirmPanel.classList.add("progress-panel");
+      const header = el("div", void 0, "confirm-head");
+      header.append(el("h2", `Comprando ${playerCount(ids.length)}`), el("p", "B\xFAsqueda y compra en curso"));
+      const summary = el("div", void 0, "progress-summary");
+      const count = el("strong", `0/${ids.length} cartas procesadas`);
+      const detail = el("small", "Iniciando b\xFAsqueda\u2026");
+      detail.setAttribute("aria-live", "polite");
+      const track = el("div", void 0, "progress-track");
+      const fill = el("span");
+      track.append(fill);
+      summary.append(count, detail, track);
+      const list = el("div", void 0, "progress-list");
+      const rows = /* @__PURE__ */ new Map();
+      const messages = /* @__PURE__ */ new Map();
+      for (const id of ids) {
+        const row = el("div", void 0, "progress-row");
+        row.append(el("strong", selected?.cards.find((card) => card.definitionId === id)?.name ?? `Carta ${id}`));
+        const message = el("span", "Pendiente");
+        row.append(message);
+        list.append(row);
+        rows.set(id, row);
+        messages.set(id, message);
+      }
+      const actions = el("div", void 0, "confirm-actions");
+      const action = button("Ocultar progreso", cancelTradeConfirmation);
+      actions.append(action);
+      confirmPanel.append(header, summary, list, actions);
+      tradeDialog = { ids, running: true, summary: count, detail, fill, rows, messages, action };
+      confirmBackdrop.classList.add("open");
+      action.focus();
+    }
+    function refreshTradeProgressDialog(activeId) {
+      const dialog = tradeDialog;
+      if (!dialog) return;
+      let processed = 0;
+      for (const id of dialog.ids) {
+        const result = tradeActuals.get(id);
+        const state2 = tradeResultState.get(id);
+        const text = result?.state === "listed" && result.buyPrice !== void 0 && result.listPrice !== void 0 ? `Comprada ${fmt(result.buyPrice)} \xB7 publicada ${fmt(result.listPrice)}` : tradeProgress.get(id) ?? "Pendiente";
+        const row = dialog.rows.get(id);
+        const message = dialog.messages.get(id);
+        message.textContent = text;
+        row.classList.remove("active", "done", "failed");
+        const finalPurchase = state2 === "bought" && (!dialog.running || result?.message.startsWith("Comprada, sin publicar"));
+        if (state2 === "listed" || finalPurchase) {
+          processed++;
+          row.classList.add("done");
+        } else if (state2 === "skipped" || state2 === "soft-ban") {
+          processed++;
+          row.classList.add("failed");
+        } else if (text !== "Pendiente") row.classList.add("active");
+      }
+      dialog.summary.textContent = dialog.running ? `${processed}/${dialog.ids.length} cartas procesadas` : `Lote terminado \xB7 ${processed}/${dialog.ids.length} cartas procesadas`;
+      dialog.fill.style.width = `${Math.round(processed / dialog.ids.length * 100)}%`;
+      if (activeId !== void 0) {
+        const name = selected?.cards.find((card) => card.definitionId === activeId)?.name ?? `Carta ${activeId}`;
+        dialog.detail.textContent = `${name}: ${tradeProgress.get(activeId) ?? "Pendiente"}`;
+      }
+      dialog.action.textContent = dialog.running ? "Ocultar progreso" : "Cerrar";
     }
     async function executeConfirmedTrade(ids, quote) {
       if (busy) return;
@@ -58205,25 +58305,42 @@ button:disabled { opacity:.5; cursor:default; }
       busy = true;
       tradeProgress = new Map(ids.map((id) => [id, "Pendiente"]));
       tradeResultState.clear();
+      tradeActuals.clear();
       setStatus("Buscando cartas con los topes confirmados\u2026");
       try {
         await buyAndList(ids, settings, (result) => {
           tradeProgress.set(result.definitionId, result.message);
           tradeResultState.set(result.definitionId, result.state);
+          tradeActuals.set(result.definitionId, result);
           if (result.state === "bought" || result.state === "listed") {
             owned.add(result.definitionId);
             saveLedger(owned);
           }
-          render();
+          refreshTradeProgressDialog(result.definitionId);
         }, (progress) => {
           tradeProgress.set(progress.definitionId, progress.message);
-          render();
+          refreshTradeProgressDialog(progress.definitionId);
         });
         setStatus("Lote terminado. Revisa el estado de cada carta y la lista de transferibles.");
       } catch (cause) {
         setStatus(`El lote se detuvo: ${cause instanceof Error ? cause.message : String(cause)}`, true);
       } finally {
+        for (const id of ids) {
+          const state2 = tradeResultState.get(id);
+          if (state2 === "bought" && !tradeActuals.get(id)?.message.startsWith("Comprada, sin publicar"))
+            tradeProgress.set(id, "Compra confirmada; verifica la publicaci\xF3n en Transferencias");
+          else if (!state2) {
+            tradeProgress.set(id, "No procesada: el lote se detuvo antes de esta carta");
+            tradeResultState.set(id, "skipped");
+          }
+        }
         busy = false;
+        activeTradeQuote = null;
+        if (tradeDialog) {
+          tradeDialog.running = false;
+          refreshTradeProgressDialog();
+          tradeDialog.detail.textContent = status;
+        }
         render();
       }
     }
@@ -58274,15 +58391,21 @@ button:disabled { opacity:.5; cursor:default; }
     }
     function renderTrade() {
       const actions = el("div", void 0, "trade-actions");
-      actions.append(button("\u2190 Jugadores", () => {
+      const back = button("\u2190 Jugadores", () => {
         tradeView = false;
         render();
-      }));
+      });
+      back.disabled = busy;
+      actions.append(back);
       const refresh = button("Actualizar precios", () => {
         void showTrade(true);
       });
       refresh.disabled = busy;
       actions.append(refresh);
+      if (tradeDialog) actions.append(button(tradeDialog.running ? "Ver progreso" : "Ver resultado", () => {
+        confirmBackdrop.classList.add("open");
+        tradeDialog?.action.focus();
+      }));
       body.append(actions);
       const fields = el("div", void 0, "trade-fields");
       fields.append(tradeField("Intentos por jugador", "retries", 1, 10));
@@ -58290,7 +58413,6 @@ button:disabled { opacity:.5; cursor:default; }
       if (tradeSettings.stepMode === "percent") fields.append(tradeField("Comprar hasta (% del mercado)", "lastPercent", 1, MAX_BUY_PERCENT));
       fields.append(tradeField("Descuento de venta (%)", "saleDiscountPercent", 0, 10));
       body.append(fields);
-      body.append(el("p", "Estos ajustes se guardan en este navegador. Cada lote requiere una confirmaci\xF3n nueva.", "note"));
       const advanced = el("details", void 0, "trade-advanced");
       advanced.open = advancedTradeOpen;
       advanced.addEventListener("toggle", () => {
@@ -58325,7 +58447,7 @@ button:disabled { opacity:.5; cursor:default; }
       if (!quote) {
         try {
           const ids = [...chosen].filter((id) => tradeReference(id) && !owned.has(id));
-          quote = lockTradeQuote(ids.map((id) => tradeReference(id)), settingsForQuote(ids));
+          if (ids.length) quote = lockTradeQuote(ids.map((id) => tradeReference(id)), settingsForQuote(ids));
         } catch (cause) {
           quoteError = cause instanceof Error ? cause.message : String(cause);
         }
@@ -58333,7 +58455,7 @@ button:disabled { opacity:.5; cursor:default; }
       if (quote) {
         const summary = el("div", void 0, "trade-summary");
         const copy = el("div");
-        copy.append(el("span", "Gasto m\xE1ximo del lote"), el("small", `${playerCount(quote.plans.size)} con precio \xB7 un m\xE1ximo por carta`));
+        copy.append(el("span", "Gasto m\xE1ximo del lote"), el("small", `${playerCount(quote.plans.size)} con precio`));
         summary.append(copy, el("strong", `${fmt(quote.settings.maxTotal)} monedas`));
         body.append(summary);
       } else if (quoteError) body.append(el("p", quoteError, "status error"));
@@ -58346,7 +58468,16 @@ button:disabled { opacity:.5; cursor:default; }
         const rowHead = el("div", void 0, "trade-card-head");
         const name = el("div", void 0, "trade-card-name");
         name.append(el("strong", card?.name ?? `Carta ${id}`));
-        name.append(el("small", reference ? `Referencia Enhancer: ${fmt(reference.price)} monedas` : "Sin precio de Enhancer \xB7 referencia manual"));
+        const meta = el("div", void 0, "trade-card-meta");
+        meta.append(el("span", reference ? `Ref. ${fmt(reference.price)}` : "Referencia manual pendiente"));
+        if (plan) {
+          meta.append(el("span", `Compra \u2264 ${fmt(plan.buyCaps.at(-1) ?? 0)}`));
+          meta.append(el("span", `Venta ${saleRange(plan)}`));
+          const net = el("span", `Neto m\xEDnimo ${plan.worstNet >= 0 ? "+" : ""}${fmt(plan.worstNet)}`);
+          if (plan.worstNet < 0) net.classList.add("negative");
+          meta.append(net);
+        }
+        name.append(meta);
         rowHead.append(name);
         if (!busy && !owned.has(id)) {
           const remove = button("Quitar", () => {
@@ -58367,19 +58498,6 @@ button:disabled { opacity:.5; cursor:default; }
           manual.append(buyLabel, saleLabel);
           row.append(manual);
         }
-        const metrics = el("div", void 0, "trade-card-metrics");
-        for (const [label, value, negative] of [
-          ["Compra m\xE1xima", plan ? fmt(plan.buyCaps.at(-1) ?? 0) : "\u2014", false],
-          ["Venta seg\xFAn compra", plan ? saleRange(plan) : "\u2014", false],
-          ["Peor neto tras 5%", plan ? `${plan.worstNet >= 0 ? "+" : ""}${fmt(plan.worstNet)}` : "\u2014", !!plan && plan.worstNet < 0]
-        ]) {
-          const metric = el("div");
-          const amount = el("strong", value);
-          if (negative) amount.classList.add("negative");
-          metric.append(el("small", label), amount);
-          metrics.append(metric);
-        }
-        row.append(metrics);
         if (plan?.buyCaps.length) {
           const detail = el("details");
           detail.append(el("summary", `Ver ${plan.buyCaps.length} ${plan.buyCaps.length === 1 ? "intento" : "intentos"}`), el("div", `Topes: ${plan.buyCaps.map(fmt).join(" \u2192 ")} monedas`));
@@ -58400,7 +58518,7 @@ button:disabled { opacity:.5; cursor:default; }
         cards.append(row);
       }
       body.append(cards);
-      body.append(el("p", "La venta nunca baja del precio pagado; puede subir seg\xFAn la compra real. EA cobra 5% al vender y publicar no garantiza la venta.", "note"));
+      body.append(el("p", "Venta nunca inferior a la compra. EA cobra 5% si se vende; publicar no garantiza la venta.", "note"));
       const remaining = [...chosen].filter((id) => tradeReference(id) && !owned.has(id)).length;
       const submit = button(busy ? "Procesando\u2026" : `Revisar y confirmar ${playerCount(remaining)}`, requestTradeConfirmation);
       submit.disabled = busy || !quote || remaining === 0;
@@ -58823,19 +58941,30 @@ button:disabled { opacity:.5; cursor:default; }
       body.append(tabs);
       const cards = (tab === "collected" ? selected.cards : referenceCards(selected)).filter((card) => owned.has(card.definitionId) === (tab === "collected"));
       const scores = lineup ? new Map(lineup.items.map((item) => [item.definitionId, item.score])) : void 0;
-      if (tab === "missing" && lineup) {
-        const groups = groupTargetCards(cards, scores);
-        for (const [label, group] of [
-          ["Oros de la alineaci\xF3n", groups.gold],
-          ["Carta clave de puntaje", groups.key],
-          ["Platas y bronces", groups.other]
+      if (tab === "missing" && cards.length > 1) {
+        const sortLabel = el("label", "Ordenar por", "card-sort");
+        const sortSelect = el("select");
+        for (const [value, label] of [
+          ["rating-desc", "Valoraci\xF3n: mayor primero"],
+          ["rating-asc", "Valoraci\xF3n: menor primero"],
+          ["price-asc", "Precio: menor primero"],
+          ["price-desc", "Precio: mayor primero"]
         ]) {
-          if (!group.length) continue;
-          body.append(el("h3", `${label} \xB7 ${group.length}`, "card-group-title"));
-          body.append(cardRows(group, scores));
+          const option = el("option", label);
+          option.value = value;
+          sortSelect.append(option);
         }
-        if (!cards.length) body.append(cardRows(cards, scores));
-      } else body.append(cardRows(cards, scores));
+        sortSelect.value = cardSort;
+        sortSelect.addEventListener("change", () => {
+          cardSort = sortSelect.value;
+          persistPreferences();
+          render();
+        });
+        sortLabel.append(sortSelect);
+        body.append(sortLabel);
+      }
+      const sortedCards = tab === "missing" ? sortGalleryCards(cards, cardSort, new Map([...prices].map(([id, price]) => [id, price.price]))) : cards;
+      body.append(cardRows(sortedCards, scores));
     }
     void syncClub();
     return { open, destroy() {
