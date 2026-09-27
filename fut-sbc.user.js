@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         FUT SBC Solver v2
 // @namespace    https://github.com/mljpa/fut-sbc-solver-v2
-// @version      0.2.12
+// @version      0.2.13
 // @description  Userscript to solve EA SPORTS FC 26 SBCs with your own club
 // @match        https://www.ea.com/*/ea-sports-fc/ultimate-team/web-app*
 // @match        https://www.ea.com/ea-sports-fc/ultimate-team/web-app*
@@ -57383,8 +57383,48 @@ Consume las cartas que use. Esto NO se puede deshacer.
     if (a.unpricedCards !== b.unpricedCards) return a.unpricedCards - b.unpricedCards;
     return a.resaleTax / a.tokens - b.resaleTax / b.tokens || a.purchaseCoins - b.purchaseCoins || b.tokens - a.tokens;
   }
-  function tokenOpportunities(recorded, claimedGrades) {
-    return catalog_snapshot_default.sets.flatMap((set) => candidatesFor(set, recorded, claimedGrades).sort(compare).slice(0, 1)).sort(compare);
+  function bestPerSet(items, compareItems) {
+    const chosen = /* @__PURE__ */ new Map();
+    for (const item of items) {
+      const previous = chosen.get(item.setId);
+      if (!previous || compareItems(item, previous) < 0) chosen.set(item.setId, item);
+    }
+    return [...chosen.values()].sort(compareItems);
+  }
+  function tokenShortcuts(recorded, claimedGrades, coinBudget = null) {
+    const all = catalog_snapshot_default.sets.flatMap((set) => candidatesFor(set, recorded, claimedGrades));
+    const ready = bestPerSet(
+      all.filter((item) => item.missingCards === 0),
+      (a, b) => b.tokens - a.tokens || a.name.localeCompare(b.name, "es")
+    );
+    const readyIds = new Set(ready.map((item) => item.setId));
+    const near = bestPerSet(all.filter((item) => !readyIds.has(item.setId) && item.missingCards >= 1 && item.missingCards <= 3 && item.unpricedCards === 0 && (coinBudget === null || item.purchaseCoins <= coinBudget)), compare);
+    const categories = [...new Set(catalog_snapshot_default.sets.map((set) => set.category))];
+    const byCategory = categories.map((category) => {
+      const priced = all.filter((item) => item.category === category && item.unpricedCards === 0);
+      const needsPurchase = priced.filter((item) => item.missingCards > 0);
+      const pool = needsPurchase.length ? needsPurchase : priced;
+      const affordable = coinBudget === null ? pool : pool.filter((item) => item.purchaseCoins <= coinBudget);
+      const candidates = affordable.length ? affordable : pool;
+      const best = bestPerSet(candidates, (a, b) => a.missingCards - b.missingCards || compare(a, b))[0] ?? null;
+      return { category, item: best, affordable: best !== null && (coinBudget === null || best.purchaseCoins <= coinBudget) };
+    });
+    return { ready, near, byCategory };
+  }
+  function diverseShortcuts(items, limit) {
+    const chosen = [];
+    const seenCategories = /* @__PURE__ */ new Set();
+    for (const item of items) {
+      if (chosen.length >= limit) break;
+      if (seenCategories.has(item.category)) continue;
+      chosen.push(item);
+      seenCategories.add(item.category);
+    }
+    for (const item of items) {
+      if (chosen.length >= limit) break;
+      if (!chosen.includes(item)) chosen.push(item);
+    }
+    return chosen;
   }
   function tokenRoute(recorded, claimedGrades, balance, coinBudget = null, target = 750) {
     const required = Math.max(0, target - balance);
@@ -57483,6 +57523,15 @@ Consume las cartas que use. Esto NO se puede deshacer.
     2218: "Arkema PL",
     31: "Serie A Enilive"
   };
+  var CATEGORY_IDS = {
+    "premier-league": "eng",
+    laliga: "esp",
+    bundesliga: "ger",
+    "ligue-1": "fra",
+    "serie-a": "ita",
+    leagues: "leagues",
+    rarities: "rarities"
+  };
   var CSS2 = `
 :host { all: initial; font: 14px/1.45 -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif; color:var(--fg); --bg:#fff;--fg:#1d2329;--muted:#606d78;--line:#d8dfe5;--soft:#f3f6f8;--accent:#176d50;--accent-fg:#fff;--warning:#9a5a16; }
 @media (prefers-color-scheme:dark) { :host { --bg:#1d2228;--fg:#f1f4f6;--muted:#aeb7bf;--line:#39424b;--soft:#293039;--accent:#29a477;--warning:#e3aa6c; } }
@@ -57556,6 +57605,14 @@ button:disabled { opacity:.5; cursor:default; }
 .gallery-cost button { border:1px solid var(--line); border-radius:5px; padding:4px 8px; background:var(--bg); color:var(--fg); }
 .gallery-cost span { margin-top:3px; font-size:16px; font-weight:600; }
 .gallery-cost small { display:block; margin-top:3px; color:var(--muted); }
+.shortcut-list { display:flex; flex-direction:column; gap:7px; margin-top:10px; }
+.shortcut-row { display:flex; flex-wrap:wrap; align-items:center; gap:9px; padding:9px 10px; border:1px solid var(--line); border-radius:5px; background:var(--bg); }
+.shortcut-row .shortcut-main { flex:1 1 220px; min-width:0; }
+.shortcut-row strong,.shortcut-row small { display:block; }
+.shortcut-row small { color:var(--muted); }
+.shortcut-row button { border:1px solid var(--line); border-radius:5px; padding:7px 10px; background:var(--soft); color:var(--fg); }
+.shortcut-row button.primary { border-color:var(--accent); background:var(--accent); color:var(--accent-fg); }
+.shortcut-row button:disabled { opacity:.5; }
 .trade-advanced { border:1px solid var(--line); border-radius:5px; padding:8px 11px; margin:10px 0; }
 .trade-advanced summary { cursor:pointer; font-weight:600; }
 .trade-summary { display:flex; justify-content:space-between; align-items:baseline; gap:12px; padding:12px 14px; background:var(--soft); border:1px solid var(--line); border-radius:5px; margin:14px 0; }
@@ -57759,6 +57816,7 @@ button:disabled { opacity:.5; cursor:default; }
     let category = null;
     let sets = [];
     let selected = null;
+    let shortcutCategoryOnly = false;
     let plannedGrade = null;
     let tab = "missing";
     let filter = "";
@@ -57767,6 +57825,8 @@ button:disabled { opacity:.5; cursor:default; }
     let galleryTokenBalance = savedPreferences.galleryTokenBalance;
     let galleryCoinBudget = savedPreferences.galleryCoinBudget;
     let claimedGrades = savedPreferences.claimedGrades;
+    let showAllReady = false;
+    let shortcutCategoryFilter = "all";
     let leagueFilter = null;
     let busy = false;
     let tradeView = false;
@@ -57860,6 +57920,7 @@ button:disabled { opacity:.5; cursor:default; }
     }
     async function loadCategory(next, force = false) {
       if (busy) return;
+      shortcutCategoryOnly = false;
       priceRequestId++;
       priceLoading = false;
       category = next;
@@ -57969,10 +58030,15 @@ button:disabled { opacity:.5; cursor:default; }
           if (requestId !== priceRequestId || selected !== set) return;
           set.cards.push(...extra);
         }
-        const found = await fetchEnhancerPrices([...referenceIds]);
+        const priceIds = referenceIds.filter((id) => !owned.has(id));
+        if (!priceIds.length) {
+          status = "Las cartas de esta alineaci\xF3n ya est\xE1n registradas. Comprueba y califica el set en Gallery de EA.";
+          return;
+        }
+        const found = await fetchEnhancerPrices(priceIds);
         if (requestId !== priceRequestId || selected !== set) return;
         prices = found;
-        status = `${found.size}/${referenceIds.length} precios de la alineaci\xF3n de referencia recibidos de Enhancer.`;
+        status = `${found.size}/${priceIds.length} precios de las cartas faltantes recibidos de Enhancer.`;
         error = false;
       } catch (cause) {
         if (requestId !== priceRequestId || selected !== set) return;
@@ -57984,6 +58050,26 @@ button:disabled { opacity:.5; cursor:default; }
           render();
         }
       }
+    }
+    async function openShortcut(item, preparePurchase = false) {
+      if (busy) return;
+      const destination = CATEGORIES.find((candidate) => candidate.id === CATEGORY_IDS[item.category]);
+      if (!destination) return;
+      const nextSets = buildSets(destination, []);
+      const set = nextSets.find((candidate) => candidate.catalogId === item.setId);
+      if (!set) return;
+      category = destination;
+      sets = nextSets;
+      shortcutCategoryOnly = true;
+      await openSet(set, item.grade);
+      if (!preparePurchase || selected !== set) return;
+      const cards = referenceCards(set);
+      if (cards.length !== referenceItems(set).length) {
+        setStatus(`EA devolvi\xF3 ${cards.length}/${referenceItems(set).length} cartas de la alineaci\xF3n. Revisa el set antes de comprar.`, true);
+        return;
+      }
+      for (const card of cards) if (!owned.has(card.definitionId)) chosen.add(card.definitionId);
+      if (chosen.size) await showTrade();
     }
     async function showTrade(force = false) {
       if (busy || priceLoading || chosen.size === 0) return;
@@ -58318,7 +58404,8 @@ button:disabled { opacity:.5; cursor:default; }
         tradeView = false;
         chosen.clear();
         prices.clear();
-        render();
+        if (shortcutCategoryOnly && category) void loadCategory(category);
+        else render();
       }, "back"));
       else if (category) tools.append(button("\u2190 Categor\xEDas", () => {
         category = null;
@@ -58374,46 +58461,113 @@ button:disabled { opacity:.5; cursor:default; }
         coinsLabel.append(coins);
         goal.append(coinsLabel);
         body.append(goal);
-        const opportunities = tokenOpportunities(owned, claimedGrades);
+        const shortcuts = tokenShortcuts(owned, claimedGrades, galleryCoinBudget);
         const route = galleryCoinBudget === null ? null : tokenRoute(owned, claimedGrades, galleryTokenBalance, galleryCoinBudget);
         const plan = el("div", void 0, "gallery-cost");
-        plan.append(el("strong", !route ? "Sets que m\xE1s fichas rinden por moneda" : route.reachesGoal ? `Ruta estimada: ${route.sets.length} sets \xB7 +${fmt(route.projectedTokens)} fichas` : `Con ${fmt(galleryCoinBudget)} monedas se proyectan +${fmt(route.projectedTokens)} fichas; faltan ${fmt(Math.max(0, 750 - galleryTokenBalance - route.projectedTokens))}.`));
-        if (!route) plan.append(el("small", "Ingresa las monedas disponibles para calcular una ruta que puedas financiar. Sin ese saldo, solo mostramos las mejores opciones individuales.", "metric"));
+        plan.append(el("strong", !route ? "Atajos para ganar fichas" : route.reachesGoal ? `Ruta estimada: ${route.sets.length} sets \xB7 +${fmt(route.projectedTokens)} fichas` : `Con ${fmt(galleryCoinBudget)} monedas se proyectan +${fmt(route.projectedTokens)} fichas; faltan ${fmt(Math.max(0, 750 - galleryTokenBalance - route.projectedTokens))}.`));
+        if (!route) plan.append(el("small", "Ingresa tus monedas para calcular una ruta completa. Los atajos de abajo ya usan las cartas de tu historial y cubren todas las ligas del cat\xE1logo.", "metric"));
         else plan.append(el("small", `Monedas para completar una alineaci\xF3n a la vez: hasta ${fmt(route.peakCoins)} \xB7 p\xE9rdida estimada tras revender al mismo precio: ${fmt(route.resaleTax)} en comisi\xF3n EA.`, "metric"));
-        plan.append(el("small", "Se compra una alineaci\xF3n, se confirma su grado en EA y luego se revende antes de empezar la siguiente. La venta puede tardar o cerrar a otro precio.", "metric"));
         if (Object.keys(claimedGrades).length === 0 && galleryTokenBalance > 0) {
-          plan.append(el("small", "A\xFAn no has marcado grados cobrados. La ruta puede incluir fichas que ya recibiste; m\xE1rcalos dentro de cada set para descontarlas.", "metric"));
+          plan.append(el("small", "No has marcado grados cobrados. Se\xF1ala los que ya reclamaste en EA para que no aparezcan como fichas nuevas.", "metric"));
         }
         if (route?.unpricedSets) plan.append(el("small", `${route.unpricedSets} sets tienen cartas sin precio y quedan fuera de esta estimaci\xF3n.`, "metric"));
-        plan.append(el("small", "Opciones ordenadas por comisi\xF3n estimada por ficha adicional:", "metric"));
-        for (const item of (route?.sets ?? opportunities).slice(0, 5)) {
-          const row = el("p", `${item.name} \xB7 grado ${item.grade} \xB7 +${item.tokens} fichas \xB7 ${item.missingCards} cartas por registrar \xB7 ${fmt(item.purchaseCoins)} para llenar el set \xB7 \u2248${fmt(item.resaleTax)} de comisi\xF3n  `, "note");
-          const categoryIds = { "premier-league": "eng", laliga: "esp", bundesliga: "ger", "ligue-1": "fra", "serie-a": "ita", leagues: "leagues", rarities: "rarities" };
-          const destination = CATEGORIES.find((candidate) => candidate.id === categoryIds[item.category]);
-          if (destination) row.append(button("Ver set", () => {
-            void (async () => {
-              await loadCategory(destination);
-              const set = sets.find((candidate) => candidate.catalogId === item.setId);
-              if (set) await openSet(set, item.grade);
-            })();
-          }));
-          plan.append(row);
-        }
-        if (!(route?.sets ?? opportunities).length) plan.append(el("p", opportunities.length ? "No hay alineaciones con precio que entren en este presupuesto. Revisa el saldo o los precios actuales." : "No quedan alineaciones con fichas pendientes en este cat\xE1logo de referencia.", "note"));
         body.append(plan);
-        body.append(el("p", "Proyecci\xF3n con alineaciones y precios de FUTGG, no con cotizaciones actuales de Enhancer. Se descuentan tus cartas registradas y los grados reclamados que marques. El grado final, la comisi\xF3n exacta, la disponibilidad y el precio de reventa pueden variar; esta ruta no compra ni reclama fichas autom\xE1ticamente.", "note"));
-        body.append(el("p", `Sets y fichas: copia p\xFAblica de FUTGG del ${new Date(GALLERY_SNAPSHOT_AT).toLocaleDateString("es-CL")}. EA confirma las cartas pose\xEDdas; solo Ipswich tiene una lista de elegibles verificada con Enhancer. Completar cartas no garantiza una nota ni entrega fichas: hay que confirmar el set en Gallery.`, "note"));
+        const shortcutTabs = el("div", void 0, "tabs");
+        for (const [id, label2] of [
+          ["all", "Todas"],
+          ["premier-league", "Inglaterra"],
+          ["laliga", "Espa\xF1a"],
+          ["bundesliga", "Alemania"],
+          ["ligue-1", "Francia"],
+          ["serie-a", "Italia"],
+          ["leagues", "Ligas"],
+          ["rarities", "Rarezas"]
+        ]) {
+          const tabButton = button(label2, () => {
+            shortcutCategoryFilter = id;
+            render();
+          });
+          if (shortcutCategoryFilter === id) tabButton.classList.add("active");
+          shortcutTabs.append(tabButton);
+        }
+        shortcutTabs.style.flexWrap = "wrap";
+        body.append(shortcutTabs);
+        const readyVisible = shortcuts.ready.filter((item) => shortcutCategoryFilter === "all" || item.category === shortcutCategoryFilter);
+        const nearVisible = shortcuts.near.filter((item) => shortcutCategoryFilter === "all" || item.category === shortcutCategoryFilter);
+        const shortcutRow = (item, ready = false, affordable = true) => {
+          const row = el("div", void 0, "shortcut-row");
+          const main = el("div", void 0, "shortcut-main");
+          main.append(el("strong", `${item.name} \xB7 grado ${item.grade} \xB7 +${item.tokens} fichas`));
+          const categoryName = CATEGORIES.find((candidate) => candidate.id === CATEGORY_IDS[item.category])?.name ?? item.category;
+          main.append(el("small", ready ? `${categoryName} \xB7 alineaci\xF3n registrada \xB7 revisa el grado y califica en Gallery de EA` : `${categoryName} \xB7 ${item.missingCards} carta${item.missingCards === 1 ? "" : "s"} por registrar \xB7 ${fmt(item.purchaseCoins)} para comprar \xB7 \u2248${fmt(item.resaleTax)} de comisi\xF3n si revendes al mismo precio`));
+          row.append(main);
+          const action = button(ready ? "Ver cartas" : "Preparar compra", () => {
+            void openShortcut(item, !ready);
+          }, ready ? "" : "primary");
+          action.disabled = busy || !affordable;
+          row.append(action);
+          if (ready) row.append(button("Ya cobr\xE9 este grado", () => {
+            claimedGrades[String(item.setId)] = item.grade;
+            persistPreferences();
+            render();
+          }));
+          return row;
+        };
+        if (readyVisible.length) {
+          const readyBox = el("div", void 0, "gallery-cost");
+          readyBox.append(el("strong", `Listos para revisar \xB7 ${readyVisible.length} sets`));
+          readyBox.append(el("small", "Estas alineaciones no requieren comprar cartas seg\xFAn el historial local. Las fichas se entregan solo al calificarlas en EA.", "metric"));
+          const readyList = el("div", void 0, "shortcut-list");
+          for (const item of readyVisible.slice(0, showAllReady ? void 0 : 5)) readyList.append(shortcutRow(item, true));
+          readyBox.append(readyList);
+          if (readyVisible.length > 5) readyBox.append(button(showAllReady ? "Ver menos" : `Ver los ${readyVisible.length} listos`, () => {
+            showAllReady = !showAllReady;
+            render();
+          }));
+          body.append(readyBox);
+        }
+        const near = shortcutCategoryFilter === "all" ? diverseShortcuts(nearVisible, 7) : nearVisible.slice(0, 7);
+        const nearBox = el("div", void 0, "gallery-cost");
+        nearBox.append(el("strong", "Completar con pocas compras"));
+        nearBox.append(el("small", "Hasta 3 cartas faltantes por alineaci\xF3n; mostramos distintas ligas antes de repetir una.", "metric"));
+        const nearList = el("div", void 0, "shortcut-list");
+        for (const item of near) nearList.append(shortcutRow(item));
+        if (!near.length) nearList.append(el("small", "No hay atajos de 1 a 3 cartas con precio dentro de este presupuesto. Mira las oportunidades por liga abajo.", "metric"));
+        nearBox.append(nearList);
+        body.append(nearBox);
+        if (shortcutCategoryFilter !== "all") {
+          const next = shortcuts.byCategory.find((row) => row.category === shortcutCategoryFilter);
+          if (next?.item && !near.some((item) => item.setId === next.item?.setId)) {
+            const nextBox = el("div", void 0, "gallery-cost");
+            nextBox.append(el("strong", "Siguiente objetivo de esta categor\xEDa"));
+            if (!next.affordable) nextBox.append(el("small", "Este set supera las monedas disponibles que ingresaste.", "metric"));
+            nextBox.append(shortcutRow(next.item, next.item.missingCards === 0, next.affordable));
+            body.append(nextBox);
+          }
+        }
+        body.append(el("p", `Oportunidades de todas las categor\xEDas \xB7 alineaciones y grados de FUT.GG, actualizados el ${new Date(GALLERY_SNAPSHOT_AT).toLocaleDateString("es-CL")}.`, "note"));
         const grid = el("div", void 0, "grid");
         for (const c of CATEGORIES) {
           const card = el("div", void 0, "card");
           card.append(el("strong", c.name));
-          card.append(el("span", c.rarities ? `${c.rarities.length} colecciones` : `${c.leagues?.length ?? 0} liga${c.leagues?.length === 1 ? "" : "s"}`, "metric"));
+          const recommendation = shortcuts.byCategory.find((row) => CATEGORY_IDS[row.category] === c.id);
+          if (recommendation?.item) {
+            const item = recommendation.item;
+            card.append(el("span", `${item.name} \xB7 grado ${item.grade} \xB7 +${item.tokens} fichas`, "metric"));
+            card.append(el("small", item.missingCards === 0 ? "Cartas ya registradas" : `${item.missingCards} faltantes \xB7 ${fmt(item.purchaseCoins)} monedas${recommendation.affordable ? "" : " \xB7 supera tu presupuesto"}`, "metric"));
+            const go = button(item.missingCards === 0 ? "Ver cartas" : "Preparar compra", () => {
+              void openShortcut(item, item.missingCards > 0);
+            });
+            go.disabled = busy || !recommendation.affordable;
+            card.append(go);
+          } else card.append(el("span", "Sin alineaci\xF3n con precio suficiente", "metric"));
           card.append(button("Ver colecciones", () => {
             void loadCategory(c);
           }));
           grid.append(card);
         }
         body.append(grid);
+        body.append(el("p", "Los precios son referencias de FUT.GG; antes de comprar se consultan los actuales de Enhancer y se revisan los topes. El grado final puede variar, y vender puede tardar o generar p\xE9rdidas adicionales. Completar cartas no entrega fichas hasta calificar en EA.", "note"));
         return;
       }
       if (!selected) {
