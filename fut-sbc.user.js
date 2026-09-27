@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         FUT SBC Solver v2
 // @namespace    https://github.com/mljpa/fut-sbc-solver-v2
-// @version      0.2.25
+// @version      0.2.26
 // @description  Userscript to solve EA SPORTS FC 26 SBCs with your own club
 // @match        https://www.ea.com/*/ea-sports-fc/ultimate-team/web-app*
 // @match        https://www.ea.com/ea-sports-fc/ultimate-team/web-app*
@@ -58007,37 +58007,77 @@ Consume las cartas que use. Esto NO se puede deshacer.
   function claimedGalleryTokens(claimed) {
     return catalog_snapshot_default.sets.reduce((total, set) => total + claimedTokens(set, claimed), 0);
   }
-  function galleryTokenProgress(estimatedFromCards, availableInStore, target) {
-    const total = Math.max(estimatedFromCards, availableInStore);
+  function galleryTokenProgress(availableInStore, target) {
+    const total = availableInStore;
     return { total, remaining: Math.max(0, target - total) };
   }
-  function galleryRouteRows(plan, claimed) {
+  function galleryRouteRows(plan, claimed, recorded = /* @__PURE__ */ new Set()) {
     const rows = plan.sets.map((item) => {
       const set = catalog_snapshot_default.sets.find((candidate) => candidate.id === item.setId);
       const grade = claimed[String(item.setId)];
       return {
         ...item,
         state: item.missingItems.length ? "missing" : "ready",
+        inPlan: true,
         ...grade ? { claimedGrade: grade } : {},
         claimedTokens: set ? claimedTokens(set, claimed) : 0
       };
     });
     const present = new Set(rows.map((row) => row.setId));
     for (const set of catalog_snapshot_default.sets) {
+      if (present.has(set.id)) continue;
       const grade = claimed[String(set.id)];
-      if (!grade || present.has(set.id)) continue;
+      if (grade) {
+        rows.push({
+          setId: set.id,
+          name: set.name,
+          category: set.category,
+          grade,
+          tokens: 0,
+          missingItems: [],
+          purchaseCoins: 0,
+          unpricedCards: 0,
+          state: "claimed",
+          inPlan: false,
+          claimedGrade: grade,
+          claimedTokens: claimedTokens(set, claimed)
+        });
+        continue;
+      }
+      const tier2 = set.costTiers.filter((candidate) => candidate.items.length === set.requiredCards).sort((a, b) => {
+        const missingA = a.items.filter((item) => !recorded.has(item.definitionId));
+        const missingB = b.items.filter((item) => !recorded.has(item.definitionId));
+        return missingA.length - missingB.length || b.tokens - a.tokens || missingA.reduce((sum, item) => sum + (item.price ?? 0), 0) - missingB.reduce((sum, item) => sum + (item.price ?? 0), 0);
+      })[0];
+      if (!tier2) {
+        rows.push({
+          setId: set.id,
+          name: set.name,
+          category: set.category,
+          grade: "",
+          tokens: 0,
+          missingItems: [],
+          purchaseCoins: 0,
+          unpricedCards: 0,
+          state: "catalog",
+          inPlan: false,
+          claimedTokens: 0
+        });
+        continue;
+      }
+      const missingItems = tier2.items.filter((item) => !recorded.has(item.definitionId)).map((item) => ({ definitionId: item.definitionId, price: item.price }));
       rows.push({
         setId: set.id,
         name: set.name,
         category: set.category,
-        grade,
-        tokens: 0,
-        missingItems: [],
-        purchaseCoins: 0,
-        unpricedCards: 0,
-        state: "claimed",
-        claimedGrade: grade,
-        claimedTokens: claimedTokens(set, claimed)
+        grade: tier2.grade,
+        tokens: tier2.tokens,
+        missingItems,
+        purchaseCoins: missingItems.reduce((sum, item) => sum + (item.price ?? 0), 0),
+        unpricedCards: missingItems.filter((item) => item.price === null).length,
+        state: missingItems.length ? "missing" : "ready",
+        inPlan: false,
+        claimedTokens: 0
       });
     }
     return rows;
@@ -58429,7 +58469,7 @@ button:disabled { opacity:.5; cursor:default; }
     panel.setAttribute("aria-label", "Mi Gallery");
     const head = el("div", void 0, "head");
     const title = el("h2", "Mi Gallery");
-    const version = el("a", `v${"0.2.25"}`, "version");
+    const version = el("a", `v${"0.2.26"}`, "version");
     version.href = "https://raw.githubusercontent.com/mljpa/fut-sbc-dist/main/fut-sbc.user.js";
     version.target = "_blank";
     version.rel = "noopener noreferrer";
@@ -58783,7 +58823,7 @@ button:disabled { opacity:.5; cursor:default; }
         return;
       }
       returnToPlan = true;
-      await openSet(set, item.grade);
+      await openSet(set, item.grade || void 0);
     }
     async function expandPlanSet(item) {
       const scroll = body.scrollTop;
@@ -59365,20 +59405,20 @@ button:disabled { opacity:.5; cursor:default; }
           const completedGrades = completedGalleryGrades(owned, [...knownCards.values()]);
           const completedTotal = claimedGalleryTokens(completedGrades);
           const goal = galleryTokenTarget;
-          const { total: progressTotal, remaining } = galleryTokenProgress(completedTotal, currentTokenBalance, goal);
+          const { total: progressTotal, remaining } = galleryTokenProgress(currentTokenBalance, goal);
           const progress = el("div", void 0, "route-progress");
           progress.setAttribute("role", "group");
           progress.setAttribute("aria-label", "Progreso de fichas");
           const progressMain = el("div", void 0, "route-progress-main");
           progressMain.append(
             el("strong", `${fmt(progressTotal)} / ${fmt(goal)}`),
-            el("span", remaining ? `Faltan hasta ${fmt(remaining)}` : "Meta alcanzada")
+            el("span", remaining ? `Faltan ${fmt(remaining)}` : "Meta alcanzada")
           );
           const progressBar = el("div", void 0, "bar");
           const progressFill = el("span");
           progressFill.style.width = `${Math.min(100, goal > 0 ? progressTotal / goal * 100 : 100)}%`;
           progressBar.append(progressFill);
-          progress.append(progressMain, progressBar, el("small", `Cartas: ${fmt(completedTotal)} estimadas \xB7 Tienda: ${fmt(currentTokenBalance)} disponibles`));
+          progress.append(progressMain, progressBar, el("small", `Cartas: ${fmt(completedTotal)} fichas potenciales \xB7 Tienda: ${fmt(currentTokenBalance)} disponibles`));
           body.append(progress);
           body.append(balanceSource, updateCollection);
           if (currentTokenBalance > completedTotal) body.append(el(
@@ -59397,10 +59437,10 @@ button:disabled { opacity:.5; cursor:default; }
             galleryPlannerMode === "coins" ? null : galleryTokenTarget,
             galleryCoinBudget
           );
-          const routeRows = galleryRouteRows(route, completedGrades).filter((row) => row.tokens > 0 || row.state === "claimed").sort((a, b) => ({ ready: 0, missing: 1, claimed: 2 })[a.state] - { ready: 0, missing: 1, claimed: 2 }[b.state] || (a.state === "missing" && b.state === "missing" ? a.missingItems.length - b.missingItems.length : 0) || b.tokens - a.tokens);
+          const routeRows = galleryRouteRows(route, completedGrades, owned).sort((a, b) => ({ ready: 0, missing: 1, catalog: 2, claimed: 3 })[a.state] - { ready: 0, missing: 1, catalog: 2, claimed: 3 }[b.state] || Number(b.inPlan) - Number(a.inPlan) || (a.state === "missing" && b.state === "missing" ? a.missingItems.length - b.missingItems.length : 0) || b.tokens - a.tokens);
           const summary = el("div", void 0, "route-summary");
           summary.append(
-            el("span", `+${fmt(route.gainedTokens)} fichas posibles`),
+            el("span", `${fmt(routeRows.length)} colecciones \xB7 +${fmt(route.gainedTokens)} fichas en la ruta sugerida`),
             el("span", `${fmt(routeRows.filter((row) => row.state === "claimed").length)} sets con grado estimado`),
             el("span", `${fmt(routeRows.filter((row) => row.state === "missing").length)} por completar`)
           );
@@ -59410,7 +59450,7 @@ button:disabled { opacity:.5; cursor:default; }
           const details = el("details", void 0, "route-details");
           details.append(
             el("summary", "C\xF3mo se calcula"),
-            el("p", `El total de arriba suma las recompensas de FUT.GG por el mejor grado estimado de cada set completo. La tienda muestra fichas disponibles y puede ser menor si ya canjeaste premios. El grado real se confirma en el juego.`),
+            el("p", `La meta usa las fichas disponibles en la tienda. Las fichas potenciales se estiman con las cartas registradas y las recompensas de FUT.GG; no prueban que el grado ya se haya canjeado. El grado real se confirma en el juego.`),
             el("p", `Las +${fmt(route.gainedTokens)} son una proyecci\xF3n de grados futuros. ${fmt(route.uniqueCards)} cartas por registrar \xB7 ${fmt(route.coinsNeeded)} monedas de referencia \xB7 ${fmt(route.tax)} de comisi\xF3n estimada \xB7 ${route.unpricedCards} sin precio. Precios de FUT.GG.`)
           );
           body.append(details);
@@ -59440,9 +59480,11 @@ button:disabled { opacity:.5; cursor:default; }
             const card = el("div", void 0, `plan-set ${item.state}`);
             const head2 = el("div", void 0, "plan-set-head");
             const summary2 = el("div");
-            summary2.append(el("strong", `${item.name} \xB7 ${item.state === "claimed" ? `grado estimado ${item.grade} \xB7 ${fmt(item.claimedTokens)} fichas` : `objetivo ${item.grade} \xB7 +${fmt(item.tokens)} fichas`}`));
-            const stateText = item.state === "claimed" ? "\u2713 Alineaci\xF3n completa \xB7 verifica el canje en EA" : item.state === "ready" ? "Cartas completas \xB7 revisa y canjea en EA" : `${item.missingItems.length} cartas por registrar \xB7 ${fmt(item.purchaseCoins)} monedas ref.`;
+            const gradeText = item.state === "catalog" ? "sin alineaci\xF3n publicada" : item.state === "claimed" ? `grado estimado ${item.grade} \xB7 ${fmt(item.claimedTokens)} fichas` : `objetivo ${item.grade} \xB7 +${fmt(item.tokens)} fichas`;
+            summary2.append(el("strong", `${item.name} \xB7 ${gradeText}`));
+            const stateText = item.state === "claimed" ? "\u2713 Alineaci\xF3n completa \xB7 verifica el canje en EA" : item.state === "catalog" ? "Colecci\xF3n disponible \xB7 abre el set para ver sus cartas" : item.state === "ready" ? "Cartas completas \xB7 revisa y canjea en EA" : `${item.missingItems.length} cartas por registrar \xB7 ${fmt(item.purchaseCoins)} monedas ref.`;
             summary2.append(el("small", stateText, "plan-state"));
+            if (item.inPlan) summary2.append(el("small", "Ruta sugerida"));
             if (item.claimedGrade && item.state !== "claimed") summary2.append(el("small", `Alineaci\xF3n ${item.claimedGrade} completa`));
             head2.append(summary2);
             if (item.state === "missing") {
