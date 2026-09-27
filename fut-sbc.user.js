@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         FUT SBC Solver v2
 // @namespace    https://github.com/mljpa/fut-sbc-solver-v2
-// @version      0.2.16
+// @version      0.2.17
 // @description  Userscript to solve EA SPORTS FC 26 SBCs with your own club
 // @match        https://www.ea.com/*/ea-sports-fc/ultimate-team/web-app*
 // @match        https://www.ea.com/ea-sports-fc/ultimate-team/web-app*
@@ -58531,8 +58531,8 @@ button:disabled { opacity:.5; cursor:default; }
             planner.append(el("div", summary, "planner-result"));
             const metrics = el("div", void 0, "planner-metrics");
             for (const [label, value] of [
-              ["Monedas necesarias", fmt(route.peakCoins)],
-              ["Costo estimado", fmt(route.resaleTax)],
+              [galleryPlannerMode === "target" && route.reachesGoal ? "Saldo necesario" : "Saldo m\xE1ximo usado", fmt(route.peakCoins)],
+              ["Comisi\xF3n estimada", fmt(route.resaleTax)],
               ["Sets", fmt(route.sets.length)],
               ["Cartas", fmt(route.cardsToBuy)]
             ]) {
