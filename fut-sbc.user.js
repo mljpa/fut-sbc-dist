@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         FUT SBC Solver v2
 // @namespace    https://github.com/mljpa/fut-sbc-solver-v2
-// @version      0.2.20
+// @version      0.2.21
 // @description  Userscript to solve EA SPORTS FC 26 SBCs with your own club
 // @match        https://www.ea.com/*/ea-sports-fc/ultimate-team/web-app*
 // @match        https://www.ea.com/ea-sports-fc/ultimate-team/web-app*
@@ -57380,6 +57380,92 @@ Consume las cartas que use. Esto NO se puede deshacer.
     }).map(({ set }) => set);
   }
 
+  // src/gallery/budget-plan.ts
+  function circulatingCoins(prices) {
+    let taxSpent = 0;
+    let peak = 0;
+    for (const price of [...prices].sort((a, b) => b - a)) {
+      peak = Math.max(peak, price + taxSpent);
+      taxSpent += price * 0.05;
+    }
+    return Math.ceil(peak);
+  }
+  function claimedTokens(set, claimed) {
+    const index = set.grades.findIndex((grade) => grade.name === claimed[String(set.id)]);
+    return index < 0 ? 0 : set.grades.slice(0, index + 1).reduce((sum, grade) => sum + grade.tokens, 0);
+  }
+  function pointFor(choices2, recorded, claimed, cap) {
+    const sets = [];
+    const uniquePrices = /* @__PURE__ */ new Map();
+    const unpriced = /* @__PURE__ */ new Set();
+    let gainedTokens = 0;
+    for (const { set, tier: tier2 } of choices2) {
+      const missingItems = tier2.items.filter((item) => !recorded.has(item.definitionId)).map((item) => ({ definitionId: item.definitionId, price: item.price }));
+      const tokens = Math.max(0, tier2.tokens - claimedTokens(set, claimed));
+      gainedTokens += tokens;
+      for (const item of missingItems) {
+        if (item.price === null) unpriced.add(item.definitionId);
+        else uniquePrices.set(item.definitionId, Math.max(uniquePrices.get(item.definitionId) ?? 0, item.price));
+      }
+      sets.push({
+        setId: set.id,
+        name: set.name,
+        category: set.category,
+        grade: tier2.grade,
+        tokens,
+        missingItems,
+        unpricedCards: missingItems.filter((item) => item.price === null).length,
+        purchaseCoins: missingItems.reduce((sum, item) => sum + (item.price ?? 0), 0)
+      });
+    }
+    const prices = [...uniquePrices.values()];
+    const genuinelyUnpriced = [...unpriced].filter((id) => !uniquePrices.has(id));
+    const tax = Math.ceil(prices.reduce((sum, price) => sum + price, 0) * 0.05);
+    return {
+      cap,
+      sets,
+      gainedTokens,
+      uniqueCards: uniquePrices.size + genuinelyUnpriced.length,
+      coinsNeeded: Math.max(cap, circulatingCoins(prices)),
+      tax,
+      unpricedCards: genuinelyUnpriced.length,
+      reachesGoal: false
+    };
+  }
+  function galleryBudgetPlan(recorded, claimed, tokenBalance, target, coinBudget = null) {
+    const need = target === null ? Number.POSITIVE_INFINITY : Math.max(0, target - tokenBalance);
+    const empty = { sets: [], gainedTokens: 0, uniqueCards: 0, coinsNeeded: 0, tax: 0, unpricedCards: 0, reachesGoal: need === 0 };
+    if (need === 0 || target === null && coinBudget === null) return empty;
+    const tiers2 = catalog_snapshot_default.sets.flatMap((set) => {
+      const alreadyClaimed = set.grades.findIndex((grade) => grade.name === claimed[String(set.id)]);
+      return set.costTiers.filter((tier2) => tier2.items.length === set.requiredCards && set.grades.findIndex((grade) => grade.name === tier2.grade) > alreadyClaimed).map((tier2) => ({
+        set,
+        tier: tier2,
+        cap: circulatingCoins(tier2.items.filter((item) => !recorded.has(item.definitionId)).map((item) => item.price ?? 0))
+      }));
+    });
+    tiers2.sort((a, b) => a.cap - b.cap || a.tier.totalScore - b.tier.totalScore || a.set.id - b.set.id);
+    const selected = /* @__PURE__ */ new Map();
+    const points = [];
+    for (let i = 0; i < tiers2.length; ) {
+      const cap = tiers2[i].cap;
+      while (i < tiers2.length && tiers2[i].cap === cap) {
+        const choice = tiers2[i++];
+        const previous = selected.get(choice.set.id);
+        if (!previous || choice.tier.tokens >= previous.tier.tokens) selected.set(choice.set.id, choice);
+      }
+      points.push(pointFor(selected.values(), recorded, claimed, cap));
+    }
+    const affordable = points.filter((point) => coinBudget === null || point.coinsNeeded <= coinBudget);
+    const chosen = target === null ? affordable.sort((a, b) => b.gainedTokens - a.gainedTokens || a.coinsNeeded - b.coinsNeeded)[0] : affordable.filter((point) => point.gainedTokens >= need).sort((a, b) => a.coinsNeeded - b.coinsNeeded || a.sets.length - b.sets.length)[0] ?? affordable.sort((a, b) => b.gainedTokens - a.gainedTokens || a.coinsNeeded - b.coinsNeeded)[0];
+    if (!chosen) return empty;
+    return {
+      ...chosen,
+      sets: [...chosen.sets].sort((a, b) => b.tokens - a.tokens || a.missingItems.length - b.missingItems.length || a.purchaseCoins - b.purchaseCoins || a.name.localeCompare(b.name, "es")),
+      reachesGoal: chosen.gainedTokens >= need
+    };
+  }
+
   // src/gallery/verified-sets.ts
   var IPSWICH_IDS = [
     50563169,
@@ -57499,6 +57585,20 @@ button:disabled { opacity:.5; cursor:default; }
 .set-card small { color:var(--muted); }
 .category-link:hover,.set-card:hover { border-color:var(--accent); }
 .category-link:focus-visible,.set-card:focus-visible { outline:2px solid var(--accent); outline-offset:2px; }
+.plan-controls { display:flex; flex-wrap:wrap; align-items:end; gap:10px; margin:12px 0 14px; }
+.plan-controls label { display:flex; flex-direction:column; gap:4px; color:var(--muted); font-size:12px; }
+.plan-controls input { width:150px; height:38px; padding:7px 9px; background:var(--bg); color:var(--fg); border:1px solid var(--line); border-radius:5px; font-size:14px; }
+.plan-list { display:flex; flex-direction:column; gap:8px; }
+.plan-set { border:1px solid var(--line); border-radius:6px; background:var(--soft); padding:12px 14px; }
+.plan-set-head { display:flex; align-items:center; gap:12px; }
+.plan-set-head div { flex:1; min-width:0; }
+.plan-set-head strong,.plan-set-head small { display:block; }
+.plan-set-head small { color:var(--muted); }
+.plan-set button { border:1px solid var(--line); border-radius:5px; padding:6px 9px; background:var(--bg); color:var(--fg); }
+.plan-set button:hover { border-color:var(--accent); }
+.plan-items { margin:10px 0 0; padding:8px 0 0 24px; border-top:1px solid var(--line); display:grid; grid-template-columns:repeat(auto-fit,minmax(190px,1fr)); gap:4px 14px; }
+.plan-items li { padding-right:8px; }
+.plan-items small { color:var(--muted); }
 .metric { color:var(--muted); }
 .bar { width:100%; height:7px; overflow:hidden; border-radius:4px; background:var(--line); }
 .bar span { display:block; height:100%; background:var(--accent); }
@@ -57641,7 +57741,7 @@ button:disabled { opacity:.5; cursor:default; }
     panel.setAttribute("aria-label", "Mi Gallery");
     const head = el("div", void 0, "head");
     const title = el("h2", "Mi Gallery");
-    const version = el("a", `v${"0.2.20"}`, "version");
+    const version = el("a", `v${"0.2.21"}`, "version");
     version.href = "https://raw.githubusercontent.com/mljpa/fut-sbc-dist/main/fut-sbc.user.js";
     version.target = "_blank";
     version.rel = "noopener noreferrer";
@@ -57738,6 +57838,10 @@ button:disabled { opacity:.5; cursor:default; }
     let categoryCards = [];
     let sets = [];
     let selected = null;
+    let plannerOpen = false;
+    let returnToPlan = false;
+    let expandedPlanSetId = null;
+    const planCardNames = /* @__PURE__ */ new Map();
     let plannedGrade = null;
     let tab = "missing";
     let filter = "";
@@ -57841,6 +57945,7 @@ button:disabled { opacity:.5; cursor:default; }
     }
     async function loadCategory(next, force = false) {
       if (busy) return;
+      plannerOpen = false;
       priceRequestId++;
       priceLoading = false;
       category = next;
@@ -57903,6 +58008,51 @@ button:disabled { opacity:.5; cursor:default; }
       } finally {
         busy = false;
         render();
+      }
+    }
+    async function openPlannedSet(item) {
+      const categoryId = {
+        "premier-league": "eng",
+        laliga: "esp",
+        bundesliga: "ger",
+        "ligue-1": "fra",
+        "serie-a": "ita",
+        leagues: "leagues",
+        rarities: "rarities"
+      };
+      const next = CATEGORIES.find((entry) => entry.id === categoryId[item.category]);
+      if (!next) return;
+      await loadCategory(next);
+      const set = sets.find((entry) => entry.catalogId === item.setId);
+      if (!set) {
+        setStatus(`No se pudo abrir ${item.name} en el cat\xE1logo de EA.`, true);
+        return;
+      }
+      returnToPlan = true;
+      await openSet(set, item.grade);
+    }
+    async function expandPlanSet(item) {
+      const scroll = body.scrollTop;
+      if (expandedPlanSetId === item.setId) {
+        expandedPlanSetId = null;
+        render();
+        body.scrollTop = scroll;
+        return;
+      }
+      expandedPlanSetId = item.setId;
+      render();
+      body.scrollTop = scroll;
+      const ids = item.missingItems.map((entry) => entry.definitionId).filter((id) => !planCardNames.has(id));
+      if (!ids.length) return;
+      try {
+        for (const card of await conceptCardsByIdsPartial(ids)) planCardNames.set(card.definitionId, card.name);
+      } catch {
+      }
+      for (const id of ids) if (!planCardNames.has(id)) planCardNames.set(id, `Carta ${id}`);
+      if (expandedPlanSetId === item.setId) {
+        const nextScroll = body.scrollTop;
+        render();
+        body.scrollTop = nextScroll;
       }
     }
     function tradeReference(id) {
@@ -58301,13 +58451,19 @@ button:disabled { opacity:.5; cursor:default; }
         return;
       }
       const tools = el("div", void 0, "tools");
-      if (selected) tools.append(button("\u2190 Colecciones", () => {
+      if (selected) tools.append(button(returnToPlan ? "\u2190 Mi ruta" : "\u2190 Colecciones", () => {
         priceRequestId++;
         priceLoading = false;
         selected = null;
         tradeView = false;
         chosen.clear();
         prices.clear();
+        if (returnToPlan) {
+          category = null;
+          sets = [];
+          plannerOpen = true;
+          returnToPlan = false;
+        }
         render();
       }, "back"));
       else if (category) tools.append(button("\u2190 Categor\xEDas", () => {
@@ -58331,6 +58487,106 @@ button:disabled { opacity:.5; cursor:default; }
       body.append(tools);
       if (busy || error || selected) body.append(el("p", status, `status${error ? " error" : ""}`));
       if (!category) {
+        const homeTabs = el("div", void 0, "tabs");
+        for (const [label, openPlan] of [["Colecciones", false], ["Mi ruta", true]]) {
+          const tabButton = button(label, () => {
+            plannerOpen = openPlan;
+            render();
+          });
+          if (plannerOpen === openPlan) tabButton.classList.add("active");
+          homeTabs.append(tabButton);
+        }
+        body.append(homeTabs);
+        if (plannerOpen) {
+          const mode2 = el("div", void 0, "tabs");
+          for (const [label, value] of [["Meta de fichas", "target"], ["Saldo de monedas", "coins"]]) {
+            const tabButton = button(label, () => {
+              galleryPlannerMode = value;
+              persistPreferences();
+              render();
+            });
+            if (galleryPlannerMode === value) tabButton.classList.add("active");
+            mode2.append(tabButton);
+          }
+          body.append(mode2);
+          const controls = el("div", void 0, "plan-controls");
+          const numberField = (label, value, change) => {
+            const field = el("label", label);
+            const input = el("input");
+            input.type = "number";
+            input.min = "0";
+            input.step = "1";
+            input.value = value === null ? "" : String(value);
+            input.placeholder = value === null ? "Sin l\xEDmite" : "";
+            input.addEventListener("change", () => {
+              const next = input.value.trim() === "" ? null : Number(input.value);
+              if (next !== null && (!Number.isSafeInteger(next) || next < 0)) return;
+              change(next);
+              persistPreferences();
+              render();
+            });
+            field.append(input);
+            controls.append(field);
+          };
+          numberField("Mis fichas", galleryTokenBalance, (next) => {
+            galleryTokenBalance = next ?? 0;
+          });
+          if (galleryPlannerMode === "target") numberField("Quiero llegar a", galleryTokenTarget, (next) => {
+            galleryTokenTarget = Math.max(1, next ?? 750);
+          });
+          numberField("Monedas disponibles", galleryCoinBudget, (next) => {
+            galleryCoinBudget = next;
+          });
+          body.append(controls);
+          if (galleryPlannerMode === "coins" && galleryCoinBudget === null) {
+            body.append(el("p", "Ingresa tus monedas disponibles para ver los sets que puedes financiar.", "note"));
+            return;
+          }
+          const route = galleryBudgetPlan(
+            owned,
+            claimedGrades,
+            galleryTokenBalance,
+            galleryPlannerMode === "coins" ? null : galleryTokenTarget,
+            galleryCoinBudget
+          );
+          const targetText = galleryPlannerMode === "target" ? ` de ${fmt(galleryTokenTarget)}` : "";
+          body.append(el("p", `${fmt(galleryTokenBalance + route.gainedTokens)}${targetText} fichas estimadas \xB7 ${route.sets.length} sets \xB7 ${fmt(route.uniqueCards)} cartas \xFAnicas por registrar`, "metric"));
+          if (route.sets.length) body.append(el("p", `${fmt(route.coinsNeeded)} monedas necesarias de referencia \xB7 ${fmt(route.tax)} de comisi\xF3n estimada`, "set-count"));
+          if (galleryPlannerMode === "target" && !route.reachesGoal)
+            body.append(el("p", "Esta ruta no alcanza la meta con las alineaciones publicadas y el saldo indicado.", "note"));
+          if (galleryTokenBalance > 0 && !Object.keys(claimedGrades).length)
+            body.append(el("p", "Marca en cada set los grados que ya cobraste para no contar esas fichas otra vez.", "note"));
+          body.append(el("p", `El c\xE1lculo comparte cartas entre sets y usa precios de FUT.GG; ${route.unpricedCards} cartas no tienen precio. Abre cada set para consultar Enhancer. EA confirma el grado y las fichas.`, "note"));
+          const list = el("div", void 0, "plan-list");
+          for (const [index, item] of route.sets.entries()) {
+            const card = el("div", void 0, "plan-set");
+            const head2 = el("div", void 0, "plan-set-head");
+            const summary = el("div");
+            summary.append(el("strong", `${index + 1}. ${item.name} \xB7 grado ${item.grade} \xB7 +${fmt(item.tokens)} fichas`));
+            summary.append(el("small", `${item.missingItems.length} cartas por registrar \xB7 ${fmt(item.purchaseCoins)} monedas de referencia FUT.GG`));
+            head2.append(summary);
+            const expand2 = button(expandedPlanSetId === item.setId ? "Ocultar" : "Ver cartas", () => {
+              void expandPlanSet(item);
+            });
+            expand2.setAttribute("aria-expanded", String(expandedPlanSetId === item.setId));
+            head2.append(expand2, button("Abrir set", () => {
+              void openPlannedSet(item);
+            }));
+            card.append(head2);
+            if (expandedPlanSetId === item.setId) {
+              const items = el("ol", void 0, "plan-items");
+              for (const missing of item.missingItems) {
+                const row = el("li", planCardNames.get(missing.definitionId) ?? `Carta ${missing.definitionId}`);
+                row.append(el("small", missing.price === null ? " \xB7 sin precio" : ` \xB7 ${fmt(missing.price)} monedas ref.`));
+                items.append(row);
+              }
+              card.append(item.missingItems.length ? items : el("p", "Todas las cartas de esta alineaci\xF3n ya est\xE1n registradas. Comprueba y reclama el grado en EA.", "note"));
+            }
+            list.append(card);
+          }
+          body.append(list);
+          return;
+        }
         body.append(el("p", `${fmt(owned.size)} cartas registradas \xB7 Elige una categor\xEDa para ver equipos y sets.`, "set-count"));
         const grid = el("div", void 0, "grid");
         for (const c of CATEGORIES) {
@@ -58426,6 +58682,7 @@ button:disabled { opacity:.5; cursor:default; }
           const got2 = setProgress(set, owned);
           const pct = set.requiredCards ? Math.round(got2 / set.requiredCards * 100) : 0;
           const card = button("", () => {
+            returnToPlan = false;
             void openSet(set);
           }, "set-card");
           card.append(el("strong", set.name));
