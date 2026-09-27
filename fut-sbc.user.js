@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         FUT SBC Solver v2
 // @namespace    https://github.com/mljpa/fut-sbc-solver-v2
-// @version      0.2.15
+// @version      0.2.16
 // @description  Userscript to solve EA SPORTS FC 26 SBCs with your own club
 // @match        https://www.ea.com/*/ea-sports-fc/ultimate-team/web-app*
 // @match        https://www.ea.com/ea-sports-fc/ultimate-team/web-app*
@@ -57273,6 +57273,8 @@ Consume las cartas que use. Esto NO se puede deshacer.
     collectionSort: "most",
     advancedTradeOpen: false,
     galleryTokenBalance: 0,
+    galleryTokenTarget: 750,
+    galleryPlannerMode: "target",
     galleryCoinBudget: null,
     claimedGrades: {}
   };
@@ -57301,6 +57303,8 @@ Consume las cartas que use. Esto NO se puede deshacer.
       collectionSort: ["most", "least", "name"].includes(String(raw.collectionSort)) ? raw.collectionSort : DEFAULT_GALLERY_PREFERENCES.collectionSort,
       advancedTradeOpen: raw.advancedTradeOpen === true,
       galleryTokenBalance: integer(raw.galleryTokenBalance, 0, 1e6, 0),
+      galleryTokenTarget: integer(raw.galleryTokenTarget, 1, 1e6, 750),
+      galleryPlannerMode: raw.galleryPlannerMode === "coins" ? "coins" : "target",
       galleryCoinBudget: raw.galleryCoinBudget === null || raw.galleryCoinBudget === void 0 ? null : integer(raw.galleryCoinBudget, 0, 15e6, 0),
       claimedGrades: Object.fromEntries(Object.entries(record(raw.claimedGrades)).filter(([id, grade]) => /^\d+$/.test(id) && ["D", "C", "B", "A", "S"].includes(String(grade))))
     };
@@ -57435,6 +57439,7 @@ Consume las cartas que use. Esto NO se puede deshacer.
     let purchaseVolume = 0;
     let resaleTax = 0;
     let peakCoins = 0;
+    let cardsToBuy = 0;
     while (projectedTokens < required) {
       const candidates = remaining.flatMap((set) => candidatesFor(set, seen, claimedGrades)).filter((item) => item.unpricedCards === 0).filter((item) => coinBudget === null || resaleTax + item.purchaseCoins <= coinBudget).sort(compare);
       const next = candidates[0];
@@ -57444,6 +57449,7 @@ Consume las cartas que use. Esto NO se puede deshacer.
       peakCoins = Math.max(peakCoins, resaleTax + next.purchaseCoins);
       purchaseVolume += next.purchaseCoins;
       resaleTax += next.resaleTax;
+      cardsToBuy += next.missingCards;
       remaining.splice(remaining.findIndex((set) => set.id === next.setId), 1);
       for (const id of next.itemIds) seen.add(id);
     }
@@ -57453,12 +57459,16 @@ Consume las cartas que use. Esto NO se puede deshacer.
       purchaseVolume,
       resaleTax,
       peakCoins,
+      cardsToBuy,
       unpricedSets: remaining.filter((set) => {
         const options = candidatesFor(set, seen, claimedGrades);
         return options.length > 0 && options.every((item) => item.unpricedCards > 0);
       }).length,
       reachesGoal: projectedTokens >= required
     };
+  }
+  function tokenRouteForCoins(recorded, claimedGrades, balance, coinBudget) {
+    return tokenRoute(recorded, claimedGrades, balance, coinBudget, Number.POSITIVE_INFINITY);
   }
 
   // src/gallery/verified-sets.ts
@@ -57605,6 +57615,17 @@ button:disabled { opacity:.5; cursor:default; }
 .gallery-cost button { border:1px solid var(--line); border-radius:5px; padding:4px 8px; background:var(--bg); color:var(--fg); }
 .gallery-cost span { margin-top:3px; font-size:16px; font-weight:600; }
 .gallery-cost small { display:block; margin-top:3px; color:var(--muted); }
+.planner-fields { display:flex; flex-wrap:wrap; align-items:end; gap:10px; margin:12px 0; }
+.planner-fields label { display:flex; flex-direction:column; gap:4px; color:var(--muted); font-size:12px; }
+.planner-fields input { width:150px; padding:8px 9px; color:var(--fg); background:var(--bg); border:1px solid var(--line); border-radius:5px; font-size:15px; }
+.planner-fields button { border:1px solid var(--line); border-radius:5px; padding:8px 10px; background:var(--bg); color:var(--fg); }
+.planner-result { margin-top:8px; font-size:20px; font-weight:700; font-variant-numeric:tabular-nums; }
+.planner-metrics { display:grid; grid-template-columns:repeat(auto-fit,minmax(145px,1fr)); gap:7px; margin-top:10px; }
+.planner-metrics div { padding:9px; background:var(--bg); border:1px solid var(--line); border-radius:5px; }
+.planner-metrics strong,.planner-metrics small { display:block; }
+.planner-metrics strong { font-size:17px; font-variant-numeric:tabular-nums; }
+.planner-method,.planner-steps { margin-top:10px; }
+.planner-method summary,.planner-steps summary { color:var(--muted); cursor:pointer; }
 .shortcut-list { display:flex; flex-direction:column; gap:7px; margin-top:10px; }
 .shortcut-row { display:flex; flex-wrap:wrap; align-items:center; gap:9px; padding:9px 10px; border:1px solid var(--line); border-radius:5px; background:var(--bg); }
 .shortcut-row .shortcut-main { flex:1 1 220px; min-width:0; }
@@ -57823,8 +57844,11 @@ button:disabled { opacity:.5; cursor:default; }
     let collectionFilter = savedPreferences.collectionFilter;
     let collectionSort = savedPreferences.collectionSort;
     let galleryTokenBalance = savedPreferences.galleryTokenBalance;
+    let galleryTokenTarget = savedPreferences.galleryTokenTarget;
+    let galleryPlannerMode = savedPreferences.galleryPlannerMode;
     let galleryCoinBudget = savedPreferences.galleryCoinBudget;
     let claimedGrades = savedPreferences.claimedGrades;
+    let homeTab = "plan";
     let showAllReady = false;
     let shortcutCategoryFilter = "all";
     let leagueFilter = null;
@@ -57850,7 +57874,7 @@ button:disabled { opacity:.5; cursor:default; }
     let status = "Sincroniza el club para registrar las cartas que tienes ahora. El historial queda guardado en este navegador.";
     let error = false;
     function persistPreferences() {
-      const safe = decodeGalleryPreferences({ trade: tradeSettings, collectionFilter, collectionSort, advancedTradeOpen, galleryTokenBalance, galleryCoinBudget, claimedGrades });
+      const safe = decodeGalleryPreferences({ trade: tradeSettings, collectionFilter, collectionSort, advancedTradeOpen, galleryTokenBalance, galleryTokenTarget, galleryPlannerMode, galleryCoinBudget, claimedGrades });
       tradeSettings = { ...tradeSettings, ...safe.trade };
       saveGalleryPreferences(safe);
     }
@@ -58428,52 +58452,142 @@ button:disabled { opacity:.5; cursor:default; }
       body.append(tools);
       body.append(el("p", status, `status${error ? " error" : ""}`));
       if (!category) {
-        const goal = el("div", void 0, "gallery-cost");
-        goal.append(el("strong", `Meta Pato \xB7 750 fichas \xB7 faltan ${fmt(Math.max(0, 750 - galleryTokenBalance))}`));
-        const label = el("label", "Fichas actuales (ingresa el saldo que muestra EA): ");
-        const balance = el("input");
-        balance.type = "number";
-        balance.min = "0";
-        balance.step = "1";
-        balance.value = String(galleryTokenBalance);
-        balance.style.width = "105px";
-        balance.addEventListener("change", () => {
-          galleryTokenBalance = Math.max(0, Math.trunc(Number(balance.value) || 0));
-          persistPreferences();
-          render();
-        });
-        label.append(balance);
-        goal.append(label);
-        const coinsLabel = el("label", "Monedas disponibles (opcional): ");
-        const coins = el("input");
-        coins.type = "number";
-        coins.min = "0";
-        coins.max = "15000000";
-        coins.step = "1";
-        coins.placeholder = "Sin l\xEDmite";
-        coins.value = galleryCoinBudget === null ? "" : String(galleryCoinBudget);
-        coins.style.width = "125px";
-        coins.addEventListener("change", () => {
-          galleryCoinBudget = coins.value === "" ? null : Math.min(15e6, Math.max(0, Math.trunc(Number(coins.value) || 0)));
-          persistPreferences();
-          render();
-        });
-        coinsLabel.append(coins);
-        goal.append(coinsLabel);
-        body.append(goal);
-        const shortcuts = tokenShortcuts(owned, claimedGrades, galleryCoinBudget);
-        const route = galleryCoinBudget === null ? null : tokenRoute(owned, claimedGrades, galleryTokenBalance, galleryCoinBudget);
-        const plan = el("div", void 0, "gallery-cost");
-        plan.append(el("strong", !route ? "Atajos para ganar fichas" : route.reachesGoal ? `Ruta estimada: ${route.sets.length} sets \xB7 +${fmt(route.projectedTokens)} fichas` : `Con ${fmt(galleryCoinBudget)} monedas se proyectan +${fmt(route.projectedTokens)} fichas; faltan ${fmt(Math.max(0, 750 - galleryTokenBalance - route.projectedTokens))}.`));
-        if (!route) plan.append(el("small", "Ingresa tus monedas para calcular una ruta completa. Los atajos de abajo ya usan las cartas de tu historial y cubren todas las ligas del cat\xE1logo.", "metric"));
-        else plan.append(el("small", `Monedas para completar una alineaci\xF3n a la vez: hasta ${fmt(route.peakCoins)} \xB7 p\xE9rdida estimada tras revender al mismo precio: ${fmt(route.resaleTax)} en comisi\xF3n EA.`, "metric"));
-        if (Object.keys(claimedGrades).length === 0 && galleryTokenBalance > 0) {
-          plan.append(el("small", "No has marcado grados cobrados. Se\xF1ala los que ya reclamaste en EA para que no aparezcan como fichas nuevas.", "metric"));
+        const homeTabs = el("div", void 0, "tabs");
+        for (const [id, label] of [["plan", "Mi plan"], ["explore", "Colecciones"]]) {
+          const tabButton = button(label, () => {
+            homeTab = id;
+            render();
+          });
+          if (homeTab === id) tabButton.classList.add("active");
+          homeTabs.append(tabButton);
         }
-        if (route?.unpricedSets) plan.append(el("small", `${route.unpricedSets} sets tienen cartas sin precio y quedan fuera de esta estimaci\xF3n.`, "metric"));
-        body.append(plan);
+        body.append(homeTabs);
+        if (homeTab === "plan") {
+          const planner = el("div", void 0, "gallery-cost");
+          planner.append(el("strong", "Planificador de fichas"));
+          const modes = el("div", void 0, "tabs");
+          for (const [mode2, label] of [["target", "Meta de fichas"], ["coins", "Saldo de monedas"]]) {
+            const modeButton = button(label, () => {
+              galleryPlannerMode = mode2;
+              persistPreferences();
+              render();
+            });
+            if (galleryPlannerMode === mode2) modeButton.classList.add("active");
+            modes.append(modeButton);
+          }
+          modes.style.marginTop = "10px";
+          planner.append(modes);
+          const fields = el("div", void 0, "planner-fields");
+          const balanceLabel = el("label", "Mis fichas");
+          const balance = el("input");
+          balance.type = "number";
+          balance.min = "0";
+          balance.step = "1";
+          balance.value = String(galleryTokenBalance);
+          balance.addEventListener("change", () => {
+            galleryTokenBalance = Math.max(0, Math.trunc(Number(balance.value) || 0));
+            persistPreferences();
+            render();
+          });
+          balanceLabel.append(balance);
+          fields.append(balanceLabel);
+          if (galleryPlannerMode === "target") {
+            const targetLabel = el("label", "Quiero llegar a");
+            const target = el("input");
+            target.type = "number";
+            target.min = "1";
+            target.step = "1";
+            target.value = String(galleryTokenTarget);
+            target.addEventListener("change", () => {
+              galleryTokenTarget = Math.max(1, Math.trunc(Number(target.value) || 750));
+              persistPreferences();
+              render();
+            });
+            targetLabel.append(target);
+            fields.append(targetLabel);
+          } else {
+            const coinsLabel = el("label", "Mis monedas");
+            const coins = el("input");
+            coins.type = "number";
+            coins.min = "0";
+            coins.max = "15000000";
+            coins.step = "1";
+            coins.placeholder = "Ingresa tu saldo";
+            coins.value = galleryCoinBudget === null ? "" : String(galleryCoinBudget);
+            coins.addEventListener("change", () => {
+              galleryCoinBudget = coins.value === "" ? null : Math.min(15e6, Math.max(0, Math.trunc(Number(coins.value) || 0)));
+              persistPreferences();
+              render();
+            });
+            coinsLabel.append(coins);
+            fields.append(coinsLabel);
+          }
+          planner.append(fields);
+          const route = galleryPlannerMode === "target" ? tokenRoute(owned, claimedGrades, galleryTokenBalance, null, galleryTokenTarget) : galleryCoinBudget === null ? null : tokenRouteForCoins(owned, claimedGrades, galleryTokenBalance, galleryCoinBudget);
+          if (!route) planner.append(el("small", "Ingresa tus monedas para calcular una ruta.", "metric"));
+          else {
+            const totalTokens = galleryTokenBalance + route.projectedTokens;
+            const summary = galleryPlannerMode === "target" ? route.reachesGoal ? `${fmt(totalTokens)} fichas posibles` : `${fmt(totalTokens)} fichas posibles \xB7 faltan ${fmt(Math.max(0, galleryTokenTarget - totalTokens))}` : `${fmt(totalTokens)} fichas posibles \xB7 +${fmt(route.projectedTokens)}`;
+            planner.append(el("div", summary, "planner-result"));
+            const metrics = el("div", void 0, "planner-metrics");
+            for (const [label, value] of [
+              ["Monedas necesarias", fmt(route.peakCoins)],
+              ["Costo estimado", fmt(route.resaleTax)],
+              ["Sets", fmt(route.sets.length)],
+              ["Cartas", fmt(route.cardsToBuy)]
+            ]) {
+              const metric = el("div");
+              metric.append(el("strong", value), el("small", label));
+              metrics.append(metric);
+            }
+            planner.append(metrics);
+            const method = el("details", void 0, "planner-method");
+            method.append(el("summary", "C\xF3mo se calcula"));
+            method.append(el("small", "Las monedas necesarias son el m\xE1ximo para financiar un set a la vez. El costo estimado supone revender al mismo precio y pagar 5% de comisi\xF3n. El precio, la venta y el grado pueden variar.", "metric"));
+            if (route.unpricedSets) method.append(el("small", `${route.unpricedSets} sets sin precio completo quedan fuera de la ruta.`, "metric"));
+            planner.append(method);
+          }
+          if (Object.keys(claimedGrades).length === 0 && galleryTokenBalance > 0) {
+            planner.append(el("small", "Provisional: marca los grados ya cobrados para evitar contar fichas dos veces.", "metric"));
+          }
+          body.append(planner);
+          if (route && route.sets.length > 0) {
+            const routeBox = el("div", void 0, "gallery-cost");
+            routeBox.append(el("strong", "Siguiente paso"));
+            const routeList = el("div", void 0, "shortcut-list");
+            const makeRouteRow = (item, index) => {
+              const row = el("div", void 0, "shortcut-row");
+              const main = el("div", void 0, "shortcut-main");
+              main.append(el("strong", `${index + 1}. ${item.name} \xB7 grado ${item.grade} \xB7 +${item.tokens} fichas`));
+              main.append(el("small", `${item.missingCards} cartas faltantes \xB7 ${fmt(item.purchaseCoins)} monedas`));
+              row.append(main);
+              const action = button(item.missingCards === 0 ? "Ver cartas" : "Preparar compra", () => {
+                void openShortcut(item, item.missingCards > 0);
+              });
+              action.disabled = busy;
+              row.append(action);
+              return row;
+            };
+            routeList.append(makeRouteRow(route.sets[0], 0));
+            routeBox.append(routeList);
+            if (route.sets.length > 1) {
+              const steps = el("details", void 0, "planner-steps");
+              steps.append(el("summary", `Ver ruta completa \xB7 ${route.sets.length} sets`));
+              const rest = el("div", void 0, "shortcut-list");
+              for (const [index, item] of route.sets.entries()) {
+                if (index > 0) rest.append(makeRouteRow(item, index));
+              }
+              steps.append(rest);
+              routeBox.append(steps);
+            }
+            body.append(routeBox);
+          }
+          body.append(el("p", `Precios de FUT.GG (${new Date(GALLERY_SNAPSHOT_AT).toLocaleDateString("es-CL")}). La compra usa cotizaciones actuales de Enhancer y requiere tu confirmaci\xF3n.`, "note"));
+          return;
+        }
+        const shortcuts = tokenShortcuts(owned, claimedGrades, galleryPlannerMode === "coins" ? galleryCoinBudget : null);
         const shortcutTabs = el("div", void 0, "tabs");
-        for (const [id, label2] of [
+        for (const [id, label] of [
           ["all", "Todas"],
           ["premier-league", "Inglaterra"],
           ["laliga", "Espa\xF1a"],
@@ -58483,7 +58597,7 @@ button:disabled { opacity:.5; cursor:default; }
           ["leagues", "Ligas"],
           ["rarities", "Rarezas"]
         ]) {
-          const tabButton = button(label2, () => {
+          const tabButton = button(label, () => {
             shortcutCategoryFilter = id;
             render();
           });
