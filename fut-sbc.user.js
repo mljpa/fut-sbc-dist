@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         FUT SBC Solver v2
 // @namespace    https://github.com/mljpa/fut-sbc-solver-v2
-// @version      0.2.18
+// @version      0.2.19
 // @description  Userscript to solve EA SPORTS FC 26 SBCs with your own club
 // @match        https://www.ea.com/*/ea-sports-fc/ultimate-team/web-app*
 // @match        https://www.ea.com/ea-sports-fc/ultimate-team/web-app*
@@ -57328,6 +57328,16 @@ Consume las cartas que use. Esto NO se puede deshacer.
   function setProgress(set, owned) {
     return Math.min(set.requiredCards, set.cards.filter((card) => owned.has(card.definitionId)).length);
   }
+  function cardsToComplete(set, owned) {
+    const missingSlots = Math.max(0, set.requiredCards - setProgress(set, owned));
+    if (missingSlots === 0) return [];
+    const referencePrices = /* @__PURE__ */ new Map();
+    for (const tier2 of set.costTiers) for (const item of tier2.items) {
+      if (item.price === null || item.price <= 0) continue;
+      referencePrices.set(item.definitionId, Math.min(referencePrices.get(item.definitionId) ?? Infinity, item.price));
+    }
+    return [...set.cards].filter((card) => !owned.has(card.definitionId)).sort((a, b) => (referencePrices.get(a.definitionId) ?? Infinity) - (referencePrices.get(b.definitionId) ?? Infinity) || a.rating - b.rating || a.definitionId - b.definitionId).slice(0, missingSlots);
+  }
   function normalized(value) {
     return value.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLocaleLowerCase("es").trim();
   }
@@ -57354,78 +57364,6 @@ Consume las cartas que use. Esto NO se puede deshacer.
       if (aMissing !== bMissing) return sort === "most" ? aMissing - bMissing : bMissing - aMissing;
       return byName;
     }).map(({ set }) => set);
-  }
-
-  // src/gallery/token-plan.ts
-  function candidatesFor(set, recorded, claimedGrades) {
-    const claimedIndex = set.grades.findIndex((grade) => grade.name === claimedGrades[String(set.id)]);
-    const claimedTokens = set.grades.slice(0, claimedIndex + 1).reduce((total, grade) => total + grade.tokens, 0);
-    const lineups = set.costTiers.filter((tier2) => tier2.items.length === set.requiredCards).map((tier2) => ({ grade: tier2.grade, tokens: tier2.tokens, items: tier2.items }));
-    if (set.recommended && !lineups.some((lineup) => lineup.grade === set.recommended?.grade)) {
-      lineups.push({ grade: set.recommended.grade, tokens: set.recommended.tokens, items: set.recommended.items });
-    }
-    return lineups.flatMap((lineup) => {
-      const tokens = Math.max(0, lineup.tokens - claimedTokens);
-      if (!tokens) return [];
-      const missing = lineup.items.filter((item) => !recorded.has(item.definitionId));
-      return [{
-        setId: set.id,
-        name: set.name,
-        category: set.category,
-        grade: lineup.grade,
-        tokens,
-        itemIds: lineup.items.map((item) => item.definitionId),
-        missingCards: missing.length,
-        purchaseCoins: missing.reduce((total, item) => total + (item.price ?? 0), 0),
-        // Conservative, per-card approximation when resale matches the listed reference price.
-        resaleTax: missing.reduce((total, item) => total + (item.price === null ? 0 : Math.ceil(item.price * 0.05)), 0),
-        unpricedCards: missing.filter((item) => item.price === null).length
-      }];
-    });
-  }
-  function compare(a, b) {
-    if (a.unpricedCards !== b.unpricedCards) return a.unpricedCards - b.unpricedCards;
-    return a.resaleTax / a.tokens - b.resaleTax / b.tokens || a.purchaseCoins - b.purchaseCoins || b.tokens - a.tokens;
-  }
-  function tokenRoute(recorded, claimedGrades, balance, coinBudget = null, target = 750) {
-    const required = Math.max(0, target - balance);
-    const sets = [];
-    const seen = new Set(recorded);
-    const remaining = [...catalog_snapshot_default.sets];
-    let projectedTokens = 0;
-    let purchaseVolume = 0;
-    let resaleTax = 0;
-    let peakCoins = 0;
-    let cardsToBuy = 0;
-    while (projectedTokens < required) {
-      const candidates = remaining.flatMap((set) => candidatesFor(set, seen, claimedGrades)).filter((item) => item.unpricedCards === 0).filter((item) => coinBudget === null || resaleTax + item.purchaseCoins <= coinBudget).sort(compare);
-      const next = candidates[0];
-      if (!next) break;
-      sets.push(next);
-      projectedTokens += next.tokens;
-      peakCoins = Math.max(peakCoins, resaleTax + next.purchaseCoins);
-      purchaseVolume += next.purchaseCoins;
-      resaleTax += next.resaleTax;
-      cardsToBuy += next.missingCards;
-      remaining.splice(remaining.findIndex((set) => set.id === next.setId), 1);
-      for (const id of next.itemIds) seen.add(id);
-    }
-    return {
-      sets,
-      projectedTokens,
-      purchaseVolume,
-      resaleTax,
-      peakCoins,
-      cardsToBuy,
-      unpricedSets: remaining.filter((set) => {
-        const options = candidatesFor(set, seen, claimedGrades);
-        return options.length > 0 && options.every((item) => item.unpricedCards > 0);
-      }).length,
-      reachesGoal: projectedTokens >= required
-    };
-  }
-  function tokenRouteForCoins(recorded, claimedGrades, balance, coinBudget) {
-    return tokenRoute(recorded, claimedGrades, balance, coinBudget, Number.POSITIVE_INFINITY);
   }
 
   // src/gallery/verified-sets.ts
@@ -57490,15 +57428,6 @@ Consume las cartas que use. Esto NO se puede deshacer.
     2218: "Arkema PL",
     31: "Serie A Enilive"
   };
-  var CATEGORY_IDS = {
-    "premier-league": "eng",
-    laliga: "esp",
-    bundesliga: "ger",
-    "ligue-1": "fra",
-    "serie-a": "ita",
-    leagues: "leagues",
-    rarities: "rarities"
-  };
   var CSS2 = `
 :host { all: initial; font: 14px/1.45 -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif; color:var(--fg); --bg:#fff;--fg:#1d2329;--muted:#606d78;--line:#d8dfe5;--soft:#f3f6f8;--accent:#176d50;--accent-fg:#fff;--warning:#9a5a16; }
 @media (prefers-color-scheme:dark) { :host { --bg:#1d2228;--fg:#f1f4f6;--muted:#aeb7bf;--line:#39424b;--soft:#293039;--accent:#29a477;--warning:#e3aa6c; } }
@@ -57513,6 +57442,8 @@ button { cursor:pointer; }
 .panel.trade-panel { width:min(1000px,96vw); height:auto; max-height:93vh; }
 .head { display:flex; align-items:center; gap:10px; padding:14px 18px; border-bottom:1px solid var(--line); }
 .head h2 { margin:0; font-size:18px; font-weight:700; flex:1; }
+.version { color:var(--muted); font-size:12px; text-decoration:none; }
+.version:hover { color:var(--accent); text-decoration:underline; }
 .head button,.tools button,.back,.tabs button,.row button,.card button { border:1px solid var(--line); border-radius:5px; padding:6px 9px; background:var(--soft); color:var(--fg); }
 button:disabled { opacity:.5; cursor:default; }
 .head button:hover,.tools button:hover,.back:hover,.tabs button:hover,.row button:hover,.card button:hover { border-color:var(--accent); }
@@ -57580,25 +57511,6 @@ button:disabled { opacity:.5; cursor:default; }
 .gallery-cost button { border:1px solid var(--line); border-radius:5px; padding:4px 8px; background:var(--bg); color:var(--fg); }
 .gallery-cost span { margin-top:3px; font-size:16px; font-weight:600; }
 .gallery-cost small { display:block; margin-top:3px; color:var(--muted); }
-.planner-fields { display:flex; flex-wrap:wrap; align-items:end; gap:10px; margin:12px 0; }
-.planner-fields label { display:flex; flex-direction:column; gap:4px; color:var(--muted); font-size:12px; }
-.planner-fields input { width:150px; padding:8px 9px; color:var(--fg); background:var(--bg); border:1px solid var(--line); border-radius:5px; font-size:15px; }
-.planner-fields button { border:1px solid var(--line); border-radius:5px; padding:8px 10px; background:var(--bg); color:var(--fg); }
-.planner-result { margin-top:8px; font-size:20px; font-weight:700; font-variant-numeric:tabular-nums; }
-.planner-metrics { display:grid; grid-template-columns:repeat(auto-fit,minmax(145px,1fr)); gap:7px; margin-top:10px; }
-.planner-metrics div { padding:9px; background:var(--bg); border:1px solid var(--line); border-radius:5px; }
-.planner-metrics strong,.planner-metrics small { display:block; }
-.planner-metrics strong { font-size:17px; font-variant-numeric:tabular-nums; }
-.planner-method,.planner-steps { margin-top:10px; }
-.planner-method summary,.planner-steps summary { color:var(--muted); cursor:pointer; }
-.shortcut-list { display:flex; flex-direction:column; gap:7px; margin-top:10px; }
-.shortcut-row { display:flex; flex-wrap:wrap; align-items:center; gap:9px; padding:9px 10px; border:1px solid var(--line); border-radius:5px; background:var(--bg); }
-.shortcut-row .shortcut-main { flex:1 1 220px; min-width:0; }
-.shortcut-row strong,.shortcut-row small { display:block; }
-.shortcut-row small { color:var(--muted); }
-.shortcut-row button { border:1px solid var(--line); border-radius:5px; padding:7px 10px; background:var(--soft); color:var(--fg); }
-.shortcut-row button.primary { border-color:var(--accent); background:var(--accent); color:var(--accent-fg); }
-.shortcut-row button:disabled { opacity:.5; }
 .trade-advanced { border:1px solid var(--line); border-radius:5px; padding:8px 11px; margin:10px 0; }
 .trade-advanced summary { cursor:pointer; font-weight:600; }
 .trade-summary { display:flex; justify-content:space-between; align-items:baseline; gap:12px; padding:12px 14px; background:var(--soft); border:1px solid var(--line); border-radius:5px; margin:14px 0; }
@@ -57711,8 +57623,13 @@ button:disabled { opacity:.5; cursor:default; }
     panel.setAttribute("aria-label", "Mi Gallery");
     const head = el("div", void 0, "head");
     const title = el("h2", "Mi Gallery");
+    const version = el("a", `v${"0.2.19"}`, "version");
+    version.href = "https://raw.githubusercontent.com/mljpa/fut-sbc-dist/main/fut-sbc.user.js";
+    version.target = "_blank";
+    version.rel = "noopener noreferrer";
+    version.title = "Abrir instalador de la \xFAltima versi\xF3n";
     const close = button("Cerrar", () => closeGallery());
-    head.append(title, close);
+    head.append(title, version, close);
     const body = el("div", void 0, "body");
     const footer = el("div", void 0, "panel-footer");
     panel.append(head, body, footer);
@@ -57800,9 +57717,9 @@ button:disabled { opacity:.5; cursor:default; }
     let owned = loadLedger();
     let current = /* @__PURE__ */ new Set();
     let category = null;
+    let categoryCards = [];
     let sets = [];
     let selected = null;
-    let shortcutCategoryOnly = false;
     let plannedGrade = null;
     let tab = "missing";
     let filter = "";
@@ -57813,7 +57730,6 @@ button:disabled { opacity:.5; cursor:default; }
     let galleryPlannerMode = savedPreferences.galleryPlannerMode;
     let galleryCoinBudget = savedPreferences.galleryCoinBudget;
     let claimedGrades = savedPreferences.claimedGrades;
-    let homeTab = "plan";
     let leagueFilter = null;
     let busy = false;
     let tradeView = false;
@@ -57907,7 +57823,6 @@ button:disabled { opacity:.5; cursor:default; }
     }
     async function loadCategory(next, force = false) {
       if (busy) return;
-      shortcutCategoryOnly = false;
       priceRequestId++;
       priceLoading = false;
       category = next;
@@ -57919,6 +57834,7 @@ button:disabled { opacity:.5; cursor:default; }
       manualPrices.clear();
       manualSalePrices.clear();
       sets = [];
+      categoryCards = [];
       busy = true;
       setStatus(`Leyendo ${next.name} desde EA\u2026`);
       try {
@@ -57958,6 +57874,7 @@ button:disabled { opacity:.5; cursor:default; }
           warning = ` No se pudo verificar Ipswich: ${cause instanceof Error ? cause.message : String(cause)}.`;
         }
         sets = mergeVerifiedSets(buildSets(next, cards), verified);
+        categoryCards = [...new Map([...cards, ...verified.flatMap((set) => set.cards)].map((card) => [card.definitionId, card])).values()];
         for (const card of [...cards, ...verified.flatMap((set) => set.cards)]) {
           if (card.isCollected) owned.add(card.definitionId);
         }
@@ -57981,13 +57898,14 @@ button:disabled { opacity:.5; cursor:default; }
       return set.costTiers.find((tier2) => tier2.grade === plannedGrade)?.items ?? set.recommended?.items ?? [];
     }
     function referenceCards(set) {
+      if (plannedGrade === null) return cardsToComplete(set, owned);
       const byId = new Map(set.cards.map((card) => [card.definitionId, card]));
       const items = referenceItems(set);
       if (items.length) return items.flatMap((item) => {
         const card = byId.get(item.definitionId);
         return card ? [card] : [];
       });
-      return set.cards.slice(0, set.requiredCards);
+      return [];
     }
     function settingsForQuote(ids) {
       const manualIds = ids.filter((id) => !prices.has(id) && manualPrices.has(id));
@@ -58017,9 +57935,9 @@ button:disabled { opacity:.5; cursor:default; }
           if (requestId !== priceRequestId || selected !== set) return;
           set.cards.push(...extra);
         }
-        const priceIds = referenceIds.filter((id) => !owned.has(id));
+        const priceIds = referenceCards(set).filter((card) => !owned.has(card.definitionId)).map((card) => card.definitionId);
         if (!priceIds.length) {
-          status = "Las cartas de esta alineaci\xF3n ya est\xE1n registradas. Comprueba y califica el set en Gallery de EA.";
+          status = plannedGrade ? "Las cartas de esta alineaci\xF3n ya est\xE1n registradas. Comprueba el grado en EA." : setProgress(set, owned) >= set.requiredCards ? "El set tiene suficientes cartas registradas. Comprueba el grado en Gallery de EA." : "No se encontraron cartas candidatas para llenar los cupos pendientes. Actualiza el cat\xE1logo.";
           return;
         }
         const found = await fetchEnhancerPrices(priceIds);
@@ -58037,26 +57955,6 @@ button:disabled { opacity:.5; cursor:default; }
           render();
         }
       }
-    }
-    async function openShortcut(item, preparePurchase = false) {
-      if (busy) return;
-      const destination = CATEGORIES.find((candidate) => candidate.id === CATEGORY_IDS[item.category]);
-      if (!destination) return;
-      const nextSets = buildSets(destination, []);
-      const set = nextSets.find((candidate) => candidate.catalogId === item.setId);
-      if (!set) return;
-      category = destination;
-      sets = nextSets;
-      shortcutCategoryOnly = true;
-      await openSet(set, item.grade);
-      if (!preparePurchase || selected !== set) return;
-      const cards = referenceCards(set);
-      if (cards.length !== referenceItems(set).length) {
-        setStatus(`EA devolvi\xF3 ${cards.length}/${referenceItems(set).length} cartas de la alineaci\xF3n. Revisa el set antes de comprar.`, true);
-        return;
-      }
-      for (const card of cards) if (!owned.has(card.definitionId)) chosen.add(card.definitionId);
-      if (chosen.size) await showTrade();
     }
     async function showTrade(force = false) {
       if (busy || priceLoading || chosen.size === 0) return;
@@ -58391,8 +58289,7 @@ button:disabled { opacity:.5; cursor:default; }
         tradeView = false;
         chosen.clear();
         prices.clear();
-        if (shortcutCategoryOnly && category) void loadCategory(category);
-        else render();
+        render();
       }, "back"));
       else if (category) tools.append(button("\u2190 Categor\xEDas", () => {
         category = null;
@@ -58413,141 +58310,9 @@ button:disabled { opacity:.5; cursor:default; }
         tools.append(refresh);
       }
       body.append(tools);
-      if (busy || error || selected || !category && homeTab === "plan") body.append(el("p", status, `status${error ? " error" : ""}`));
+      if (busy || error || selected) body.append(el("p", status, `status${error ? " error" : ""}`));
       if (!category) {
-        const homeTabs = el("div", void 0, "tabs");
-        for (const [id, label] of [["plan", "Mi plan"], ["explore", "Colecciones"]]) {
-          const tabButton = button(label, () => {
-            homeTab = id;
-            render();
-          });
-          if (homeTab === id) tabButton.classList.add("active");
-          homeTabs.append(tabButton);
-        }
-        body.append(homeTabs);
-        if (homeTab === "plan") {
-          const planner = el("div", void 0, "gallery-cost");
-          planner.append(el("strong", "Planificador de fichas"));
-          const modes = el("div", void 0, "tabs");
-          for (const [mode2, label] of [["target", "Meta de fichas"], ["coins", "Saldo de monedas"]]) {
-            const modeButton = button(label, () => {
-              galleryPlannerMode = mode2;
-              persistPreferences();
-              render();
-            });
-            if (galleryPlannerMode === mode2) modeButton.classList.add("active");
-            modes.append(modeButton);
-          }
-          modes.style.marginTop = "10px";
-          planner.append(modes);
-          const fields = el("div", void 0, "planner-fields");
-          const balanceLabel = el("label", "Mis fichas");
-          const balance = el("input");
-          balance.type = "number";
-          balance.min = "0";
-          balance.step = "1";
-          balance.value = String(galleryTokenBalance);
-          balance.addEventListener("change", () => {
-            galleryTokenBalance = Math.max(0, Math.trunc(Number(balance.value) || 0));
-            persistPreferences();
-            render();
-          });
-          balanceLabel.append(balance);
-          fields.append(balanceLabel);
-          if (galleryPlannerMode === "target") {
-            const targetLabel = el("label", "Quiero llegar a");
-            const target = el("input");
-            target.type = "number";
-            target.min = "1";
-            target.step = "1";
-            target.value = String(galleryTokenTarget);
-            target.addEventListener("change", () => {
-              galleryTokenTarget = Math.max(1, Math.trunc(Number(target.value) || 750));
-              persistPreferences();
-              render();
-            });
-            targetLabel.append(target);
-            fields.append(targetLabel);
-          } else {
-            const coinsLabel = el("label", "Mis monedas");
-            const coins = el("input");
-            coins.type = "number";
-            coins.min = "0";
-            coins.max = "15000000";
-            coins.step = "1";
-            coins.placeholder = "Ingresa tu saldo";
-            coins.value = galleryCoinBudget === null ? "" : String(galleryCoinBudget);
-            coins.addEventListener("change", () => {
-              galleryCoinBudget = coins.value === "" ? null : Math.min(15e6, Math.max(0, Math.trunc(Number(coins.value) || 0)));
-              persistPreferences();
-              render();
-            });
-            coinsLabel.append(coins);
-            fields.append(coinsLabel);
-          }
-          planner.append(fields);
-          const route = galleryPlannerMode === "target" ? tokenRoute(owned, claimedGrades, galleryTokenBalance, null, galleryTokenTarget) : galleryCoinBudget === null ? null : tokenRouteForCoins(owned, claimedGrades, galleryTokenBalance, galleryCoinBudget);
-          if (!route) planner.append(el("small", "Ingresa tus monedas para calcular una ruta.", "metric"));
-          else {
-            const totalTokens = galleryTokenBalance + route.projectedTokens;
-            const summary = galleryPlannerMode === "target" ? route.reachesGoal ? `${fmt(totalTokens)} fichas posibles` : `${fmt(totalTokens)} fichas posibles \xB7 faltan ${fmt(Math.max(0, galleryTokenTarget - totalTokens))}` : `${fmt(totalTokens)} fichas posibles \xB7 +${fmt(route.projectedTokens)}`;
-            planner.append(el("div", summary, "planner-result"));
-            const metrics = el("div", void 0, "planner-metrics");
-            for (const [label, value] of [
-              [galleryPlannerMode === "target" && route.reachesGoal ? "Saldo necesario" : "Saldo m\xE1ximo usado", fmt(route.peakCoins)],
-              ["Comisi\xF3n estimada", fmt(route.resaleTax)],
-              ["Sets", fmt(route.sets.length)],
-              ["Cartas", fmt(route.cardsToBuy)]
-            ]) {
-              const metric = el("div");
-              metric.append(el("strong", value), el("small", label));
-              metrics.append(metric);
-            }
-            planner.append(metrics);
-            const method = el("details", void 0, "planner-method");
-            method.append(el("summary", "C\xF3mo se calcula"));
-            method.append(el("small", "Las monedas necesarias son el m\xE1ximo para financiar un set a la vez. El costo estimado supone revender al mismo precio y pagar 5% de comisi\xF3n. El precio, la venta y el grado pueden variar.", "metric"));
-            if (route.unpricedSets) method.append(el("small", `${route.unpricedSets} sets sin precio completo quedan fuera de la ruta.`, "metric"));
-            planner.append(method);
-          }
-          if (Object.keys(claimedGrades).length === 0 && galleryTokenBalance > 0) {
-            planner.append(el("small", "Provisional: marca los grados ya cobrados para evitar contar fichas dos veces.", "metric"));
-          }
-          body.append(planner);
-          if (route && route.sets.length > 0) {
-            const routeBox = el("div", void 0, "gallery-cost");
-            routeBox.append(el("strong", "Siguiente paso"));
-            const routeList = el("div", void 0, "shortcut-list");
-            const makeRouteRow = (item, index) => {
-              const row = el("div", void 0, "shortcut-row");
-              const main = el("div", void 0, "shortcut-main");
-              main.append(el("strong", `${index + 1}. ${item.name} \xB7 grado ${item.grade} \xB7 +${item.tokens} fichas`));
-              main.append(el("small", `${item.missingCards} cartas faltantes \xB7 ${fmt(item.purchaseCoins)} monedas`));
-              row.append(main);
-              const action = button(item.missingCards === 0 ? "Ver cartas" : "Preparar compra", () => {
-                void openShortcut(item, item.missingCards > 0);
-              });
-              action.disabled = busy;
-              row.append(action);
-              return row;
-            };
-            routeList.append(makeRouteRow(route.sets[0], 0));
-            routeBox.append(routeList);
-            if (route.sets.length > 1) {
-              const steps = el("details", void 0, "planner-steps");
-              steps.append(el("summary", `Ver ruta completa \xB7 ${route.sets.length} sets`));
-              const rest = el("div", void 0, "shortcut-list");
-              for (const [index, item] of route.sets.entries()) {
-                if (index > 0) rest.append(makeRouteRow(item, index));
-              }
-              steps.append(rest);
-              routeBox.append(steps);
-            }
-            body.append(routeBox);
-          }
-          body.append(el("p", `Precios de FUT.GG (${new Date(GALLERY_SNAPSHOT_AT).toLocaleDateString("es-CL")}). La compra usa cotizaciones actuales de Enhancer y requiere tu confirmaci\xF3n.`, "note"));
-          return;
-        }
+        body.append(el("p", `${fmt(owned.size)} cartas registradas \xB7 Elige una categor\xEDa para ver equipos y sets.`, "set-count"));
         const grid = el("div", void 0, "grid");
         for (const c of CATEGORIES) {
           const card = button(c.name, () => {
@@ -58670,8 +58435,17 @@ button:disabled { opacity:.5; cursor:default; }
         return;
       }
       const got = setProgress(selected, owned);
-      body.append(el("p", shortcutCategoryOnly ? `${got}/${selected.requiredCards} cartas de la alineaci\xF3n sugerida registradas \xB7 ${Math.max(0, selected.requiredCards - got)} faltantes en esta alineaci\xF3n. Para ver el progreso completo del set, abre la categor\xEDa.` : `${got}/${selected.requiredCards} obtenidas \xB7 ${Math.max(0, selected.requiredCards - got)} faltantes para la cantidad requerida${selected.verified ? "" : " (elegibilidad aproximada)"}`, "metric"));
-      body.append(el("p", `Fichas por grado: ${selected.grades.map((grade) => `${grade.name} +${grade.tokens}`).join(" \xB7 ")}. Se obtienen al confirmar el set en Gallery.`, "note"));
+      body.append(el("p", `${got}/${selected.requiredCards} cartas registradas \xB7 ${Math.max(0, selected.requiredCards - got)} cupos pendientes${selected.verified ? "" : " (elegibilidad aproximada)"}`, "metric"));
+      if (!category?.leagueSets && !category?.rarities) {
+        const leaguesCategory = CATEGORIES.find((candidate) => candidate.leagueSets);
+        const leagueIds = new Set(selected.cards.map((card) => card.leagueId));
+        const leagueSets = leaguesCategory ? buildSets(leaguesCategory, categoryCards).filter((set) => leagueIds.has(Number(set.id.split(":")[1]))) : [];
+        for (const leagueSet of leagueSets) body.append(el("p", `${leagueSet.name}: ${setProgress(leagueSet, owned)}/${leagueSet.requiredCards} cartas registradas.`, "note"));
+      }
+      const gradeDetails = el("details", void 0, "trade-advanced");
+      gradeDetails.open = plannedGrade !== null;
+      gradeDetails.append(el("summary", "Grados y mejoras"));
+      gradeDetails.append(el("p", `Fichas por grado: ${selected.grades.map((grade) => `${grade.name} +${grade.tokens}`).join(" \xB7 ")}. EA confirma el grado y entrega las fichas.`, "note"));
       const claimed = el("label", "Grado ya reclamado en EA: ");
       const gradeSelect = el("select");
       const none = el("option", "Ninguno");
@@ -58690,16 +58464,16 @@ button:disabled { opacity:.5; cursor:default; }
         render();
       });
       claimed.append(gradeSelect);
-      body.append(claimed);
+      gradeDetails.append(claimed);
       const lineup = selected.costTiers.find((tier2) => tier2.grade === plannedGrade);
-      if (selected.costTiers.some((tier2) => tier2.tokens > 0)) {
-        const target = el("label", "Alineaci\xF3n a buscar: ");
+      if (selected.costTiers.some((tier2) => tier2.tokens > 0 && tier2.items.length === selected.requiredCards)) {
+        const target = el("label", "Modo: ");
         const grade = el("select");
-        const recommendedOption = el("option", `Mejor grado disponible${selected.recommended ? ` (${selected.recommended.grade})` : ""}`);
+        const recommendedOption = el("option", "Completar cupos");
         recommendedOption.value = "";
         grade.append(recommendedOption);
-        for (const tier2 of selected.costTiers.filter((candidate) => candidate.tokens > 0)) {
-          const option = el("option", `Grado ${tier2.grade} \xB7 ${tier2.tokens} fichas acumuladas`);
+        for (const tier2 of selected.costTiers.filter((candidate) => candidate.tokens > 0 && candidate.items.length === selected.requiredCards)) {
+          const option = el("option", `Mejorar a grado ${tier2.grade} \xB7 alineaci\xF3n FUT.GG`);
           option.value = tier2.grade;
           grade.append(option);
         }
@@ -58708,9 +58482,10 @@ button:disabled { opacity:.5; cursor:default; }
           void openSet(selected, grade.value || null);
         });
         target.append(grade);
-        body.append(target);
+        gradeDetails.append(target);
       }
-      if (lineup || selected.recommended) body.append(el("p", `Esta alineaci\xF3n p\xFAblica apunta a grado ${lineup?.grade ?? selected.recommended?.grade} (${lineup?.tokens ?? selected.recommended?.tokens} fichas acumuladas). Sus precios y puntuaci\xF3n pueden cambiar; revisa el grado en EA antes de comprar.`, "note"));
+      if (lineup) gradeDetails.append(el("p", `La alineaci\xF3n publicada apunta a grado ${lineup.grade}; el grado final y los precios pueden variar.`, "note"));
+      body.append(gradeDetails);
       if (tab === "missing") {
         const missing = referenceCards(selected).filter((card) => !owned.has(card.definitionId));
         const selectedCards = missing.filter((card) => chosen.has(card.definitionId));
@@ -58724,15 +58499,19 @@ button:disabled { opacity:.5; cursor:default; }
           }));
         }
         if (actions.childElementCount) body.append(actions);
-        const costs = el("div", void 0, "gallery-costs");
-        const total = referenceTotal(missing, prices);
-        const cost = el("div", void 0, "gallery-cost");
-        cost.append(el("strong", `Alineaci\xF3n de referencia \xB7 ${playerCount(missing.length)} sin registrar`));
-        cost.append(el("span", priceLoading ? "Consultando precios\u2026" : total.priced === 0 && missing.length > 0 ? "Sin precios de referencia" : `${fmt(total.amount)} monedas de referencia`));
-        if (!priceLoading && total.priced < missing.length)
-          cost.append(el("small", `Subtotal de ${total.priced}/${missing.length} cartas con precio.`));
-        costs.append(cost);
-        body.append(costs);
+        if (missing.length) {
+          const gap = Math.max(0, selected.requiredCards - got);
+          if (!plannedGrade && missing.length < gap) body.append(el("p", `S\xF3lo hay ${missing.length} cartas candidatas para ${gap} cupos pendientes. Actualiza el cat\xE1logo antes de comprar.`, "status error"));
+          const costs = el("div", void 0, "gallery-costs");
+          const total = referenceTotal(missing, prices);
+          const cost = el("div", void 0, "gallery-cost");
+          cost.append(el("strong", plannedGrade ? `Mejora opcional \xB7 ${playerCount(missing.length)} sin registrar` : `${playerCount(missing.length)} sugeridos para completar`));
+          cost.append(el("span", priceLoading ? "Consultando precios\u2026" : total.priced === 0 ? "Sin precios de referencia" : `${fmt(total.amount)} monedas de referencia`));
+          if (!priceLoading && total.priced < missing.length)
+            cost.append(el("small", `Subtotal de ${total.priced}/${missing.length} cartas con precio.`));
+          costs.append(cost);
+          body.append(costs);
+        } else body.append(el("p", plannedGrade ? "Todas las cartas de esta alineaci\xF3n ya est\xE1n registradas." : got >= selected.requiredCards ? "Ya tienes suficientes cartas para llenar los cupos. Comprueba el grado en Gallery de EA; si quieres mejorarlo, abre \xABGrados y mejoras\xBB." : "No hay cartas candidatas para llenar los cupos pendientes. Actualiza el cat\xE1logo.", "note"));
         const selectedTotal = referenceTotal(selectedCards, prices);
         const footerCopy = el("div", void 0, "footer-copy");
         footerCopy.append(el("strong", `${playerCount(selectedCards.length)} \xB7 ${selectedTotal.priced === 0 && selectedCards.length > 0 ? "sin precios de referencia" : `${fmt(selectedTotal.amount)} monedas de referencia`}`));
