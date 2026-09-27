@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         FUT SBC Solver v2
 // @namespace    https://github.com/mljpa/fut-sbc-solver-v2
-// @version      0.2.23
+// @version      0.2.24
 // @description  Userscript to solve EA SPORTS FC 26 SBCs with your own club
 // @match        https://www.ea.com/*/ea-sports-fc/ultimate-team/web-app*
 // @match        https://www.ea.com/ea-sports-fc/ultimate-team/web-app*
@@ -57517,6 +57517,14 @@ Consume las cartas que use. Esto NO se puede deshacer.
     };
   }
 
+  // src/gallery/token-balance.ts
+  function readGalleryTokenBalance(source = globalThis.services) {
+    const eventToken = source?.EventToken;
+    if (!eventToken?.areDefinitionsLoaded?.() || eventToken.getDefinition?.("EVENT_TOKEN_1")?.displayName !== "Gallery Token") return null;
+    const balance = eventToken.getBalance?.("EVENT_TOKEN_1");
+    return typeof balance === "number" && Number.isSafeInteger(balance) && balance >= 0 ? balance : null;
+  }
+
   // src/gallery/verified-sets.ts
   var IPSWICH_IDS = [
     50563169,
@@ -57808,7 +57816,7 @@ button:disabled { opacity:.5; cursor:default; }
     panel.setAttribute("aria-label", "Mi Gallery");
     const head = el("div", void 0, "head");
     const title = el("h2", "Mi Gallery");
-    const version = el("a", `v${"0.2.23"}`, "version");
+    const version = el("a", `v${"0.2.24"}`, "version");
     version.href = "https://raw.githubusercontent.com/mljpa/fut-sbc-dist/main/fut-sbc.user.js";
     version.target = "_blank";
     version.rel = "noopener noreferrer";
@@ -58643,9 +58651,12 @@ button:disabled { opacity:.5; cursor:default; }
             field.append(input);
             controls.append(field);
           };
-          numberField("Mis fichas", galleryTokenBalance, (next) => {
+          const eaTokenBalance = readGalleryTokenBalance();
+          const currentTokenBalance = eaTokenBalance ?? galleryTokenBalance;
+          if (eaTokenBalance === null) numberField("Mis fichas", galleryTokenBalance, (next) => {
             galleryTokenBalance = next ?? 0;
           });
+          else controls.append(el("span", `Mis fichas en EA: ${fmt(eaTokenBalance)}`, "metric"));
           if (galleryPlannerMode === "target") numberField("Quiero llegar a", galleryTokenTarget, (next) => {
             galleryTokenTarget = Math.max(1, next ?? 750);
           });
@@ -58660,23 +58671,23 @@ button:disabled { opacity:.5; cursor:default; }
           const route = galleryBudgetPlan(
             owned,
             claimedGrades,
-            galleryTokenBalance,
+            currentTokenBalance,
             galleryPlannerMode === "coins" ? null : galleryTokenTarget,
             galleryCoinBudget
           );
           const routeRows = galleryRouteRows(route, claimedGrades);
           const claimedTotal = claimedGalleryTokens(claimedGrades);
           const targetText = galleryPlannerMode === "target" ? ` de ${fmt(galleryTokenTarget)}` : "";
-          body.append(el("p", `${fmt(galleryTokenBalance + route.gainedTokens)}${targetText} fichas estimadas \xB7 ${route.sets.length} sets \xB7 ${fmt(route.uniqueCards)} cartas \xFAnicas por registrar`, "metric"));
-          body.append(el("p", `${fmt(claimedTotal)} fichas marcadas como cobradas en sets \xB7 saldo EA indicado: ${fmt(galleryTokenBalance)}`, "set-count"));
+          body.append(el("p", `${fmt(currentTokenBalance + route.gainedTokens)}${targetText} fichas estimadas \xB7 ${route.sets.length} sets \xB7 ${fmt(route.uniqueCards)} cartas \xFAnicas por registrar`, "metric"));
+          body.append(el("p", `${fmt(claimedTotal)} fichas marcadas como cobradas en sets \xB7 saldo ${eaTokenBalance === null ? "indicado" : "le\xEDdo de EA"}: ${fmt(currentTokenBalance)}`, "set-count"));
           if (route.sets.length) body.append(el("p", `${fmt(route.coinsNeeded)} monedas necesarias de referencia \xB7 ${fmt(route.tax)} de comisi\xF3n estimada`, "set-count"));
           if (galleryPlannerMode === "target" && !route.reachesGoal)
             body.append(el("p", "Esta ruta no alcanza la meta con las alineaciones publicadas y el saldo indicado.", "note"));
-          body.append(el("p", `El c\xE1lculo comparte cartas entre sets y usa precios de FUT.GG; ${route.unpricedCards} cartas no tienen precio. Los grados cobrados se marcan manualmente.`, "note"));
+          body.append(el("p", `Precios de FUT.GG \xB7 ${route.unpricedCards} cartas sin precio. La webapp entrega el saldo, pero no encontr\xE9 el historial de grados cobrados por set; sin marcar esos grados, la proyecci\xF3n puede contar fichas dos veces.`, "note"));
           const routeControls = el("div", void 0, "set-controls");
           const routeLabel = el("label", "Mostrar sets");
           const routeSelect = el("select");
-          for (const [value, label] of [["all", "Todos"], ["missing", "Con cartas pendientes"], ["ready", "Cartas completas"], ["claimed", "Grado cobrado"]]) {
+          for (const [value, label] of [["all", "Todos"], ["missing", "Con cartas pendientes"], ["ready", "Cartas completas"], ["claimed", "Marcados cobrados"]]) {
             const option = el("option", `${label} \xB7 ${routeRows.filter((row) => value === "all" || row.state === value).length}`);
             option.value = value;
             routeSelect.append(option);
@@ -58699,7 +58710,7 @@ button:disabled { opacity:.5; cursor:default; }
             const head2 = el("div", void 0, "plan-set-head");
             const summary = el("div");
             summary.append(el("strong", `${index + 1}. ${item.name} \xB7 grado ${item.grade} \xB7 ${item.state === "claimed" ? `${fmt(item.claimedTokens)} fichas cobradas` : `+${fmt(item.tokens)} fichas`}`));
-            const stateText = item.state === "claimed" ? "\u2713 Grado cobrado en EA" : item.state === "ready" ? "\u2713 Cartas completas \xB7 califica en EA" : `${item.missingItems.length} cartas por registrar \xB7 ${fmt(item.purchaseCoins)} monedas de referencia FUT.GG`;
+            const stateText = item.state === "claimed" ? "\u2713 Marcado como cobrado" : item.state === "ready" ? "\u2713 Cartas completas \xB7 califica en EA" : `${item.missingItems.length} cartas por registrar \xB7 ${fmt(item.purchaseCoins)} monedas de referencia FUT.GG`;
             summary.append(el("small", stateText, "plan-state"));
             if (item.claimedGrade && item.state !== "claimed") summary.append(el("small", `Grado ${item.claimedGrade} ya cobrado`));
             head2.append(summary);
@@ -58714,7 +58725,7 @@ button:disabled { opacity:.5; cursor:default; }
               void openPlannedSet(item);
             }));
             card.append(head2);
-            const claim = el("label", "Grado cobrado en EA", "plan-set-claim");
+            const claim = el("label", "Marcar grado cobrado", "plan-set-claim");
             const gradeSelect2 = el("select");
             const none2 = el("option", "Ninguno");
             none2.value = "";
