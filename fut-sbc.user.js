@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         FUT SBC Solver v2
 // @namespace    https://github.com/mljpa/fut-sbc-solver-v2
-// @version      0.2.28
+// @version      0.2.29
 // @description  Userscript to solve EA SPORTS FC 26 SBCs with your own club
 // @match        https://www.ea.com/*/ea-sports-fc/ultimate-team/web-app*
 // @match        https://www.ea.com/ea-sports-fc/ultimate-team/web-app*
@@ -57833,7 +57833,7 @@ Consume las cartas que use. Esto NO se puede deshacer.
       galleryTokenTarget: integer(raw.galleryTokenTarget, 1, 1e6, 750),
       galleryPlannerMode: raw.galleryPlannerMode === "coins" ? "coins" : "target",
       galleryCoinBudget: raw.galleryCoinBudget === null || raw.galleryCoinBudget === void 0 ? null : integer(raw.galleryCoinBudget, 0, 15e6, 0),
-      routeFilter: raw.routeFilter === "claimed" ? "complete" : ["all", "missing", "ready", "complete"].includes(String(raw.routeFilter)) ? raw.routeFilter : "all",
+      routeFilter: raw.routeFilter === "claimed" ? "complete" : ["all", "missing", "ready", "complete", "confirmed", "pending", "unverified", "upgrade"].includes(String(raw.routeFilter)) ? raw.routeFilter : "all",
       claimedGrades: Object.fromEntries(Object.entries(record(raw.claimedGrades)).filter(([id, grade]) => /^\d+$/.test(id) && ["D", "C", "B", "A", "S"].includes(String(grade))))
     };
   }
@@ -58173,6 +58173,49 @@ Consume las cartas que use. Esto NO se puede deshacer.
     return typeof balance === "number" && Number.isSafeInteger(balance) && balance >= 0 ? balance : null;
   }
 
+  // src/gallery/claim-tracking.ts
+  var KEY2 = "fut-sbc-gallery:confirmed-claims:fc27";
+  var GRADES = ["D", "C", "B", "A", "S"];
+  function loadConfirmedClaims(storage3) {
+    try {
+      const parsed = JSON.parse((storage3 ?? localStorage).getItem(KEY2) ?? "null");
+      if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) return {};
+      return Object.fromEntries(Object.entries(parsed).filter(([id, grade]) => /^\d+$/.test(id) && GRADES.includes(String(grade))));
+    } catch {
+      return {};
+    }
+  }
+  function saveConfirmedClaims(claims, storage3) {
+    try {
+      (storage3 ?? localStorage).setItem(KEY2, JSON.stringify(claims));
+    } catch {
+    }
+  }
+  function galleryClaimRows(recorded, calculated, confirmed) {
+    return catalog_snapshot_default.sets.map((set) => {
+      const calculatedGrade = calculated[String(set.id)] ?? null;
+      const confirmedGrade = confirmed[String(set.id)] ?? null;
+      const gradeIndex = (name) => set.grades.findIndex((grade) => grade.name === name);
+      const tokensThrough = (name) => set.grades.slice(0, gradeIndex(name) + 1).reduce((sum, grade) => sum + grade.tokens, 0);
+      const calculatedIndex = gradeIndex(calculatedGrade);
+      const confirmedIndex = gradeIndex(confirmedGrade);
+      const claimState = confirmedIndex >= 0 && confirmedIndex >= calculatedIndex ? "confirmed" : calculatedIndex < 0 ? "not-ready" : confirmedIndex >= 0 ? "pending" : "unverified";
+      const better = set.costTiers.filter((tier2) => tier2.items.length === set.requiredCards && gradeIndex(tier2.grade) > calculatedIndex && tier2.tokens > tokensThrough(calculatedGrade)).map((tier2) => ({ tier: tier2, missing: tier2.items.filter((item) => !recorded.has(item.definitionId)).length })).sort((a, b) => a.missing - b.missing || b.tier.tokens - a.tier.tokens)[0];
+      return {
+        setId: set.id,
+        name: set.name,
+        category: set.category,
+        calculatedGrade,
+        confirmedGrade,
+        claimState,
+        potentialTokens: Math.max(0, tokensThrough(calculatedGrade) - tokensThrough(confirmedGrade)),
+        nextGrade: better?.tier.grade ?? null,
+        nextMissing: better?.missing ?? null,
+        nextTokens: better ? Math.max(0, better.tier.tokens - tokensThrough(calculatedGrade)) : 0
+      };
+    });
+  }
+
   // src/gallery/verified-sets.ts
   var IPSWICH_IDS = [
     50563169,
@@ -58480,7 +58523,7 @@ button:disabled { opacity:.5; cursor:default; }
     panel.setAttribute("aria-label", "Mi Gallery");
     const head = el("div", void 0, "head");
     const title = el("h2", "Mi Gallery");
-    const version = el("a", `v${"0.2.28"}`, "version");
+    const version = el("a", `v${"0.2.29"}`, "version");
     version.href = "https://raw.githubusercontent.com/mljpa/fut-sbc-dist/main/fut-sbc.user.js";
     version.target = "_blank";
     version.rel = "noopener noreferrer";
@@ -58571,6 +58614,8 @@ button:disabled { opacity:.5; cursor:default; }
     launcher.addEventListener("pointerup", finishDrag);
     launcher.addEventListener("pointercancel", finishDrag);
     const savedPreferences = loadGalleryPreferences();
+    let confirmedClaims = loadConfirmedClaims();
+    const routeDebug = window;
     let owned = loadLedger();
     const knownCards = new Map(loadCachedGalleryCards().map((card) => [card.definitionId, card]));
     function rememberCard(card) {
@@ -59462,6 +59507,9 @@ button:disabled { opacity:.5; cursor:default; }
           }, "route-update");
           updateCollection.disabled = busy;
           const completedGrades = completedGalleryGrades(owned, [...knownCards.values()]);
+          const claimRows = galleryClaimRows(owned, completedGrades, confirmedClaims);
+          routeDebug.__futGalleryRoute = claimRows;
+          const claimsById = new Map(claimRows.map((row) => [row.setId, row]));
           const completedTotal = claimedGalleryTokens(completedGrades);
           const goal = galleryTokenTarget;
           const { total: progressTotal, remaining } = galleryTokenProgress(currentTokenBalance, goal);
@@ -59508,7 +59556,21 @@ button:disabled { opacity:.5; cursor:default; }
               persistPreferences();
               render();
             }, "route-update"),
-            el("span", `${fmt(routeRows.filter((row) => row.state === "missing").length)} por completar`)
+            el("span", `${fmt(claimRows.filter((row) => row.claimState === "confirmed").length)} canjes registrados \xB7 ${fmt(claimRows.filter((row) => row.claimState === "pending").length)} mejoras por canjear \xB7 ${fmt(claimRows.filter((row) => row.claimState === "unverified").length)} por verificar`),
+            button("Ver lista en consola", () => {
+              console.info("Mi ruta: los canjes registrados son confirmaciones tuyas; las cartas por s\xED solas no prueban un canje.");
+              for (const [label, rows] of [
+                ["Canjes registrados", claimRows.filter((row) => row.claimState === "confirmed")],
+                ["Mejoras por canjear", claimRows.filter((row) => row.claimState === "pending")],
+                ["Canje por verificar", claimRows.filter((row) => row.claimState === "unverified")],
+                ["Pueden subir de grado", claimRows.filter((row) => row.calculatedGrade && row.nextGrade)],
+                ["Pendientes de cartas", claimRows.filter((row) => row.claimState === "not-ready")]
+              ]) {
+                console.info(`${label}: ${rows.length}`);
+                console.table(rows);
+              }
+              console.info("Datos actuales: window.__futGalleryRoute");
+            }, "route-update")
           );
           body.append(summary);
           if (galleryPlannerMode === "target" && !route.reachesGoal)
@@ -59523,8 +59585,16 @@ button:disabled { opacity:.5; cursor:default; }
           const routeControls = el("div", void 0, "set-controls");
           const routeLabel = el("label", "Mostrar sets");
           const routeSelect = el("select");
-          for (const [value, label] of [["all", "Todos"], ["complete", "Grado calculado"], ["ready", "Para revisar en EA"], ["missing", "Por completar"]]) {
-            const option = el("option", `${label} \xB7 ${routeRows.filter((row) => value === "all" || (value === "complete" ? Boolean(row.completedGrade) : row.state === value)).length}`);
+          const matchesRouteFilter = (row, value) => {
+            const claim = claimsById.get(row.setId);
+            if (value === "all") return true;
+            if (value === "complete") return Boolean(row.completedGrade);
+            if (value === "upgrade") return Boolean(claim?.calculatedGrade && claim.nextGrade);
+            if (value === "confirmed" || value === "pending" || value === "unverified") return claim?.claimState === value;
+            return row.state === value;
+          };
+          for (const [value, label] of [["all", "Todos"], ["unverified", "Canje por verificar"], ["pending", "Mejora por canjear"], ["confirmed", "Canje registrado"], ["upgrade", "Puede subir de grado"], ["missing", "Por completar"], ["complete", "Grado calculado"]]) {
+            const option = el("option", `${label} \xB7 ${routeRows.filter((row) => matchesRouteFilter(row, value)).length}`);
             option.value = value;
             routeSelect.append(option);
           }
@@ -59541,18 +59611,32 @@ button:disabled { opacity:.5; cursor:default; }
           routeControls.append(routeLabel);
           body.append(routeControls);
           const list = el("div", void 0, "plan-list");
-          const shownRoute = routeRows.filter((row) => routeFilter === "all" || (routeFilter === "complete" ? Boolean(row.completedGrade) : row.state === routeFilter));
+          const shownRoute = routeRows.filter((row) => matchesRouteFilter(row, routeFilter));
           for (const item of shownRoute.slice(0, routeVisibleCount)) {
+            const claim = claimsById.get(item.setId);
             const card = el("div", void 0, `plan-set ${item.state}`);
             const head2 = el("div", void 0, "plan-set-head");
             const summary2 = el("div");
             const gradeText = item.state === "catalog" ? "sin alineaci\xF3n publicada" : item.state === "complete" ? `grado estimado ${item.grade} \xB7 ${fmt(item.readyTokens)} fichas potenciales` : `objetivo ${item.grade} \xB7 +${fmt(item.tokens)} fichas`;
             summary2.append(el("strong", `${item.name} \xB7 ${gradeText}`));
-            const stateText = item.state === "complete" ? "\u2713 Cartas completas \xB7 revisa el canje en Gallery" : item.state === "catalog" ? "Colecci\xF3n disponible \xB7 abre el set para ver sus cartas" : item.state === "ready" ? "Cartas completas \xB7 revisa el canje en Gallery" : `${item.missingItems.length} cartas por registrar \xB7 ${fmt(item.purchaseCoins)} monedas ref.`;
+            const stateText = claim.claimState === "confirmed" ? `\u2713 Canje registrado: grado ${claim.confirmedGrade}` : claim.claimState === "pending" ? `Grado ${claim.calculatedGrade} calculado \xB7 +${fmt(claim.potentialTokens)} fichas por canjear` : claim.claimState === "unverified" ? `Grado ${claim.calculatedGrade} calculado \xB7 confirma si ya lo canjeaste` : item.state === "complete" ? "\u2713 Cartas completas \xB7 revisa el canje" : item.state === "catalog" ? "Colecci\xF3n disponible \xB7 abre el set para ver sus cartas" : item.state === "ready" ? "Cartas completas \xB7 revisa el canje en Gallery" : `${item.missingItems.length} cartas por registrar \xB7 ${fmt(item.purchaseCoins)} monedas ref.`;
             summary2.append(el("small", stateText, "plan-state"));
             if (item.inPlan) summary2.append(el("small", "Ruta sugerida"));
             if (item.completedGrade && item.state !== "complete") summary2.append(el("small", `Grado ${item.completedGrade} calculado \xB7 ${fmt(item.readyTokens)} fichas seg\xFAn cartas \xB7 revisa el canje en Gallery`));
+            if (claim.calculatedGrade && claim.nextGrade) summary2.append(el("small", `Puede subir a ${claim.nextGrade}: ${fmt(claim.nextMissing ?? 0)} cartas de la alineaci\xF3n FUT.GG \xB7 +${fmt(claim.nextTokens)} fichas`));
             head2.append(summary2);
+            if (claim.calculatedGrade && claim.claimState !== "confirmed") head2.append(button(`Ya canje\xE9 ${claim.calculatedGrade}`, () => {
+              confirmedClaims = { ...confirmedClaims, [String(item.setId)]: claim.calculatedGrade };
+              saveConfirmedClaims(confirmedClaims);
+              render();
+            }));
+            if (claim.claimState === "confirmed") head2.append(button("Deshacer registro", () => {
+              const next = { ...confirmedClaims };
+              delete next[String(item.setId)];
+              confirmedClaims = next;
+              saveConfirmedClaims(confirmedClaims);
+              render();
+            }));
             if (item.state === "missing") {
               const expand2 = button(expandedPlanSetId === item.setId ? "Ocultar" : "Ver cartas", () => {
                 void expandPlanSet(item);
@@ -59571,7 +59655,7 @@ button:disabled { opacity:.5; cursor:default; }
                 row.append(el("small", missing.price === null ? " \xB7 sin precio" : ` \xB7 ${fmt(missing.price)} monedas ref.`));
                 items.append(row);
               }
-              card.append(item.missingItems.length ? items : el("p", "Todas las cartas de esta alineaci\xF3n ya est\xE1n registradas. Comprueba y reclama el grado en EA.", "note"));
+              card.append(item.missingItems.length ? items : el("p", "Todas las cartas de esta alineaci\xF3n ya est\xE1n registradas. Comprueba el grado antes de canjear.", "note"));
             }
             list.append(card);
           }
@@ -59833,6 +59917,7 @@ button:disabled { opacity:.5; cursor:default; }
     return { open, destroy() {
       window.clearInterval(balanceTimer);
       window.removeEventListener("resize", onResize);
+      delete routeDebug.__futGalleryRoute;
       host.remove();
     } };
   }
@@ -59990,7 +60075,7 @@ button:disabled { opacity:.5; cursor:default; }
   }
 
   // src/prices/cache.ts
-  var KEY2 = "fut-sbc-solver:prices";
+  var KEY3 = "fut-sbc-solver:prices";
   var MANIFEST_POLL_MS = 15 * 60 * 1e3;
   var STALE_AFTER_MS = 6 * 60 * 60 * 1e3;
   function storage2() {
@@ -60002,7 +60087,7 @@ button:disabled { opacity:.5; cursor:default; }
   }
   function readSnapshot() {
     try {
-      const raw = storage2()?.getItem(KEY2);
+      const raw = storage2()?.getItem(KEY3);
       if (!raw) return null;
       const parsed = JSON.parse(raw);
       if (typeof parsed.revision !== "string" || typeof parsed.fetchedAt !== "number" || !parsed.prices || typeof parsed.prices !== "object") {
