@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         FUT SBC Solver v2
 // @namespace    https://github.com/mljpa/fut-sbc-solver-v2
-// @version      0.2.27
+// @version      0.2.28
 // @description  Userscript to solve EA SPORTS FC 26 SBCs with your own club
 // @match        https://www.ea.com/*/ea-sports-fc/ultimate-team/web-app*
 // @match        https://www.ea.com/ea-sports-fc/ultimate-team/web-app*
@@ -58480,7 +58480,7 @@ button:disabled { opacity:.5; cursor:default; }
     panel.setAttribute("aria-label", "Mi Gallery");
     const head = el("div", void 0, "head");
     const title = el("h2", "Mi Gallery");
-    const version = el("a", `v${"0.2.27"}`, "version");
+    const version = el("a", `v${"0.2.28"}`, "version");
     version.href = "https://raw.githubusercontent.com/mljpa/fut-sbc-dist/main/fut-sbc.user.js";
     version.target = "_blank";
     version.rel = "noopener noreferrer";
@@ -58958,7 +58958,7 @@ button:disabled { opacity:.5; cursor:default; }
         }
         const priceIds = referenceCards(set).filter((card) => !owned.has(card.definitionId)).map((card) => card.definitionId);
         if (!priceIds.length) {
-          status = plannedGrade ? "Las cartas de esta alineaci\xF3n ya est\xE1n registradas. Comprueba el grado en EA." : setProgress(set, owned) >= set.requiredCards ? "El set tiene suficientes cartas registradas. Comprueba el grado en Gallery de EA." : "No se encontraron cartas candidatas para llenar los cupos pendientes. Actualiza el cat\xE1logo.";
+          status = plannedGrade ? "Las cartas de esta alineaci\xF3n ya est\xE1n registradas. Comprueba el grado en EA." : setProgress(set, owned) >= set.requiredCards ? "El set tiene suficientes cartas registradas. Comprueba el grado en Gallery de FC Enhancer." : "No se encontraron cartas candidatas para llenar los cupos pendientes. Actualiza el cat\xE1logo.";
           return;
         }
         const found = await fetchEnhancerPrices(priceIds);
@@ -59516,7 +59516,7 @@ button:disabled { opacity:.5; cursor:default; }
           const details = el("details", void 0, "route-details");
           details.append(
             el("summary", "C\xF3mo se calcula"),
-            el("p", `La meta usa las fichas disponibles en la tienda. Las fichas potenciales se estiman con las cartas registradas y las recompensas de FUT.GG; no prueban que el grado ya se haya canjeado. El grado real se confirma en el juego.`),
+            el("p", `La meta usa las fichas disponibles en la tienda. Las fichas potenciales se estiman con las cartas registradas y las recompensas de FUT.GG; no prueban que el grado ya se haya canjeado. Comprueba el canje en Gallery de FC Enhancer.`),
             el("p", `Las +${fmt(route.gainedTokens)} son una proyecci\xF3n de grados futuros. ${fmt(route.uniqueCards)} cartas por registrar \xB7 ${fmt(route.coinsNeeded)} monedas de referencia \xB7 ${fmt(route.tax)} de comisi\xF3n estimada \xB7 ${route.unpricedCards} sin precio. Precios de FUT.GG.`)
           );
           body.append(details);
@@ -59548,10 +59548,10 @@ button:disabled { opacity:.5; cursor:default; }
             const summary2 = el("div");
             const gradeText = item.state === "catalog" ? "sin alineaci\xF3n publicada" : item.state === "complete" ? `grado estimado ${item.grade} \xB7 ${fmt(item.readyTokens)} fichas potenciales` : `objetivo ${item.grade} \xB7 +${fmt(item.tokens)} fichas`;
             summary2.append(el("strong", `${item.name} \xB7 ${gradeText}`));
-            const stateText = item.state === "complete" ? "\u2713 Cartas completas \xB7 revisa el canje en EA" : item.state === "catalog" ? "Colecci\xF3n disponible \xB7 abre el set para ver sus cartas" : item.state === "ready" ? "Cartas completas \xB7 revisa el canje en EA" : `${item.missingItems.length} cartas por registrar \xB7 ${fmt(item.purchaseCoins)} monedas ref.`;
+            const stateText = item.state === "complete" ? "\u2713 Cartas completas \xB7 revisa el canje en Gallery" : item.state === "catalog" ? "Colecci\xF3n disponible \xB7 abre el set para ver sus cartas" : item.state === "ready" ? "Cartas completas \xB7 revisa el canje en Gallery" : `${item.missingItems.length} cartas por registrar \xB7 ${fmt(item.purchaseCoins)} monedas ref.`;
             summary2.append(el("small", stateText, "plan-state"));
             if (item.inPlan) summary2.append(el("small", "Ruta sugerida"));
-            if (item.completedGrade && item.state !== "complete") summary2.append(el("small", `Grado ${item.completedGrade} calculado \xB7 ${fmt(item.readyTokens)} fichas seg\xFAn cartas \xB7 revisa el canje en EA`));
+            if (item.completedGrade && item.state !== "complete") summary2.append(el("small", `Grado ${item.completedGrade} calculado \xB7 ${fmt(item.readyTokens)} fichas seg\xFAn cartas \xB7 revisa el canje en Gallery`));
             head2.append(summary2);
             if (item.state === "missing") {
               const expand2 = button(expandedPlanSetId === item.setId ? "Ocultar" : "Ver cartas", () => {
@@ -59727,9 +59727,9 @@ button:disabled { opacity:.5; cursor:default; }
       }
       const gradeDetails = el("details", void 0, "trade-advanced");
       gradeDetails.append(el("summary", "Cambiar objetivo o ver grados"));
-      gradeDetails.append(el("p", `Fichas por grado: ${selected.grades.map((grade) => `${grade.name} +${grade.tokens}`).join(" \xB7 ")}. EA confirma el grado y entrega las fichas.`, "note"));
+      gradeDetails.append(el("p", `Fichas por grado: ${selected.grades.map((grade) => `${grade.name} +${grade.tokens}`).join(" \xB7 ")}. Revisa el grado y su canje en Gallery de FC Enhancer.`, "note"));
       const completedGrade = completedGalleryGrades(owned, [...knownCards.values()])[String(selected.catalogId)];
-      if (completedGrade) gradeDetails.append(el("p", `Grado ${completedGrade} calculado con tus cartas. Revisa en EA si ya lo canjeaste.`, "note"));
+      if (completedGrade) gradeDetails.append(el("p", `Grado ${completedGrade} calculado con tus cartas. Revisa en Gallery si ya lo canjeaste.`, "note"));
       if (selected.costTiers.some((tier2) => tier2.tokens > 0 && tier2.items.length === selected.requiredCards)) {
         const target = el("label", "Modo: ");
         const grade = el("select");
@@ -59781,7 +59781,7 @@ button:disabled { opacity:.5; cursor:default; }
           if (groups?.key.length) cost.append(el("small", `Carta clave: ${groups.key.map((card) => `${card.name} (${prices.has(card.definitionId) ? fmt(prices.get(card.definitionId).price) : "precio pendiente"})`).join(" \xB7 ")}.`));
           costs.append(cost);
           body.append(costs);
-        } else body.append(el("p", plannedGrade ? "Todas las cartas de esta alineaci\xF3n ya est\xE1n registradas." : got >= selected.requiredCards ? "Ya tienes suficientes cartas para llenar los cupos. Comprueba el grado en Gallery de EA; si quieres mejorarlo, abre \xABGrados y mejoras\xBB." : "No hay cartas candidatas para llenar los cupos pendientes. Actualiza el cat\xE1logo.", "note"));
+        } else body.append(el("p", plannedGrade ? "Todas las cartas de esta alineaci\xF3n ya est\xE1n registradas." : got >= selected.requiredCards ? "Ya tienes suficientes cartas para llenar los cupos. Comprueba el grado en Gallery de FC Enhancer; si quieres mejorarlo, abre \xABGrados y mejoras\xBB." : "No hay cartas candidatas para llenar los cupos pendientes. Actualiza el cat\xE1logo.", "note"));
         const selectedTotal = referenceTotal(selectedCards, prices);
         const footerCopy = el("div", void 0, "footer-copy");
         footerCopy.append(el("strong", `${playerCount(selectedCards.length)} \xB7 ${selectedTotal.priced === 0 && selectedCards.length > 0 ? "sin precios de referencia" : `${fmt(selectedTotal.amount)} monedas de referencia`}`));
