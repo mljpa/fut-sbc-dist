@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         FUT SBC Solver v2
 // @namespace    https://github.com/mljpa/fut-sbc-solver-v2
-// @version      0.2.34
+// @version      0.2.35
 // @description  Userscript to solve EA SPORTS FC 26 SBCs with your own club
 // @match        https://www.ea.com/*/ea-sports-fc/ultimate-team/web-app*
 // @match        https://www.ea.com/ea-sports-fc/ultimate-team/web-app*
@@ -57777,6 +57777,9 @@ Consume las cartas que use. Esto NO se puede deshacer.
     collectionSort: "most",
     cardSort: "rating-desc",
     advancedTradeOpen: false,
+    collectionTokenGoal: null,
+    collectionPlanPriority: "coins",
+    collectionPlanBaseline: {},
     galleryTokenBalance: 0,
     galleryBalanceMode: "ea",
     galleryTokenTarget: 750,
@@ -57810,6 +57813,9 @@ Consume las cartas que use. Esto NO se puede deshacer.
       collectionSort: ["most", "least", "name"].includes(String(raw.collectionSort)) ? raw.collectionSort : DEFAULT_GALLERY_PREFERENCES.collectionSort,
       cardSort: ["rating-desc", "rating-asc", "price-asc", "price-desc"].includes(String(raw.cardSort)) ? raw.cardSort : DEFAULT_GALLERY_PREFERENCES.cardSort,
       advancedTradeOpen: raw.advancedTradeOpen === true,
+      collectionTokenGoal: Number.isSafeInteger(raw.collectionTokenGoal) && raw.collectionTokenGoal > 0 ? Math.min(1e6, raw.collectionTokenGoal) : null,
+      collectionPlanPriority: raw.collectionPlanPriority === "cards" ? "cards" : "coins",
+      collectionPlanBaseline: Object.fromEntries(Object.entries(record(raw.collectionPlanBaseline)).filter(([id, grade]) => /^\d+$/.test(id) && ["D", "C", "B", "A", "S"].includes(String(grade)))),
       galleryTokenBalance: integer(raw.galleryTokenBalance, 0, 1e6, 0),
       galleryBalanceMode: raw.galleryBalanceMode === "manual" ? "manual" : "ea",
       galleryTokenTarget: integer(raw.galleryTokenTarget, 1, 1e6, 750),
@@ -57928,6 +57934,10 @@ Consume las cartas que use. Esto NO se puede deshacer.
   }
 
   // src/gallery/budget-plan.ts
+  function claimedTokens(set, claimed) {
+    const index = set.grades.findIndex((grade) => grade.name === claimed[String(set.id)]);
+    return index < 0 ? 0 : set.grades.slice(0, index + 1).reduce((sum, grade) => sum + grade.tokens, 0);
+  }
   function percent(count, tiers2) {
     return tiers2.reduce((rate, [minimum, value]) => count >= minimum ? value : rate, 0);
   }
@@ -57997,6 +58007,9 @@ Consume las cartas que use. Esto NO se puede deshacer.
     }
     return result;
   }
+  function claimedGalleryTokens(claimed) {
+    return catalog_snapshot_default.sets.reduce((total, set) => total + claimedTokens(set, claimed), 0);
+  }
 
   // src/gallery/grade-track.ts
   function collectionGradeTrack(set, owned, calculated) {
@@ -58040,6 +58053,84 @@ Consume las cartas que use. Esto NO se puede deshacer.
         unpricedCards: missingItems.filter((item) => item.price === null).length
       };
     });
+  }
+  function costs(prices) {
+    let loss = 0;
+    let coins = 0;
+    for (const price of [...prices].sort((a, b) => b - a)) {
+      coins = Math.max(coins, price + loss);
+      loss += price * 0.05;
+    }
+    return { coins: Math.ceil(coins), tax: Math.ceil(loss) };
+  }
+  function compare(a, b, priority) {
+    if (priority === "cards") return a.prices.size - b.prices.size || a.coins - b.coins || a.tax - b.tax || a.steps.length - b.steps.length || a.gained - b.gained;
+    return a.coins - b.coins || a.tax - b.tax || a.prices.size - b.prices.size || a.steps.length - b.steps.length || a.gained - b.gained;
+  }
+  function selectGradeRoute(options, need, budget = null, priority = "coins") {
+    const empty = {
+      sets: [],
+      gainedTokens: 0,
+      uniqueCards: 0,
+      coinsNeeded: 0,
+      tax: 0,
+      unpricedCards: 0,
+      reachesGoal: need === 0
+    };
+    if (need === 0 || need === null && budget === null) return empty;
+    const groups = /* @__PURE__ */ new Map();
+    for (const option of options) {
+      if (!option.available || option.completed || option.tokens <= 0 || option.unpricedCards) continue;
+      groups.set(option.setId, [...groups.get(option.setId) ?? [], option]);
+    }
+    const limit = need ?? [...groups.values()].reduce((sum, group) => sum + Math.max(...group.map((option) => option.tokens)), 0);
+    let states = /* @__PURE__ */ new Map([[0, [{ steps: [], prices: /* @__PURE__ */ new Map(), gained: 0, coins: 0, tax: 0 }]]]);
+    for (const group of groups.values()) {
+      const next = new Map([...states].map(([tokens, paths]) => [tokens, [...paths]]));
+      for (const paths of states.values()) for (const path of paths) for (const option of group) {
+        const prices = new Map(path.prices);
+        for (const item of option.missingItems) prices.set(item.definitionId, Math.max(prices.get(item.definitionId) ?? 0, item.price));
+        const cost = costs(prices.values());
+        if (budget !== null && cost.coins > budget) continue;
+        const candidate = { steps: [...path.steps, option], prices, gained: path.gained + option.tokens, ...cost };
+        const key = Math.min(limit, candidate.gained);
+        const alternatives = [...next.get(key) ?? [], candidate].sort((a, b) => compare(a, b, priority));
+        const unique = new Map(alternatives.map((entry) => [entry.steps.map((step) => `${step.setId}:${step.grade}`).join(","), entry]));
+        next.set(key, [...unique.values()].slice(0, 2));
+      }
+      states = next;
+    }
+    const max = Math.max(...states.keys());
+    const best = states.get(max).sort((a, b) => compare(a, b, priority))[0];
+    return {
+      sets: best.steps,
+      gainedTokens: best.gained,
+      uniqueCards: best.prices.size,
+      coinsNeeded: best.coins,
+      tax: best.tax,
+      unpricedCards: 0,
+      reachesGoal: need !== null && best.gained >= need
+    };
+  }
+
+  // src/gallery/collection-plan.ts
+  function collectionTokenPlan(owned, completed, calculated, goal, baseline, priority = "coins") {
+    const registered = Math.max(0, claimedGalleryTokens(completed) - claimedGalleryTokens(baseline));
+    const remaining = Math.max(0, goal - registered);
+    const options = catalog_snapshot_default.sets.flatMap((set) => {
+      const currentIndex = set.grades.findIndex((grade) => grade.name === calculated[String(set.id)]);
+      return galleryGradeOptions(set.id, owned, completed).map((option, index) => index <= currentIndex ? { ...option, available: true, missingItems: [], purchaseCoins: 0, unpricedCards: 0 } : option);
+    });
+    const plan = selectGradeRoute(options, remaining, null, priority);
+    const prices = /* @__PURE__ */ new Map();
+    for (const step of plan.sets) for (const item of step.missingItems)
+      prices.set(item.definitionId, Math.max(prices.get(item.definitionId) ?? 0, item.price));
+    return {
+      ...plan,
+      registered,
+      remaining,
+      purchaseCoins: [...prices.values()].reduce((sum, price) => sum + price, 0)
+    };
   }
 
   // src/gallery/index.ts
@@ -58113,6 +58204,19 @@ button:disabled { opacity:.5; cursor:default; }
 .set-card small { color:var(--muted); }
 .category-link:hover,.set-card:hover { border-color:var(--accent); }
 .category-link:focus-visible,.set-card:focus-visible { outline:2px solid var(--accent); outline-offset:2px; }
+.token-suggestions { margin-bottom:18px; }
+.token-goal-form { display:flex; align-items:end; flex-wrap:wrap; gap:10px; margin:0 0 12px; }
+.token-goal-form label { display:flex; flex-direction:column; gap:4px; color:var(--muted); font-size:12px; }
+.token-goal-form input,.token-goal-form select,.token-suggestions button { border:1px solid var(--line); border-radius:5px; padding:8px 10px; background:var(--bg); color:var(--fg); font-size:14px; }
+.token-goal-form input { width:170px; }
+.token-goal-form button[type=submit] { background:var(--accent); color:var(--accent-fg); border-color:var(--accent); }
+.token-plan-summary { display:flex; flex-direction:column; gap:4px; }
+.token-plan-step { display:flex; gap:12px; align-items:center; padding:11px 13px; margin:6px 0; border:1px solid var(--line); border-radius:5px; background:var(--soft); }
+.token-plan-step div { flex:1; min-width:0; }
+.token-plan-step strong,.token-plan-step small { display:block; }
+.token-suggestions small { color:var(--muted); }
+.token-suggestions button:focus-visible,.token-goal-form input:focus-visible,.token-goal-form select:focus-visible { outline:2px solid var(--accent); outline-offset:2px; }
+@media(max-width:600px) { .token-plan-step { flex-wrap:wrap; } .token-goal-form label { flex:1; } }
 .metric { color:var(--muted); }
 .bar { width:100%; height:7px; overflow:hidden; border-radius:4px; background:var(--line); }
 .bar span { display:block; height:100%; background:var(--accent); }
@@ -58273,7 +58377,7 @@ button:disabled { opacity:.5; cursor:default; }
     panel.setAttribute("aria-label", "Colecciones");
     const head = el("div", void 0, "head");
     const title = el("h2", "Colecciones");
-    const version = el("a", `v${"0.2.34"}`, "version");
+    const version = el("a", `v${"0.2.35"}`, "version");
     version.href = "https://raw.githubusercontent.com/mljpa/fut-sbc-dist/main/fut-sbc.user.js";
     version.target = "_blank";
     version.rel = "noopener noreferrer";
@@ -58386,6 +58490,12 @@ button:disabled { opacity:.5; cursor:default; }
     let sets = [];
     let selected = null;
     let plannedGrade = null;
+    let collectionTokenGoal = savedPreferences.collectionTokenGoal;
+    let collectionPlanPriority = savedPreferences.collectionPlanPriority;
+    let collectionPlanBaseline = savedPreferences.collectionPlanBaseline;
+    let planVisibleCount = 5;
+    let returnToHome = false;
+    let tokenPlanCache = null;
     function markGrade(setId, grade) {
       const next = { ...confirmedClaims };
       if (grade === null) delete next[String(setId)];
@@ -58422,7 +58532,7 @@ button:disabled { opacity:.5; cursor:default; }
     let status = "Sincroniza el club para registrar las cartas que tienes ahora. El historial queda guardado en este navegador.";
     let error = false;
     function persistPreferences() {
-      const safe = decodeGalleryPreferences({ ...savedPreferences, trade: tradeSettings, collectionFilter, collectionSort, cardSort, advancedTradeOpen });
+      const safe = decodeGalleryPreferences({ ...savedPreferences, trade: tradeSettings, collectionFilter, collectionSort, cardSort, advancedTradeOpen, collectionTokenGoal, collectionPlanPriority, collectionPlanBaseline });
       tradeSettings = { ...tradeSettings, ...safe.trade };
       saveGalleryPreferences(safe);
     }
@@ -58510,6 +58620,7 @@ button:disabled { opacity:.5; cursor:default; }
       priceRequestId++;
       priceLoading = false;
       category = next;
+      returnToHome = false;
       filter = "";
       leagueFilter = null;
       selected = null;
@@ -58545,6 +58656,118 @@ button:disabled { opacity:.5; cursor:default; }
         busy = false;
         render();
       }
+    }
+    async function openSuggestedCollection(step) {
+      const setCategory = {
+        "premier-league": "eng",
+        laliga: "esp",
+        bundesliga: "ger",
+        "ligue-1": "fra",
+        "serie-a": "ita",
+        leagues: "leagues",
+        rarities: "rarities"
+      };
+      const next = CATEGORIES.find((entry) => entry.id === setCategory[step.category]);
+      if (!next || busy) return;
+      await loadCategory(next);
+      const set = sets.find((entry) => entry.catalogId === step.setId);
+      if (!set) return;
+      returnToHome = true;
+      await openSet(set, step.grade);
+      if (!step.missingItems.length && selected === set) {
+        tab = "collected";
+        render();
+      }
+    }
+    function tokenSuggestions(calculatedGrades) {
+      const block = el("section", void 0, "token-suggestions");
+      const form = el("form", void 0, "token-goal-form");
+      const field = el("label", "Fichas que quiero obtener");
+      const input = el("input");
+      input.type = "number";
+      input.min = "1";
+      input.max = "1000000";
+      input.step = "1";
+      input.required = true;
+      input.placeholder = "Ej. 500";
+      input.value = collectionTokenGoal === null ? "" : String(collectionTokenGoal);
+      field.append(input);
+      const priorityLabel = el("label", "Priorizar");
+      const priority = el("select");
+      for (const [value, label] of [["coins", "Menor coste de compra/reventa"], ["cards", "Menos cartas por obtener"]]) {
+        const option = el("option", label);
+        option.value = value;
+        priority.append(option);
+      }
+      priority.value = collectionPlanPriority;
+      priority.addEventListener("change", () => {
+        collectionPlanPriority = priority.value === "coins" ? "coins" : "cards";
+        persistPreferences();
+        if (collectionTokenGoal !== null && Number(input.value) === collectionTokenGoal) render();
+      });
+      priorityLabel.append(priority);
+      const calculate = el("button", "Calcular sugerencias");
+      calculate.type = "submit";
+      calculate.disabled = busy;
+      form.append(field, priorityLabel, calculate);
+      if (collectionTokenGoal !== null) form.append(button("Quitar objetivo", () => {
+        collectionTokenGoal = null;
+        collectionPlanBaseline = {};
+        tokenPlanCache = null;
+        persistPreferences();
+        render();
+      }));
+      form.addEventListener("submit", (event) => {
+        event.preventDefault();
+        const value = Number(input.value);
+        if (!Number.isSafeInteger(value) || value < 1 || value > 1e6) return;
+        if (collectionTokenGoal !== value) collectionPlanBaseline = { ...confirmedClaims };
+        collectionTokenGoal = value;
+        planVisibleCount = 5;
+        persistPreferences();
+        render();
+      });
+      block.append(form);
+      if (collectionTokenGoal === null) return block;
+      const key = JSON.stringify([
+        [...owned].sort((a, b) => a - b),
+        confirmedClaims,
+        calculatedGrades,
+        collectionTokenGoal,
+        collectionPlanBaseline,
+        collectionPlanPriority
+      ]);
+      if (tokenPlanCache?.key !== key) tokenPlanCache = {
+        key,
+        plan: collectionTokenPlan(owned, confirmedClaims, calculatedGrades, collectionTokenGoal, collectionPlanBaseline, collectionPlanPriority)
+      };
+      const plan = tokenPlanCache.plan;
+      const summary = el("div", void 0, "token-plan-summary");
+      summary.append(
+        el("strong", plan.remaining === 0 ? `\u2713 Objetivo de ${fmt(collectionTokenGoal)} fichas registrado` : `${fmt(plan.registered)} / ${fmt(collectionTokenGoal)} registradas \xB7 sugerencias para +${fmt(plan.gainedTokens)} fichas`),
+        el("small", `${plan.sets.length} colecciones \xB7 ${fmt(plan.uniqueCards)} cartas por obtener \xB7 ${fmt(plan.coinsNeeded)} monedas para compra/reventa \xB7 ${fmt(plan.purchaseCoins)} precio total FUT.GG`)
+      );
+      block.append(summary);
+      if (!plan.reachesGoal) block.append(el("p", `Las opciones disponibles cubren +${fmt(plan.gainedTokens)}; faltan ${fmt(Math.max(0, plan.remaining - plan.gainedTokens))} fichas.`, "note"));
+      block.append(el("p", "Son fichas adicionales. Los grados ya marcados se descuentan; los listos por tus cartas requieren revisar el canje. Precios estimados.", "note"));
+      const steps = [...plan.sets].sort((a, b) => a.missingItems.length - b.missingItems.length || b.tokens - a.tokens);
+      for (const [index, step] of steps.slice(0, planVisibleCount).entries()) {
+        const card = el("div", void 0, "token-plan-step");
+        const text = el("div");
+        text.append(
+          el("strong", `${index + 1}. ${step.name} \xB7 grado ${step.grade} \xB7 +${fmt(step.tokens)} fichas`),
+          el("small", step.missingItems.length ? `${step.missingItems.length} cartas por obtener \xB7 ${fmt(step.purchaseCoins)} precio total FUT.GG` : "Listo seg\xFAn tus cartas \xB7 revisa el canje")
+        );
+        card.append(text, button("Ver colecci\xF3n", () => {
+          void openSuggestedCollection(step);
+        }));
+        block.append(card);
+      }
+      if (steps.length > planVisibleCount) block.append(button(`Ver todas (${steps.length})`, () => {
+        planVisibleCount = steps.length;
+        render();
+      }));
+      return block;
     }
     function tradeReference(id) {
       const enhancer = prices.get(id);
@@ -58990,13 +59213,18 @@ button:disabled { opacity:.5; cursor:default; }
       }
       const calculatedGrades = completedGalleryGrades(owned, [...knownCards.values()]);
       const tools = el("div", void 0, "tools");
-      if (selected) tools.append(button("\u2190 Colecciones", () => {
+      if (selected) tools.append(button(returnToHome ? "\u2190 Sugerencias" : "\u2190 Colecciones", () => {
         priceRequestId++;
         priceLoading = false;
         selected = null;
         tradeView = false;
         chosen.clear();
         prices.clear();
+        if (returnToHome) {
+          category = null;
+          sets = [];
+          returnToHome = false;
+        }
         render();
       }, "back"));
       else if (category) tools.append(button("\u2190 Categor\xEDas", () => {
@@ -59020,6 +59248,7 @@ button:disabled { opacity:.5; cursor:default; }
       body.append(tools);
       if (busy || error || selected) body.append(el("p", status, `status${error ? " error" : ""}`));
       if (!category) {
+        body.append(tokenSuggestions(calculatedGrades));
         body.append(el("p", `${fmt(owned.size)} cartas registradas \xB7 Elige una categor\xEDa para ver equipos y sets.`, "set-count"));
         const grid = el("div", void 0, "grid");
         for (const c of CATEGORIES) {
@@ -59236,7 +59465,7 @@ button:disabled { opacity:.5; cursor:default; }
         if (missing.length) {
           const gap = Math.max(0, selected.requiredCards - got);
           if (!plannedGrade && missing.length < gap) body.append(el("p", `S\xF3lo hay ${missing.length} cartas candidatas para ${gap} cupos pendientes. Actualiza el cat\xE1logo antes de comprar.`, "status error"));
-          const costs = el("div", void 0, "gallery-costs");
+          const costs2 = el("div", void 0, "gallery-costs");
           const total = referenceTotal(missing, prices);
           const cost = el("div", void 0, "gallery-cost");
           cost.append(el("strong", plannedGrade ? `Grado ${plannedGrade} \xB7 ${playerCount(missing.length)} por obtener` : `${playerCount(missing.length)} sugeridos para completar`));
@@ -59244,8 +59473,8 @@ button:disabled { opacity:.5; cursor:default; }
           if (!priceLoading && total.priced < missing.length)
             cost.append(el("small", `Subtotal de ${total.priced}/${missing.length} cartas con precio.`));
           if (groups?.key.length) cost.append(el("small", `Carta clave: ${groups.key.map((card) => `${card.name} (${prices.has(card.definitionId) ? fmt(prices.get(card.definitionId).price) : "precio pendiente"})`).join(" \xB7 ")}.`));
-          costs.append(cost);
-          body.append(costs);
+          costs2.append(cost);
+          body.append(costs2);
         } else body.append(el("p", plannedGrade ? !targetOption?.available ? "No hay cartas sugeridas para este grado." : targetOption.missingItems.length ? "Quedan cartas por cargar desde EA." : "\u2713 Cartas de esta alineaci\xF3n obtenidas." : got >= selected.requiredCards ? "Ya tienes suficientes cartas para llenar los cupos. Elige un grado para ver su alineaci\xF3n." : "No hay cartas candidatas para llenar los cupos pendientes. Actualiza el cat\xE1logo.", "note"));
         const selectedTotal = referenceTotal(selectedCards, prices);
         const footerCopy = el("div", void 0, "footer-copy");
