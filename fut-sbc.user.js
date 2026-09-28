@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         FUT SBC Solver v2
 // @namespace    https://github.com/mljpa/fut-sbc-solver-v2
-// @version      0.2.42
+// @version      0.2.43
 // @description  Userscript to solve EA SPORTS FC 26 SBCs with your own club
 // @match        https://www.ea.com/*/ea-sports-fc/ultimate-team/web-app*
 // @match        https://www.ea.com/ea-sports-fc/ultimate-team/web-app*
@@ -57690,6 +57690,12 @@ Consume las cartas que use. Esto NO se puede deshacer.
   ];
   var SOFT_BAN4 = /* @__PURE__ */ new Set([426, 429, 512, 521]);
   var MAX_BUY_PERCENT = 300;
+  function tradeResultStopReason(result, isQueue) {
+    if (result.state === "soft-ban" || result.message.startsWith("Compra sin respuesta")) return result.message;
+    if (isQueue && result.state === "bought" && result.message.startsWith("Comprada, sin publicar"))
+      return "La cola se detuvo porque una carta qued\xF3 sin publicar. Revisa Transferencias.";
+    return null;
+  }
   function manualTradeReference(definitionId, price) {
     if (!Number.isSafeInteger(definitionId) || definitionId <= 0 || !Number.isSafeInteger(price) || price < 150 || price > 15e6)
       throw new Error("Precio manual inv\xE1lido");
@@ -57882,7 +57888,7 @@ Consume las cartas que use. Esto NO se puede deshacer.
           break;
         }
         if (Number(bid.status) !== 461) {
-          emit({ definitionId, state: "skipped", message: `Compra rechazada (${bid.status ?? "sin estado"}); revisa Transferencias` });
+          emit({ definitionId, state: "skipped", message: `Compra rechazada (${bid.status ?? "sin estado"}); carta omitida` });
           stop = true;
           break;
         }
@@ -58645,7 +58651,7 @@ button:disabled { opacity:.5; cursor:default; }
     panel.setAttribute("aria-label", "Colecciones");
     const head = el("div", void 0, "head");
     const title = el("h2", "Colecciones");
-    const version = el("a", `v${"0.2.42"}`, "version");
+    const version = el("a", `v${"0.2.43"}`, "version");
     version.href = "https://raw.githubusercontent.com/mljpa/fut-sbc-dist/main/fut-sbc.user.js";
     version.target = "_blank";
     version.rel = "noopener noreferrer";
@@ -59573,12 +59579,10 @@ button:disabled { opacity:.5; cursor:default; }
           tradeProgress.set(result.definitionId, result.message);
           tradeResultState.set(result.definitionId, result.state);
           tradeActuals.set(result.definitionId, result);
-          if (result.state === "soft-ban" || result.message.startsWith("Compra sin respuesta") || tradeIsQueue && result.message.startsWith("Compra rechazada")) {
+          const stopReason = tradeResultStopReason(result, tradeIsQueue);
+          if (stopReason) {
             stopRequested = true;
-            tradeStopReason = result.message;
-          } else if (tradeIsQueue && result.state === "bought" && result.message.startsWith("Comprada, sin publicar")) {
-            stopRequested = true;
-            tradeStopReason = "La cola se detuvo porque una carta qued\xF3 sin publicar. Revisa Transferencias.";
+            tradeStopReason = stopReason;
           }
           if (result.state === "bought" || result.state === "listed") {
             owned.add(result.definitionId);
