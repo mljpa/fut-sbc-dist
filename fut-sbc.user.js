@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         FUT SBC Solver v2
 // @namespace    https://github.com/mljpa/fut-sbc-solver-v2
-// @version      0.2.35
+// @version      0.2.36
 // @description  Userscript to solve EA SPORTS FC 26 SBCs with your own club
 // @match        https://www.ea.com/*/ea-sports-fc/ultimate-team/web-app*
 // @match        https://www.ea.com/ea-sports-fc/ultimate-team/web-app*
@@ -57639,7 +57639,7 @@ Consume las cartas que use. Esto NO se puede deshacer.
     return (res.data?.items ?? []).filter((it) => it.definitionId === definitionId).map((item) => ({ item, price: Number(item.getAuctionData?.().buyNowPrice ?? 0) })).filter(({ price }) => Number.isSafeInteger(price) && price >= 150 && price <= maxBuy).sort((a, b) => a.price - b.price)[0] ?? null;
   }
   async function buyAndList(ids, settings, onResult, onProgress = () => {
-  }) {
+  }, shouldStop = () => false) {
     const Item = service();
     if (!Item.bid || !Item.move || !Item.list || !Item.requestMarketData) throw new Error("EA no expone compra y venta");
     const clubPile = getGlobal("ItemPile")?.CLUB;
@@ -57651,6 +57651,7 @@ Consume las cartas que use. Esto NO se puede deshacer.
     };
     let spent = 0;
     for (const definitionId of [...new Set(ids)]) {
+      if (shouldStop()) break;
       const progress = (message, attempt, totalAttempts) => onProgress({ definitionId, message, attempt, totalAttempts });
       const manualPrice = settings.manualPriceById?.[definitionId];
       progress(manualPrice === void 0 ? "Consultando el precio de Enhancer\u2026" : "Usando referencia manual confirmada\u2026");
@@ -57683,6 +57684,7 @@ Consume las cartas que use. Esto NO se puede deshacer.
         if (spent + cap > settings.maxTotal) break;
         progress(`${attempt === 1 ? "Intento" : "Reintento"} ${attempt}/${totalAttempts}: esperando entre b\xFAsquedas\u2026`, attempt, totalAttempts);
         await delay(2e3 + Math.floor(Math.random() * 2001));
+        if (shouldStop()) return results;
         progress(`${attempt === 1 ? "Intento" : "Reintento"} ${attempt}/${totalAttempts}: buscando hasta ${cap} monedas\u2026`, attempt, totalAttempts);
         let listing;
         try {
@@ -57693,6 +57695,7 @@ Consume las cartas que use. Esto NO se puede deshacer.
           stop = true;
           break;
         }
+        if (shouldStop()) return results;
         if (!listing) {
           progress(attempt < totalAttempts ? `Sin anuncios hasta ${cap}; sigue reintento ${attempt + 1}/${totalAttempts}` : `Sin anuncios hasta ${cap}; intentos agotados`, attempt, totalAttempts);
           continue;
@@ -57778,6 +57781,7 @@ Consume las cartas que use. Esto NO se puede deshacer.
     cardSort: "rating-desc",
     advancedTradeOpen: false,
     collectionTokenGoal: null,
+    collectionBuyQueue: [],
     collectionPlanPriority: "coins",
     collectionPlanBaseline: {},
     galleryTokenBalance: 0,
@@ -57813,6 +57817,7 @@ Consume las cartas que use. Esto NO se puede deshacer.
       collectionSort: ["most", "least", "name"].includes(String(raw.collectionSort)) ? raw.collectionSort : DEFAULT_GALLERY_PREFERENCES.collectionSort,
       cardSort: ["rating-desc", "rating-asc", "price-asc", "price-desc"].includes(String(raw.cardSort)) ? raw.cardSort : DEFAULT_GALLERY_PREFERENCES.cardSort,
       advancedTradeOpen: raw.advancedTradeOpen === true,
+      collectionBuyQueue: Array.isArray(raw.collectionBuyQueue) ? [...new Map(raw.collectionBuyQueue.filter((entry) => Number.isSafeInteger(entry?.setId) && entry.setId > 0 && ["D", "C", "B", "A", "S"].includes(entry.grade)).map((entry) => [entry.setId, { setId: entry.setId, grade: entry.grade }])).values()] : [],
       collectionTokenGoal: Number.isSafeInteger(raw.collectionTokenGoal) && raw.collectionTokenGoal > 0 ? Math.min(1e6, raw.collectionTokenGoal) : null,
       collectionPlanPriority: raw.collectionPlanPriority === "cards" ? "cards" : "coins",
       collectionPlanBaseline: Object.fromEntries(Object.entries(record(raw.collectionPlanBaseline)).filter(([id, grade]) => /^\d+$/.test(id) && ["D", "C", "B", "A", "S"].includes(String(grade)))),
@@ -58133,6 +58138,39 @@ Consume las cartas que use. Esto NO se puede deshacer.
     };
   }
 
+  // src/gallery/purchase-queue.ts
+  function updatePurchaseQueue(queue, entry) {
+    const existing = queue.findIndex((item) => item.setId === entry.setId);
+    if (existing < 0) return [...queue, entry];
+    return queue.map((item, index) => index === existing ? entry : item);
+  }
+  function collectionPurchaseQueue(queue, owned, calculated, completed = {}) {
+    const unique = new Map(queue.map((entry) => [entry.setId, entry]));
+    const rows = [...unique.values()].flatMap((entry) => {
+      const options = galleryGradeOptions(entry.setId, owned, completed);
+      const option = options.find((candidate) => candidate.grade === entry.grade);
+      if (!option) return [];
+      const reached = option.completed || options.findIndex((candidate) => candidate.grade === calculated[String(entry.setId)]) >= options.findIndex((candidate) => candidate.grade === entry.grade);
+      return [{ ...option, missingItems: reached ? [] : option.missingItems, available: option.available || reached }];
+    });
+    const items = /* @__PURE__ */ new Map();
+    for (const row of rows) for (const item of row.missingItems) {
+      const previous = items.get(item.definitionId);
+      items.set(item.definitionId, {
+        ...item,
+        price: previous?.price != null && item.price != null ? Math.max(previous.price, item.price) : previous?.price ?? item.price,
+        collections: [...previous?.collections ?? [], row.setId]
+      });
+    }
+    return {
+      rows,
+      items: [...items.values()],
+      blocked: rows.some((row) => !row.available),
+      ready: rows.filter((row) => row.available && !row.missingItems.length).length,
+      shared: [...items.values()].filter((item) => item.collections.length > 1).length
+    };
+  }
+
   // src/gallery/index.ts
   var LEDGER_KEY = "fut-sbc-gallery:owned:fc27";
   var LAUNCHER_POSITION_KEY = "fut-sbc-gallery:launcher-position";
@@ -58217,6 +58255,19 @@ button:disabled { opacity:.5; cursor:default; }
 .token-suggestions small { color:var(--muted); }
 .token-suggestions button:focus-visible,.token-goal-form input:focus-visible,.token-goal-form select:focus-visible { outline:2px solid var(--accent); outline-offset:2px; }
 @media(max-width:600px) { .token-plan-step { flex-wrap:wrap; } .token-goal-form label { flex:1; } }
+.set-card.queued { border-color:var(--accent); }
+.queue-picker { display:flex; gap:6px; margin-top:7px; }
+.queue-picker select,.queue-row select,.queue-picker button,.queue-row button { border:1px solid var(--line); border-radius:5px; padding:7px 9px; background:var(--bg); color:var(--fg); min-width:0; }
+.queue-picker button { flex:1; }
+.queue-list { display:flex; flex-direction:column; gap:8px; margin:12px 0; }
+.queue-row { display:flex; align-items:center; gap:10px; padding:12px; border:1px solid var(--line); border-radius:5px; background:var(--soft); }
+.queue-row div { flex:1; min-width:0; }
+.queue-row strong,.queue-row small { display:block; }
+.queue-row small { color:var(--muted); }
+.progress-summary .queue-list { max-height:160px; overflow:auto; }
+.queue-row .bar { margin-top:6px; }
+.queue-picker button:focus-visible,.queue-picker select:focus-visible,.queue-row button:focus-visible,.queue-row select:focus-visible { outline:2px solid var(--accent); outline-offset:2px; }
+@media(max-width:600px) { .queue-row { flex-wrap:wrap; } .queue-row div { flex-basis:100%; } }
 .metric { color:var(--muted); }
 .bar { width:100%; height:7px; overflow:hidden; border-radius:4px; background:var(--line); }
 .bar span { display:block; height:100%; background:var(--accent); }
@@ -58377,7 +58428,7 @@ button:disabled { opacity:.5; cursor:default; }
     panel.setAttribute("aria-label", "Colecciones");
     const head = el("div", void 0, "head");
     const title = el("h2", "Colecciones");
-    const version = el("a", `v${"0.2.35"}`, "version");
+    const version = el("a", `v${"0.2.36"}`, "version");
     version.href = "https://raw.githubusercontent.com/mljpa/fut-sbc-dist/main/fut-sbc.user.js";
     version.target = "_blank";
     version.rel = "noopener noreferrer";
@@ -58490,6 +58541,12 @@ button:disabled { opacity:.5; cursor:default; }
     let sets = [];
     let selected = null;
     let plannedGrade = null;
+    let purchaseQueue = savedPreferences.collectionBuyQueue;
+    let queueOpen = false;
+    let tradeIsQueue = false;
+    let activeQueueRows = [];
+    let stopRequested = false;
+    let tradeStopReason = null;
     let collectionTokenGoal = savedPreferences.collectionTokenGoal;
     let collectionPlanPriority = savedPreferences.collectionPlanPriority;
     let collectionPlanBaseline = savedPreferences.collectionPlanBaseline;
@@ -58532,7 +58589,7 @@ button:disabled { opacity:.5; cursor:default; }
     let status = "Sincroniza el club para registrar las cartas que tienes ahora. El historial queda guardado en este navegador.";
     let error = false;
     function persistPreferences() {
-      const safe = decodeGalleryPreferences({ ...savedPreferences, trade: tradeSettings, collectionFilter, collectionSort, cardSort, advancedTradeOpen, collectionTokenGoal, collectionPlanPriority, collectionPlanBaseline });
+      const safe = decodeGalleryPreferences({ ...savedPreferences, trade: tradeSettings, collectionFilter, collectionSort, cardSort, advancedTradeOpen, collectionTokenGoal, collectionPlanPriority, collectionPlanBaseline, collectionBuyQueue: purchaseQueue });
       tradeSettings = { ...tradeSettings, ...safe.trade };
       saveGalleryPreferences(safe);
     }
@@ -58625,6 +58682,7 @@ button:disabled { opacity:.5; cursor:default; }
       leagueFilter = null;
       selected = null;
       tradeView = false;
+      tradeIsQueue = false;
       chosen.clear();
       manualPrices.clear();
       manualSalePrices.clear();
@@ -58656,6 +58714,164 @@ button:disabled { opacity:.5; cursor:default; }
         busy = false;
         render();
       }
+    }
+    function toggleQueuedCollection(setId, grade) {
+      if (busy) return;
+      const entry = purchaseQueue.find((item) => item.setId === setId);
+      purchaseQueue = entry?.grade === grade ? purchaseQueue.filter((item) => item.setId !== setId) : updatePurchaseQueue(purchaseQueue, { setId, grade });
+      persistPreferences();
+      render();
+    }
+    function queuePicker(set) {
+      const picker = el("div", void 0, "queue-picker");
+      const options = galleryGradeOptions(set.catalogId, owned, confirmedClaims);
+      const queued = purchaseQueue.find((entry) => entry.setId === set.catalogId);
+      let grade = queued?.grade ?? options.find((option) => option.grade === "B" && option.available)?.grade ?? options.find((option) => option.available)?.grade ?? "D";
+      const select = el("select");
+      select.setAttribute("aria-label", `Grado para comprar ${set.name}`);
+      select.disabled = busy;
+      for (const option of options) {
+        const item = el("option", `Grado ${option.grade}`);
+        item.value = option.grade;
+        select.append(item);
+      }
+      select.value = grade;
+      const add = button(queued ? "\u2713 En cola" : "A\xF1adir a cola", () => {
+        toggleQueuedCollection(set.catalogId, grade);
+      });
+      const update = () => {
+        const option = options.find((entry) => entry.grade === grade);
+        add.disabled = busy || !option?.available;
+        add.title = option?.available ? "Seleccionar este grado para la compra conjunta" : "Sin alineaci\xF3n publicada para este grado";
+      };
+      select.addEventListener("change", () => {
+        grade = select.value;
+        if (queued) {
+          purchaseQueue = updatePurchaseQueue(purchaseQueue, { setId: set.catalogId, grade });
+          persistPreferences();
+          render();
+        } else update();
+      });
+      update();
+      picker.append(select, add);
+      return picker;
+    }
+    function tradeCard(id) {
+      return selected?.cards.find((card) => card.definitionId === id) ?? knownCards.get(id);
+    }
+    function renderQueue() {
+      const calculated = completedGalleryGrades(owned, [...knownCards.values()]);
+      const queue = collectionPurchaseQueue(purchaseQueue, owned, calculated, confirmedClaims);
+      const tools = el("div", void 0, "tools");
+      const back = button("\u2190 Colecciones", () => {
+        queueOpen = false;
+        render();
+      });
+      back.disabled = busy;
+      tools.append(back);
+      const clear = button("Vaciar cola", () => {
+        purchaseQueue = [];
+        persistPreferences();
+        render();
+      });
+      clear.disabled = busy;
+      tools.append(clear);
+      body.append(tools);
+      body.append(el("p", `${queue.rows.length} colecciones \xB7 ${queue.items.length} cartas por obtener \xB7 ${queue.shared} compartidas`, "metric"));
+      if (status && (busy || error)) body.append(el("p", status, `status${error ? " error" : ""}`));
+      const list = el("div", void 0, "queue-list");
+      for (const row of queue.rows) {
+        const card = el("div", void 0, "queue-row");
+        const text = el("div");
+        text.append(el("strong", row.name), el("small", !row.available ? "Sin alineaci\xF3n publicada" : !row.missingItems.length ? "\u2713 Grado alcanzado seg\xFAn tus registros" : `${row.missingItems.length} cartas pendientes`));
+        const grade = el("select");
+        grade.setAttribute("aria-label", `Grado de ${row.name} en la cola`);
+        grade.disabled = busy;
+        for (const option of galleryGradeOptions(row.setId, owned, confirmedClaims)) {
+          const item = el("option", `Grado ${option.grade}`);
+          item.value = option.grade;
+          grade.append(item);
+        }
+        grade.value = row.grade;
+        grade.addEventListener("change", () => {
+          purchaseQueue = updatePurchaseQueue(purchaseQueue, { setId: row.setId, grade: grade.value });
+          persistPreferences();
+          render();
+        });
+        const remove = button("Quitar", () => {
+          purchaseQueue = purchaseQueue.filter((entry) => entry.setId !== row.setId);
+          persistPreferences();
+          render();
+        });
+        remove.disabled = busy;
+        card.append(text, grade, remove);
+        list.append(card);
+      }
+      body.append(list);
+      if (!queue.rows.length) body.append(el("p", "Elige un grado y a\xF1ade colecciones a la cola.", "empty"));
+      const review = button(busy ? "Preparando\u2026" : `Revisar compra de ${queue.items.length} cartas`, () => {
+        void prepareQueueTrade();
+      });
+      review.disabled = busy || queue.blocked || !queue.items.length;
+      footer.append(el("span", "Una compra por carta compartida. Revisa precios y gasto m\xE1ximo antes de iniciar."), review);
+    }
+    async function prepareQueueTrade() {
+      if (busy) return;
+      busy = true;
+      error = false;
+      status = "Revisando tus cartas de las colecciones seleccionadas\u2026";
+      render();
+      try {
+        const before = collectionPurchaseQueue(purchaseQueue, owned, completedGalleryGrades(owned, [...knownCards.values()]), confirmedClaims);
+        const hydrated = await conceptCardsByIdsPartial(before.items.map((item) => item.definitionId));
+        if (hydrated.length !== before.items.length) throw new Error(`EA devolvi\xF3 ${hydrated.length}/${before.items.length} cartas; vuelve a revisar la cola.`);
+        for (const card of hydrated) {
+          rememberCard(card);
+          if (card.isCollected) owned.add(card.definitionId);
+        }
+        saveLedger(owned);
+        const queue = collectionPurchaseQueue(purchaseQueue, owned, completedGalleryGrades(owned, [...knownCards.values()]), confirmedClaims);
+        if (queue.blocked) throw new Error("Cambia o quita los grados sin alineaci\xF3n publicada.");
+        if (!queue.items.length) {
+          status = "Las colecciones seleccionadas ya est\xE1n alcanzadas seg\xFAn tus cartas.";
+          return;
+        }
+        activeQueueRows = queue.rows;
+        chosen = new Set(queue.items.map((item) => item.definitionId));
+        manualPrices.clear();
+        manualSalePrices.clear();
+        prices.clear();
+        tradeIsQueue = true;
+        queueOpen = false;
+      } catch (cause) {
+        error = true;
+        status = `No se pudo preparar la cola: ${cause instanceof Error ? cause.message : String(cause)}`;
+        return;
+      } finally {
+        busy = false;
+        render();
+      }
+      await showTrade();
+    }
+    function renderQueueProgress() {
+      const block = el("div", void 0, "queue-list");
+      for (const row of activeQueueRows) {
+        const done = row.missingItems.filter((item) => owned.has(item.definitionId)).length;
+        const article = el("div", void 0, "queue-row");
+        const text = el("div");
+        text.append(
+          el("strong", `${row.name} \xB7 grado ${row.grade}`),
+          el("small", row.missingItems.length ? `${done}/${row.missingItems.length} cartas obtenidas de este lote` : "\u2713 Ya alcanzado")
+        );
+        const bar = el("div", void 0, "bar");
+        const fill = el("span");
+        fill.style.width = `${row.missingItems.length ? done / row.missingItems.length * 100 : 100}%`;
+        bar.append(fill);
+        text.append(bar);
+        article.append(text);
+        block.append(article);
+      }
+      return block;
     }
     async function openSuggestedCollection(step) {
       const setCategory = {
@@ -58758,9 +58974,15 @@ button:disabled { opacity:.5; cursor:default; }
           el("strong", `${index + 1}. ${step.name} \xB7 grado ${step.grade} \xB7 +${fmt(step.tokens)} fichas`),
           el("small", step.missingItems.length ? `${step.missingItems.length} cartas por obtener \xB7 ${fmt(step.purchaseCoins)} precio total FUT.GG` : "Listo seg\xFAn tus cartas \xB7 revisa el canje")
         );
-        card.append(text, button("Ver colecci\xF3n", () => {
-          void openSuggestedCollection(step);
-        }));
+        card.append(
+          text,
+          button("Ver colecci\xF3n", () => {
+            void openSuggestedCollection(step);
+          }),
+          button(purchaseQueue.find((entry) => entry.setId === step.setId)?.grade === step.grade ? "\u2713 En cola" : "A\xF1adir a cola", () => {
+            toggleQueuedCollection(step.setId, step.grade);
+          })
+        );
         block.append(card);
       }
       if (steps.length > planVisibleCount) block.append(button(`Ver todas (${steps.length})`, () => {
@@ -58803,6 +59025,7 @@ button:disabled { opacity:.5; cursor:default; }
       plannedGrade = grade === void 0 ? bestPublishedGrade(set)?.grade ?? null : grade;
       tab = "missing";
       tradeView = false;
+      tradeIsQueue = false;
       chosen.clear();
       prices.clear();
       priceLoading = true;
@@ -58867,6 +59090,8 @@ button:disabled { opacity:.5; cursor:default; }
     function startTradeFromReview() {
       if (busy) return;
       const ids = [...chosen].filter((id) => tradeReference(id) && !owned.has(id));
+      if (tradeIsQueue && ids.length !== [...chosen].filter((id) => !owned.has(id)).length)
+        return setStatus("Completa los precios manuales pendientes antes de iniciar la cola.", true);
       if (!ids.length) return setStatus("Falta precio de compra y venta para las cartas seleccionadas.", true);
       let quote;
       try {
@@ -58874,6 +59099,8 @@ button:disabled { opacity:.5; cursor:default; }
       } catch (cause) {
         return setStatus(cause instanceof Error ? cause.message : String(cause), true);
       }
+      stopRequested = false;
+      tradeStopReason = null;
       showTradeProgressDialog(ids);
       void executeConfirmedTrade(ids, quote);
     }
@@ -58890,12 +59117,26 @@ button:disabled { opacity:.5; cursor:default; }
       const fill = el("span");
       track.append(fill);
       summary.append(count, detail, track);
+      const collectionMessages = /* @__PURE__ */ new Map();
+      if (tradeIsQueue) {
+        const groups = el("div", void 0, "queue-list");
+        for (const row of activeQueueRows) {
+          const group = el("div", void 0, "queue-row");
+          const text = el("div");
+          const message = el("small", `${row.missingItems.length} cartas pendientes`);
+          text.append(el("strong", `${row.name} \xB7 ${row.grade}`), message);
+          group.append(text);
+          groups.append(group);
+          collectionMessages.set(row.setId, message);
+        }
+        summary.append(groups);
+      }
       const list = el("div", void 0, "progress-list");
       const rows = /* @__PURE__ */ new Map();
       const messages = /* @__PURE__ */ new Map();
       for (const id of ids) {
         const row = el("div", void 0, "progress-row");
-        row.append(el("strong", selected?.cards.find((card) => card.definitionId === id)?.name ?? `Carta ${id}`));
+        row.append(el("strong", tradeCard(id)?.name ?? `Carta ${id}`));
         const message = el("span", "Pendiente");
         row.append(message);
         list.append(row);
@@ -58904,9 +59145,16 @@ button:disabled { opacity:.5; cursor:default; }
       }
       const actions = el("div", void 0, "confirm-actions");
       const action = button("Ocultar progreso", cancelTradeConfirmation);
-      actions.append(action);
+      const stop = button("Detener compras", () => {
+        stopRequested = true;
+        tradeStopReason = "Compras detenidas por ti. Las cartas pendientes quedan en la cola.";
+        stop.disabled = true;
+        stop.textContent = "Deteniendo\u2026";
+        detail.textContent = "Termina la operaci\xF3n en curso y se detienen las compras siguientes.";
+      });
+      actions.append(stop, action);
       confirmPanel.append(header, summary, list, actions);
-      tradeDialog = { ids, running: true, summary: count, detail, fill, rows, messages, action };
+      tradeDialog = { ids, running: true, summary: count, detail, fill, rows, messages, action, collectionMessages, stopAction: stop };
       confirmBackdrop.classList.add("open");
       action.focus();
     }
@@ -58927,15 +59175,30 @@ button:disabled { opacity:.5; cursor:default; }
           processed++;
           row.classList.add("done");
         } else if (state2 === "skipped" || state2 === "soft-ban") {
-          processed++;
+          if (result) processed++;
           row.classList.add("failed");
         } else if (text !== "Pendiente") row.classList.add("active");
       }
-      dialog.summary.textContent = dialog.running ? `${processed}/${dialog.ids.length} cartas procesadas` : `Lote terminado \xB7 ${processed}/${dialog.ids.length} cartas procesadas`;
+      for (const row of activeQueueRows) {
+        const message = dialog.collectionMessages.get(row.setId);
+        if (!message) continue;
+        const done = row.missingItems.filter((item) => owned.has(item.definitionId)).length;
+        const pending = row.missingItems.length - done;
+        message.textContent = !row.missingItems.length ? "\u2713 Ya alcanzado" : `${done}/${row.missingItems.length} obtenidas \xB7 ${pending} pendientes`;
+      }
+      dialog.summary.textContent = dialog.running ? `${processed}/${dialog.ids.length} cartas procesadas` : `${stopRequested || error ? "Lote detenido" : "Lote terminado"} \xB7 ${processed}/${dialog.ids.length} cartas procesadas`;
       dialog.fill.style.width = `${Math.round(processed / dialog.ids.length * 100)}%`;
       if (activeId !== void 0) {
-        const name = selected?.cards.find((card) => card.definitionId === activeId)?.name ?? `Carta ${activeId}`;
+        const name = tradeCard(activeId)?.name ?? `Carta ${activeId}`;
         dialog.detail.textContent = `${name}: ${tradeProgress.get(activeId) ?? "Pendiente"}`;
+      }
+      dialog.stopAction.disabled = !dialog.running || stopRequested;
+      dialog.stopAction.textContent = !dialog.running ? "Compras finalizadas" : stopRequested ? "Deteniendo\u2026" : "Detener compras";
+      if (!dialog.running) {
+        const heading = confirmPanel.querySelector(".confirm-head h2");
+        const subtitle = confirmPanel.querySelector(".confirm-head p");
+        if (heading) heading.textContent = stopRequested || error ? "Compras detenidas" : "Lote terminado";
+        if (subtitle) subtitle.textContent = "Revisa las cartas obtenidas y pendientes";
       }
       dialog.action.textContent = dialog.running ? "Ocultar progreso" : "Cerrar";
     }
@@ -58953,9 +59216,16 @@ button:disabled { opacity:.5; cursor:default; }
           tradeProgress.set(result.definitionId, result.message);
           tradeResultState.set(result.definitionId, result.state);
           tradeActuals.set(result.definitionId, result);
+          if (result.state === "soft-ban" || result.message.startsWith("Compra sin respuesta") || tradeIsQueue && result.message.startsWith("Compra rechazada")) {
+            stopRequested = true;
+            tradeStopReason = result.message;
+          } else if (tradeIsQueue && result.state === "bought" && result.message.startsWith("Comprada, sin publicar")) {
+            stopRequested = true;
+            tradeStopReason = "La cola se detuvo porque una carta qued\xF3 sin publicar. Revisa Transferencias.";
+          }
           if (result.state === "bought" || result.state === "listed") {
             owned.add(result.definitionId);
-            const card = selected?.cards.find((candidate) => candidate.definitionId === result.definitionId);
+            const card = tradeCard(result.definitionId);
             if (card) rememberCard(card);
             saveLedger(owned);
           }
@@ -58963,8 +59233,8 @@ button:disabled { opacity:.5; cursor:default; }
         }, (progress) => {
           tradeProgress.set(progress.definitionId, progress.message);
           refreshTradeProgressDialog(progress.definitionId);
-        });
-        setStatus("Lote terminado. Revisa el estado de cada carta y la lista de transferibles.");
+        }, () => stopRequested);
+        setStatus(tradeStopReason ?? (stopRequested ? "Compras detenidas. Las cartas pendientes quedan en la cola." : "Lote terminado. Revisa el estado de cada carta y la lista de transferibles."));
       } catch (cause) {
         setStatus(`El lote se detuvo: ${cause instanceof Error ? cause.message : String(cause)}`, true);
       } finally {
@@ -59015,7 +59285,7 @@ button:disabled { opacity:.5; cursor:default; }
       input.max = "15000000";
       input.step = "50";
       input.placeholder = kind === "reference" ? "Precio manual" : "Venta manual";
-      input.setAttribute("aria-label", `${kind === "reference" ? "Precio de compra" : "Precio de venta"} manual para ${selected?.cards.find((card) => card.definitionId === id)?.name ?? id}`);
+      input.setAttribute("aria-label", `${kind === "reference" ? "Precio de compra" : "Precio de venta"} manual para ${tradeCard(id)?.name ?? id}`);
       input.value = values.has(id) ? String(values.get(id)) : "";
       input.disabled = busy;
       input.addEventListener("change", () => {
@@ -59034,8 +59304,10 @@ button:disabled { opacity:.5; cursor:default; }
     }
     function renderTrade() {
       const actions = el("div", void 0, "trade-actions");
-      const back = button("\u2190 Jugadores", () => {
+      const back = button(tradeIsQueue ? "\u2190 Cola" : "\u2190 Jugadores", () => {
         tradeView = false;
+        if (tradeIsQueue) queueOpen = true;
+        tradeIsQueue = false;
         render();
       });
       back.disabled = busy;
@@ -59050,6 +59322,7 @@ button:disabled { opacity:.5; cursor:default; }
         tradeDialog?.action.focus();
       }));
       body.append(actions);
+      if (tradeIsQueue) body.append(renderQueueProgress());
       const fields = el("div", void 0, "trade-fields");
       fields.append(tradeField("Intentos por jugador", "retries", 1, 10));
       fields.append(tradeField("Comprar desde (% del mercado)", "firstPercent", 1, MAX_BUY_PERCENT));
@@ -59104,7 +59377,7 @@ button:disabled { opacity:.5; cursor:default; }
       } else if (quoteError) body.append(el("p", quoteError, "status error"));
       const cards = el("div", void 0, "trade-cards");
       for (const id of chosen) {
-        const card = selected?.cards.find((c) => c.definitionId === id);
+        const card = tradeCard(id);
         const reference = prices.get(id);
         const plan = quote?.plans.get(id);
         const row = el("article", void 0, "trade-card");
@@ -59164,7 +59437,7 @@ button:disabled { opacity:.5; cursor:default; }
       body.append(el("p", "Venta nunca inferior a la compra. EA cobra 5% si se vende; publicar no garantiza la venta.", "note"));
       const remaining = [...chosen].filter((id) => tradeReference(id) && !owned.has(id)).length;
       const submit = button(busy ? "Procesando\u2026" : `Comprar ${playerCount(remaining)}`, startTradeFromReview);
-      submit.disabled = busy || !quote || remaining === 0;
+      submit.disabled = busy || !quote || remaining === 0 || tradeIsQueue && remaining !== [...chosen].filter((id) => !owned.has(id)).length;
       const footerCopy = el("div", void 0, "footer-copy");
       footerCopy.append(el("strong", quote ? `Hasta ${fmt(quote.settings.maxTotal)} monedas` : "Faltan precios"));
       footerCopy.append(el("small", `${remaining} con precio \xB7 ${chosen.size - remaining} pendientes o ya obtenidos`));
@@ -59205,10 +59478,14 @@ button:disabled { opacity:.5; cursor:default; }
       body.replaceChildren();
       footer.replaceChildren();
       panel.classList.toggle("trade-panel", tradeView);
-      title.textContent = tradeView ? `Comprar ${playerCount(chosen.size)}` : selected?.name ?? category?.name ?? "Colecciones";
+      title.textContent = tradeView ? tradeIsQueue ? `Comprar cola \xB7 ${activeQueueRows.length} colecciones` : `Comprar ${playerCount(chosen.size)}` : queueOpen ? "Cola de colecciones" : selected?.name ?? category?.name ?? "Colecciones";
       if (tradeView) {
         body.append(el("p", status, `status${error ? " error" : ""}`));
         renderTrade();
+        return;
+      }
+      if (queueOpen) {
+        renderQueue();
         return;
       }
       const calculatedGrades = completedGalleryGrades(owned, [...knownCards.values()]);
@@ -59238,6 +59515,12 @@ button:disabled { opacity:.5; cursor:default; }
       });
       sync.disabled = busy;
       tools.append(sync);
+      const queueButton = button(`Cola (${purchaseQueue.length})`, () => {
+        queueOpen = true;
+        render();
+      });
+      queueButton.disabled = busy;
+      tools.append(queueButton);
       if (category && !selected) {
         const refresh = button("Actualizar cat\xE1logo", () => {
           void loadCategory(category, true);
@@ -59345,6 +59628,7 @@ button:disabled { opacity:.5; cursor:default; }
           const got2 = track2.obtained;
           const pct = set.requiredCards ? Math.round(got2 / set.requiredCards * 100) : 0;
           const card = el("div", void 0, "set-card");
+          if (purchaseQueue.some((entry) => entry.setId === set.catalogId)) card.classList.add("queued");
           card.append(button(set.name, () => {
             void openSet(set);
           }, "set-title"));
@@ -59362,7 +59646,7 @@ button:disabled { opacity:.5; cursor:default; }
             }
             grades.append(grade);
           }
-          card.append(grades);
+          card.append(grades, queuePicker(set));
           const leagueId = set.cards[0]?.leagueId;
           if (leagues.length > 1 && leagueId && LEAGUE_NAMES[leagueId]) card.append(el("small", LEAGUE_NAMES[leagueId]));
           if (track2.grade) card.append(el("small", `${got2}/${set.requiredCards} cartas`));
@@ -59438,6 +59722,11 @@ button:disabled { opacity:.5; cursor:default; }
         if (targetOption.fromGrade) marks.append(button("Quitar marca", () => {
           markGrade(selected.catalogId, null);
         }));
+        const addQueue = button(purchaseQueue.find((entry) => entry.setId === selected.catalogId)?.grade === targetOption.grade ? "\u2713 En cola \xB7 quitar" : `A\xF1adir grado ${targetOption.grade} a cola`, () => {
+          toggleQueuedCollection(selected.catalogId, targetOption.grade);
+        });
+        addQueue.disabled = busy || !targetOption.available;
+        marks.append(addQueue);
         target.append(marks);
         body.append(target);
         body.append(el("p", "Grado estimado por tus cartas \xB7 \u2713 es tu marca de completado, no una lectura del canje.", "note"));
