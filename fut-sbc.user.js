@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         FUT SBC Solver v2
 // @namespace    https://github.com/mljpa/fut-sbc-solver-v2
-// @version      0.2.44
+// @version      0.2.45
 // @description  Userscript to solve EA SPORTS FC 26 SBCs with your own club
 // @match        https://www.ea.com/*/ea-sports-fc/ultimate-team/web-app*
 // @match        https://www.ea.com/ea-sports-fc/ultimate-team/web-app*
@@ -341,12 +341,18 @@
     if (slotPositions.length === constraints.slots) {
       constraints.slotPositions = slotPositions;
     }
+    const isStreamlined = typeof raw.isStreamlined === "function" ? raw.isStreamlined() : Number(raw.targetScore ?? 0) > 0;
+    const targetScore = Number(raw.targetScore ?? 0);
+    const currentScore = Number(raw.currentScore ?? 0);
     return {
       id: Number(raw.id ?? -1),
       setId: Number(raw.setId ?? -1),
       name: String(raw.name ?? ""),
       slots: constraints.slots,
       constraints,
+      isStreamlined,
+      targetScore: isStreamlined ? targetScore : void 0,
+      currentScore: isStreamlined ? currentScore : void 0,
       raw
     };
   }
@@ -2090,6 +2096,118 @@
       return Number.isFinite(n) ? n : null;
     } catch {
       return null;
+    }
+  }
+
+  // src/ea/apply-streamlined.ts
+  async function applyStreamlinedSolution(challenge, solution, clubItems) {
+    if (!challenge.isStreamlined) {
+      return {
+        ok: false,
+        reason: "applyStreamlinedSolution llamado en un challenge no-streamlined."
+      };
+    }
+    if (!solution.ok) {
+      return {
+        ok: false,
+        reason: `Soluci\xF3n incompleta: ${solution.totalScore} / ${solution.targetScore} pts.`
+      };
+    }
+    const vc = findLiveOverviewVC(challenge.id);
+    const eaChallenge = vc?._challenge ?? challenge.raw;
+    if (!eaChallenge) {
+      return { ok: false, reason: "No se encontr\xF3 el challenge EA." };
+    }
+    const squad = eaChallenge["squad"];
+    if (!squad) {
+      return {
+        ok: false,
+        reason: "El challenge no tiene squad \u2014 \xBFfalta loadChallenge()?"
+      };
+    }
+    const UTSquadSlotEntity = getGlobal(
+      "UTSquadSlotEntity"
+    );
+    if (typeof UTSquadSlotEntity !== "function") {
+      return {
+        ok: false,
+        reason: "UTSquadSlotEntity no encontrado en el contexto de EA. \xBFEst\xE1 cargado el juego?"
+      };
+    }
+    const slots = [];
+    for (const player of solution.items) {
+      const item = clubItems.get(player.id);
+      if (!item) {
+        return {
+          ok: false,
+          reason: `Falta UTItemEntity real para "${player.name}" (id ${player.id}).`
+        };
+      }
+      const slot = new UTSquadSlotEntity();
+      if (typeof slot["setItem"] === "function") {
+        slot["setItem"](item);
+      } else {
+        slot["_item"] = item;
+      }
+      slots.push(slot);
+    }
+    try {
+      squad["setPlayers"](
+        slots,
+        true
+      );
+    } catch (err) {
+      return {
+        ok: false,
+        reason: `squad.setPlayers() fall\xF3: ${err instanceof Error ? err.message : String(err)}`
+      };
+    }
+    const services = getGlobal("services");
+    const sbc = services?.SBC;
+    if (typeof sbc?.saveChallenge !== "function") {
+      return { ok: false, reason: "services.SBC.saveChallenge no disponible." };
+    }
+    let res;
+    try {
+      res = await toPromise(sbc.saveChallenge.call(sbc, eaChallenge));
+    } catch (err) {
+      return {
+        ok: false,
+        reason: `saveChallenge() fall\xF3: ${err instanceof Error ? err.message : String(err)}`
+      };
+    }
+    if (res.status !== 200 || !res.success) {
+      return {
+        ok: false,
+        reason: `saveChallenge devolvi\xF3 status=${res.status ?? "?"} success=${res.success}` + (res.error != null ? ` error=${String(res.error)}` : "")
+      };
+    }
+    if (vc) {
+      try {
+        const ch = vc._challenge;
+        ch["onDataChange"]?.notify?.({ squad });
+      } catch {
+      }
+      try {
+        vc._pushSquadToView?.(squad);
+      } catch {
+      }
+    }
+    const currentScore = safeNum4(
+      () => eaChallenge["currentScore"]
+    );
+    return {
+      ok: true,
+      currentScore,
+      targetScore: challenge.targetScore
+    };
+  }
+  function safeNum4(fn) {
+    try {
+      const n = fn();
+      return typeof n === "number" && Number.isFinite(n) ? n : void 0;
+    } catch {
+      return void 0;
     }
   }
 
@@ -58657,7 +58775,7 @@ button:disabled { opacity:.5; cursor:default; }
     panel.setAttribute("aria-label", "Colecciones");
     const head = el("div", void 0, "head");
     const title = el("h2", "Colecciones");
-    const version = el("a", `v${"0.2.44"}`, "version");
+    const version = el("a", `v${"0.2.45"}`, "version");
     version.href = "https://raw.githubusercontent.com/mljpa/fut-sbc-dist/main/fut-sbc.user.js";
     version.target = "_blank";
     version.rel = "noopener noreferrer";
@@ -60668,6 +60786,80 @@ button:disabled { opacity:.5; cursor:default; }
     return out;
   }
 
+  // src/solver/streamlined.ts
+  function getItemScore(rating) {
+    if (rating < 65) return 10;
+    if (rating < 75) return 20;
+    if (rating < 80) return 75;
+    if (rating <= 83) return 75 + 10 * (rating - 79);
+    if (rating === 84) return 200;
+    if (rating === 85) return 400;
+    if (rating === 86) return 600;
+    if (rating === 87) return 800;
+    if (rating === 88) return 1e3;
+    if (rating === 89) return 1400;
+    if (rating === 90) return 1900;
+    if (rating === 91) return 2600;
+    if (rating === 92) return 3700;
+    if (rating === 93) return 5e3;
+    if (rating === 94) return 7e3;
+    return 9e3;
+  }
+  function qualityMatches(player, filter) {
+    if (filter === "any") return true;
+    return player.quality === filter;
+  }
+  function solveStreamlined(players, targetScore, qualityFilter = "any", cardCost2) {
+    const eligible = players.filter((p) => qualityMatches(p, qualityFilter));
+    if (eligible.length === 0) {
+      return {
+        items: [],
+        totalScore: 0,
+        targetScore,
+        ok: false
+      };
+    }
+    const scored = eligible.map((p) => ({
+      player: p,
+      score: getItemScore(p.rating),
+      cost: cardCost2 ? cardCost2(p) : 0
+    }));
+    if (cardCost2) {
+      scored.sort((a, b) => {
+        const ra = a.score / (a.cost || 1);
+        const rb = b.score / (b.cost || 1);
+        if (rb !== ra) return rb - ra;
+        return a.cost - b.cost;
+      });
+    } else {
+      scored.sort((a, b) => b.score - a.score);
+    }
+    const selected = [];
+    let accumulated = 0;
+    for (const candidate of scored) {
+      if (accumulated >= targetScore) break;
+      selected.push(candidate);
+      accumulated += candidate.score;
+    }
+    if (accumulated < targetScore) {
+      return {
+        items: selected.map((s) => s.player),
+        totalScore: accumulated,
+        targetScore,
+        ok: false
+      };
+    }
+    const items = selected.map((s) => s.player);
+    const costCoins = cardCost2 ? items.reduce((sum, p) => sum + (cardCost2(p) ?? 0), 0) : void 0;
+    return {
+      items,
+      totalScore: accumulated,
+      targetScore,
+      ok: true,
+      costCoins
+    };
+  }
+
   // src/solver/index.ts
   var DEFAULT_TIME_BUDGET_MS = 4e3;
   function solve(pool, constraints, opts) {
@@ -61284,6 +61476,36 @@ button:disabled { opacity:.5; cursor:default; }
         await run(async () => {
           lastExtras = extras;
           const pool = await buildPool(challenge, strategy, extras);
+          if (challenge.isStreamlined) {
+            const target = challenge.targetScore ?? 0;
+            const qualReq = challenge.constraints.counted.find((r) => r.kind === "quality");
+            const qualFilter = qualReq?.value ?? "any";
+            const { cardCost: cardCost2 } = costsFor(pool);
+            const stRes = solveStreamlined(pool, target, qualFilter, cardCost2);
+            if (!stRes.ok) {
+              handle()?.showError(
+                `Puntaje insuficiente: solo se alcanzan ${stRes.totalScore} de ${target} pts con tus cartas disponibles.`
+              );
+              return;
+            }
+            const notes2 = [
+              `\u2B50 Puntaje alcanzado: ${stRes.totalScore} / ${target} pts (${stRes.items.length} cartas)`
+            ];
+            const priceNote2 = costsFor(pool).note;
+            if (priceNote2) notes2.push(priceNote2);
+            const ids = stRes.items.map((p) => p.id).sort((a, b) => a - b);
+            const stSolution = {
+              players: stRes.items,
+              teamRating: 0,
+              chemistry: 0,
+              costCoins: stRes.costCoins ?? squadBill(stRes.items),
+              toBuy: [],
+              key: ids.join(",")
+            };
+            handle()?.showSolution(stSolution, [], notes2);
+            if (extras && extras.dryRun === false) await doApply(stSolution);
+            return;
+          }
           const result = solve(pool, challenge.constraints, {
             strategy,
             timeBudgetMs: SOLVE_BUDGET_MS,
@@ -61344,6 +61566,12 @@ button:disabled { opacity:.5; cursor:default; }
       },
       async showCombos() {
         await run(async () => {
+          if (challenge.isStreamlined) {
+            handle()?.showNotice(
+              `Este SBC es por puntaje (${challenge.targetScore ?? 0} pts). No utiliza combinaciones de media.`
+            );
+            return;
+          }
           const target = challenge.constraints.teamRatingMin;
           if (!target) {
             handle()?.showError("Este SBC no pide media de equipo.");
@@ -61382,6 +61610,29 @@ ${text}`);
     }
     async function doApply(solution) {
       const { players, items } = await getPool(lastExtras);
+      if (challenge.isStreamlined) {
+        const target = challenge.targetScore ?? 0;
+        const totalScore = solution.players.reduce((sum, p) => sum + getItemScore(p.rating), 0);
+        const res2 = await applyStreamlinedSolution(
+          challenge,
+          {
+            items: solution.players,
+            totalScore,
+            targetScore: target,
+            ok: true
+          },
+          items
+        );
+        if (!res2.ok) {
+          handle()?.showError(res2.reason ?? "No se pudo aplicar al SBC.");
+          return;
+        }
+        console.info(LOG, "applied streamlined", res2);
+        handle()?.showNotice(
+          `Aplicado \u2713  (puntaje ${res2.currentScore ?? totalScore} / ${target} pts)`
+        );
+        return;
+      }
       const ownedByDef = new Map(players.map((p) => [p.definitionId, p]));
       const hydrated = {
         ...solution,
@@ -61706,15 +61957,16 @@ Total SBC enviados: ${submitted}`);
       const challenge = await getOpenChallenge().catch(() => null);
       window.__futChallenge = challenge;
       const pitch = document.querySelector(
-        ".ut-squad-pitch-view.sbc, .ut-squad-pitch-view"
+        ".ut-squad-pitch-view.sbc, .ut-squad-pitch-view, .ut-sbc-squad-overview"
       );
       if (challenge && pitch && challenge.id !== mountedFor) {
         handle?.destroy();
         resetPoolCache();
+        const displayName = challenge.isStreamlined && challenge.targetScore ? `${challenge.name} (${challenge.targetScore} pts)` : challenge.name;
         handle = mountToolbar(
           pitch,
           bootActions(challenge, () => handle),
-          challenge.name
+          displayName
         );
         mountedFor = challenge.id;
         console.info(LOG, "toolbar mounted for challenge", challenge.id, challenge.name);
