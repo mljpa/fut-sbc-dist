@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         FUT SBC Solver v2
 // @namespace    https://github.com/mljpa/fut-sbc-solver-v2
-// @version      0.2.37
+// @version      0.2.38
 // @description  Userscript to solve EA SPORTS FC 26 SBCs with your own club
 // @match        https://www.ea.com/*/ea-sports-fc/ultimate-team/web-app*
 // @match        https://www.ea.com/ea-sports-fc/ultimate-team/web-app*
@@ -4966,6 +4966,72 @@ Consume las cartas que use. Esto NO se puede deshacer.
       },
       showProgress
     };
+  }
+
+  // src/gallery/account-storage.ts
+  function galleryAccountId() {
+    try {
+      const user = getGlobal("services")?.User?.getUser?.();
+      const persona = user?.getSelectedPersona?.();
+      const id = (value) => typeof value === "number" && Number.isSafeInteger(value) && value > 0 || typeof value === "string" && /^[1-9]\d*$/.test(value) ? String(value) : null;
+      const userId = id(user?.id), personaId = id(persona?.id);
+      return userId && personaId && typeof persona?._sku === "string" && persona._sku ? `${userId}:${personaId}:${persona._sku}` : null;
+    } catch {
+      return null;
+    }
+  }
+  function galleryStorage(account = galleryAccountId(), storage3, currentAccount = galleryAccountId) {
+    const prefix = `fut-sbc-gallery:account:${encodeURIComponent(account ?? "")}:`;
+    const source = () => storage3 ?? localStorage;
+    const isCurrent = () => account !== null && currentAccount() === account;
+    const keys = () => {
+      if (!isCurrent()) return [];
+      try {
+        const result = [];
+        for (let i = 0; i < source().length; i++) {
+          const key = source().key(i);
+          if (key?.startsWith(prefix)) result.push(key.slice(prefix.length));
+        }
+        return result;
+      } catch {
+        return [];
+      }
+    };
+    return {
+      isCurrent,
+      get length() {
+        return keys().length;
+      },
+      key(index) {
+        return keys()[index] ?? null;
+      },
+      getItem(key) {
+        if (!isCurrent()) return null;
+        try {
+          return source().getItem(prefix + key);
+        } catch {
+          return null;
+        }
+      },
+      setItem(key, value) {
+        if (!isCurrent()) return;
+        try {
+          source().setItem(prefix + key, value);
+        } catch {
+        }
+      }
+    };
+  }
+  function assertGalleryAccount(account) {
+    if (!account || galleryAccountId() !== account) throw new Error("La cuenta de EA cambi\xF3; vuelve a abrir Colecciones.");
+  }
+  function legacyGalleryIds(storage3) {
+    try {
+      const value = JSON.parse((storage3 ?? localStorage).getItem("fut-sbc-gallery:owned:fc27") ?? "null");
+      return Array.isArray(value) ? [...new Set(value.filter((id) => Number.isSafeInteger(id) && id > 0))] : [];
+    } catch {
+      return [];
+    }
   }
 
   // src/gallery/catalog-snapshot.json
@@ -57304,13 +57370,13 @@ Consume las cartas que use. Esto NO se puede deshacer.
       gradingScore: Number(raw.gradingScore ?? 0)
     };
   }
-  function loadCachedGalleryCards() {
+  function loadCachedGalleryCards(storage3 = galleryStorage()) {
     const cards = /* @__PURE__ */ new Map();
     try {
-      for (let i = 0; i < localStorage.length; i++) {
-        const key = localStorage.key(i);
+      for (let i = 0; i < storage3.length; i++) {
+        const key = storage3.key(i);
         if (!key?.startsWith(CACHE_PREFIX)) continue;
-        const stored = JSON.parse(localStorage.getItem(key) ?? "null");
+        const stored = JSON.parse(storage3.getItem(key) ?? "null");
         if (!Array.isArray(stored?.cards)) continue;
         for (const card of stored.cards) {
           if (!Number.isSafeInteger(card.definitionId) || card.definitionId <= 0) continue;
@@ -57322,24 +57388,27 @@ Consume las cartas que use. Esto NO se puede deshacer.
     }
     return [...cards.values()];
   }
-  function cached(key) {
+  function cached(key, storage3) {
     try {
-      const value = JSON.parse(localStorage.getItem(CACHE_PREFIX + key) ?? "null");
+      const value = JSON.parse(storage3.getItem(CACHE_PREFIX + key) ?? "null");
       if (value && Date.now() - value.at < CACHE_MS && Array.isArray(value.cards)) return value.cards;
     } catch {
     }
     return null;
   }
-  function save(key, cards) {
+  function save(key, cards, storage3) {
     try {
-      localStorage.setItem(CACHE_PREFIX + key, JSON.stringify({ at: Date.now(), cards }));
+      storage3.setItem(CACHE_PREFIX + key, JSON.stringify({ at: Date.now(), cards }));
     } catch {
     }
   }
   async function conceptCards(filter, force = false) {
+    const account = galleryAccountId();
+    const storage3 = galleryStorage(account);
+    assertGalleryAccount(account);
     const key = filter.league != null ? `league:${filter.league}` : `rarity:${filter.rarity}`;
     if (!force) {
-      const hit = cached(key);
+      const hit = cached(key, storage3);
       if (hit) return hit;
     }
     const Item = itemService3();
@@ -57349,11 +57418,13 @@ Consume las cartas que use. Esto NO se puede deshacer.
     const maxPages = filter.rarity != null ? 1 : 40;
     let complete = false;
     for (let page = 0; page < maxPages; page++) {
+      assertGalleryAccount(account);
       const c = criteria();
       c["offset"] = page * PAGE_SIZE3;
       if (filter.league != null) c["league"] = filter.league;
       if (filter.rarity != null) c["rarities"] = [filter.rarity];
       const res = await toPromise(Item.searchConceptItems(c));
+      assertGalleryAccount(account);
       const data = res.data;
       if (res.success === false || !data || !Array.isArray(data.items)) {
         throw new Error(`EA rechaz\xF3 la b\xFAsqueda de conceptos (${res.status ?? "sin estado"})`);
@@ -57376,20 +57447,24 @@ Consume las cartas que use. Esto NO se puede deshacer.
       await delay(350);
     }
     if (filter.league != null && !complete) throw new Error("El cat\xE1logo de la liga no termin\xF3 de cargar");
-    save(key, cards);
+    save(key, cards, storage3);
     return cards;
   }
   async function conceptCardsByIdsPartial(ids) {
+    const account = galleryAccountId();
+    assertGalleryAccount(account);
     const unique = [...new Set(ids)].filter((id) => Number.isSafeInteger(id) && id > 0);
     const Item = itemService3();
     if (!Item.searchConceptItems) throw new Error("EA no expone searchConceptItems");
     const result = /* @__PURE__ */ new Map();
     for (let i = 0; i < unique.length; i += 100) {
       const batch = unique.slice(i, i + 100);
+      assertGalleryAccount(account);
       const c = criteria();
       c["count"] = 100;
       c["defId"] = batch;
       const res = await toPromise(Item.searchConceptItems(c));
+      assertGalleryAccount(account);
       if (res.success === false || !Array.isArray(res.data?.items)) throw new Error("EA no devolvi\xF3 las cartas recomendadas");
       for (const raw of res.data.items) {
         const card = galleryCardFromRaw(raw);
@@ -57640,6 +57715,8 @@ Consume las cartas que use. Esto NO se puede deshacer.
   }
   async function buyAndList(ids, settings, onResult, onProgress = () => {
   }, shouldStop = () => false) {
+    const account = galleryAccountId();
+    assertGalleryAccount(account);
     const Item = service();
     if (!Item.bid || !Item.move || !Item.list || !Item.requestMarketData) throw new Error("EA no expone compra y venta");
     const clubPile = getGlobal("ItemPile")?.CLUB;
@@ -57652,6 +57729,7 @@ Consume las cartas que use. Esto NO se puede deshacer.
     let spent = 0;
     for (const definitionId of [...new Set(ids)]) {
       if (shouldStop()) break;
+      assertGalleryAccount(account);
       const progress = (message, attempt, totalAttempts) => onProgress({ definitionId, message, attempt, totalAttempts });
       const manualPrice = settings.manualPriceById?.[definitionId];
       progress(manualPrice === void 0 ? "Consultando el precio de Enhancer\u2026" : "Usando referencia manual confirmada\u2026");
@@ -57685,6 +57763,7 @@ Consume las cartas que use. Esto NO se puede deshacer.
         progress(`${attempt === 1 ? "Intento" : "Reintento"} ${attempt}/${totalAttempts}: esperando entre b\xFAsquedas\u2026`, attempt, totalAttempts);
         await delay(2e3 + Math.floor(Math.random() * 2001));
         if (shouldStop()) return results;
+        assertGalleryAccount(account);
         progress(`${attempt === 1 ? "Intento" : "Reintento"} ${attempt}/${totalAttempts}: buscando hasta ${cap} monedas\u2026`, attempt, totalAttempts);
         let listing;
         try {
@@ -57696,6 +57775,7 @@ Consume las cartas que use. Esto NO se puede deshacer.
           break;
         }
         if (shouldStop()) return results;
+        assertGalleryAccount(account);
         if (!listing) {
           progress(attempt < totalAttempts ? `Sin anuncios hasta ${cap}; sigue reintento ${attempt + 1}/${totalAttempts}` : `Sin anuncios hasta ${cap}; intentos agotados`, attempt, totalAttempts);
           continue;
@@ -57739,10 +57819,12 @@ Consume las cartas que use. Esto NO se puede deshacer.
         const sellPrice = salePriceForPurchase(plan.salePrice, bought.price, tiers());
         progress(`Comprada por ${bought.price}; moviendo al club\u2026`);
         await delay(1200);
+        assertGalleryAccount(account);
         const moved = await toPromise(Item.move(bought.item, clubPile));
         assertNotBanned(moved.status);
         if (!okay(moved.status, moved.success)) throw new Error(`No se pudo mover al club (${moved.status ?? "sin estado"})`);
         if (bought.item.isTradeable?.() === false) throw new Error("La carta comprada no es transferible");
+        assertGalleryAccount(account);
         if (!bought.item.hasPriceLimits?.()) {
           const marketData = await toPromise(Item.requestMarketData(bought.item));
           assertNotBanned(marketData.status);
@@ -57752,6 +57834,7 @@ Consume las cartas que use. Esto NO se puede deshacer.
         if (start > sellPrice || limits?.maximum != null && sellPrice > limits.maximum) throw new Error("Precio de venta fuera del rango permitido por EA");
         progress(`Publicando a ${sellPrice} monedas\u2026`);
         await delay(1200);
+        assertGalleryAccount(account);
         const listed = await toPromise(Item.list(bought.item, start, sellPrice, 3600));
         assertNotBanned(listed.status);
         if (!okay(listed.status, listed.success)) throw new Error(`EA rechaz\xF3 la publicaci\xF3n (${listed.status ?? "sin estado"})`);
@@ -57832,7 +57915,7 @@ Consume las cartas que use. Esto NO se puede deshacer.
   }
   function loadGalleryPreferences(storage3) {
     try {
-      return decodeGalleryPreferences(JSON.parse((storage3 ?? localStorage).getItem(KEY) ?? "null"));
+      return decodeGalleryPreferences(JSON.parse((storage3 ?? galleryStorage()).getItem(KEY) ?? "null"));
     } catch {
       return decodeGalleryPreferences(null);
     }
@@ -57840,7 +57923,7 @@ Consume las cartas que use. Esto NO se puede deshacer.
   function saveGalleryPreferences(value, storage3) {
     const safe = decodeGalleryPreferences(value);
     try {
-      (storage3 ?? localStorage).setItem(KEY, JSON.stringify(safe));
+      (storage3 ?? galleryStorage()).setItem(KEY, JSON.stringify(safe));
     } catch {
     }
   }
@@ -57924,7 +58007,7 @@ Consume las cartas que use. Esto NO se puede deshacer.
   var GRADES = ["D", "C", "B", "A", "S"];
   function loadConfirmedClaims(storage3) {
     try {
-      const parsed = JSON.parse((storage3 ?? localStorage).getItem(KEY2) ?? "null");
+      const parsed = JSON.parse((storage3 ?? galleryStorage()).getItem(KEY2) ?? "null");
       if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) return {};
       return Object.fromEntries(Object.entries(parsed).filter(([id, grade]) => /^\d+$/.test(id) && GRADES.includes(String(grade))));
     } catch {
@@ -57933,7 +58016,7 @@ Consume las cartas que use. Esto NO se puede deshacer.
   }
   function saveConfirmedClaims(claims, storage3) {
     try {
-      (storage3 ?? localStorage).setItem(KEY2, JSON.stringify(claims));
+      (storage3 ?? galleryStorage()).setItem(KEY2, JSON.stringify(claims));
     } catch {
     }
   }
@@ -58374,16 +58457,16 @@ button:disabled { opacity:.5; cursor:default; }
 @media (max-width:620px) { .backdrop { padding:6px; } .panel,.panel.trade-panel { width:100%; height:calc(100vh - 12px); max-height:none; } .row { flex-wrap:wrap; } .row .who { flex-basis:calc(100% - 50px); } .row .market-price { flex:1; text-align:left; } .panel-footer { align-items:stretch; flex-direction:column; } .panel-footer button { width:100%; } .progress-row { grid-template-columns:1fr; gap:1px; } }
 .empty { padding:24px; text-align:center; color:var(--muted); }
 `;
-  function loadLedger() {
+  function loadLedger(storage3) {
     try {
-      const ids = JSON.parse(localStorage.getItem(LEDGER_KEY) ?? "[]");
+      const ids = JSON.parse(storage3.getItem(LEDGER_KEY) ?? "[]");
       return new Set(ids.filter((id) => Number.isSafeInteger(id) && id > 0));
     } catch {
       return /* @__PURE__ */ new Set();
     }
   }
-  function saveLedger(ids) {
-    localStorage.setItem(LEDGER_KEY, JSON.stringify([...ids].sort((a, b) => a - b)));
+  function saveLedger(ids, storage3) {
+    storage3.setItem(LEDGER_KEY, JSON.stringify([...ids].sort((a, b) => a - b)));
   }
   function el(tag, text, cls) {
     const node = document.createElement(tag);
@@ -58412,6 +58495,30 @@ button:disabled { opacity:.5; cursor:default; }
     return { amount, priced };
   }
   function mountGallery() {
+    let account = galleryAccountId();
+    let instance = mountAccountGallery(galleryStorage(account));
+    function refreshAccount() {
+      const next = galleryAccountId();
+      if (next === account) return;
+      instance.destroy();
+      account = next;
+      instance = mountAccountGallery(galleryStorage(account));
+    }
+    const timer = setInterval(refreshAccount, 500);
+    return { open() {
+      refreshAccount();
+      instance.open();
+    }, destroy() {
+      clearInterval(timer);
+      instance.destroy();
+    } };
+  }
+  function mountAccountGallery(storage3) {
+    let disposed = false;
+    const isActive = () => !disposed && storage3.isCurrent();
+    function assertActive() {
+      if (!isActive()) throw new Error("La cuenta de EA cambi\xF3; vuelve a abrir Colecciones.");
+    }
     const host = el("div");
     host.id = "fut-gallery-root";
     const shadow = host.attachShadow({ mode: "open" });
@@ -58430,7 +58537,7 @@ button:disabled { opacity:.5; cursor:default; }
     panel.setAttribute("aria-label", "Colecciones");
     const head = el("div", void 0, "head");
     const title = el("h2", "Colecciones");
-    const version = el("a", `v${"0.2.37"}`, "version");
+    const version = el("a", `v${"0.2.38"}`, "version");
     version.href = "https://raw.githubusercontent.com/mljpa/fut-sbc-dist/main/fut-sbc.user.js";
     version.target = "_blank";
     version.rel = "noopener noreferrer";
@@ -58520,10 +58627,10 @@ button:disabled { opacity:.5; cursor:default; }
     }
     launcher.addEventListener("pointerup", finishDrag);
     launcher.addEventListener("pointercancel", finishDrag);
-    const savedPreferences = loadGalleryPreferences();
-    let confirmedClaims = loadConfirmedClaims();
-    let owned = loadLedger();
-    const knownCards = new Map(loadCachedGalleryCards().map((card) => [card.definitionId, card]));
+    const savedPreferences = loadGalleryPreferences(storage3);
+    let confirmedClaims = loadConfirmedClaims(storage3);
+    let owned = loadLedger(storage3);
+    const knownCards = new Map(loadCachedGalleryCards(storage3).map((card) => [card.definitionId, card]));
     function rememberCard(card) {
       const previous = knownCards.get(card.definitionId);
       knownCards.set(card.definitionId, {
@@ -58560,7 +58667,7 @@ button:disabled { opacity:.5; cursor:default; }
       if (grade === null) delete next[String(setId)];
       else next[String(setId)] = grade;
       confirmedClaims = next;
-      saveConfirmedClaims(confirmedClaims);
+      saveConfirmedClaims(confirmedClaims, storage3);
       render();
     }
     let tab = "missing";
@@ -58593,7 +58700,7 @@ button:disabled { opacity:.5; cursor:default; }
     function persistPreferences() {
       const safe = decodeGalleryPreferences({ ...savedPreferences, trade: tradeSettings, collectionFilter, collectionSort, cardSort, advancedTradeOpen, collectionTokenGoal, collectionPlanPriority, collectionPlanBaseline, collectionBuyQueue: purchaseQueue });
       tradeSettings = { ...tradeSettings, ...safe.trade };
-      saveGalleryPreferences(safe);
+      saveGalleryPreferences(safe, storage3);
     }
     function setStatus(message, isError = false) {
       status = message;
@@ -58607,6 +58714,7 @@ button:disabled { opacity:.5; cursor:default; }
     function open() {
       backdrop.classList.add("open");
       render();
+      if (isActive() && !owned.size) void syncClub();
     }
     function cancelTradeConfirmation() {
       if (tradeDialog?.running) {
@@ -58643,14 +58751,17 @@ button:disabled { opacity:.5; cursor:default; }
     }
     shadow.addEventListener("keydown", onConfirmationKeydown);
     async function syncClub() {
-      if (busy) return;
+      if (busy || !isActive()) return;
       busy = true;
       setStatus("Leyendo tu club desde EA\u2026");
       try {
         let { players, items } = await fetchClubPlayers();
+        assertActive();
         if (players.length === 0) {
           await delay(1200);
+          assertActive();
           ({ players, items } = await fetchClubPlayers());
+          assertActive();
         }
         if (players.length === 0) throw new Error("EA no devolvi\xF3 cartas del club");
         current = new Set(players.map((p) => p.definitionId));
@@ -58659,13 +58770,28 @@ button:disabled { opacity:.5; cursor:default; }
           const card = galleryCardFromRaw(raw);
           if (card) rememberCard(card);
         }
+        saveLedger(owned, storage3);
+        if (storage3.getItem("legacy-history-verified:v1") !== "1") {
+          const candidates = legacyGalleryIds();
+          if (candidates.length) {
+            setStatus("Verificando el historial anterior con las cartas de esta cuenta\u2026");
+            const history = await conceptCardsByIdsPartial(candidates);
+            assertActive();
+            for (const card of history) {
+              rememberCard(card);
+              if (card.isCollected === true) owned.add(card.definitionId);
+            }
+            saveLedger(owned, storage3);
+          }
+          storage3.setItem("legacy-history-verified:v1", "1");
+        }
         if (category) {
           categoryCards = [...knownCards.values()];
           const refreshed = new Map(buildSets(category, categoryCards).map((set) => [set.catalogId, set.cards]));
           for (const set of sets) set.cards = refreshed.get(set.catalogId) ?? set.cards;
           if (selected) selected.cards = refreshed.get(selected.catalogId) ?? selected.cards;
         }
-        saveLedger(owned);
+        saveLedger(owned, storage3);
         setStatus(`${fmt(players.length)} cartas actuales; ${fmt(owned.size)} definiciones registradas en el historial local.`);
       } catch (cause) {
         setStatus(`No se pudo leer el club: ${cause instanceof Error ? cause.message : String(cause)}`, true);
@@ -58675,7 +58801,7 @@ button:disabled { opacity:.5; cursor:default; }
       }
     }
     async function loadCategory(next, force = false) {
-      if (busy) return;
+      if (busy || !isActive()) return;
       priceRequestId++;
       priceLoading = false;
       category = next;
@@ -58700,13 +58826,21 @@ button:disabled { opacity:.5; cursor:default; }
       setStatus(`Actualizando cartas de ${next.name} desde EA\u2026`);
       try {
         const cards = [];
-        for (const league of next.leagues ?? []) cards.push(...await conceptCards({ league }, true));
-        for (const rarity of next.rarities ?? []) cards.push(...await conceptCards({ rarity: rarity.id }, true));
+        for (const league of next.leagues ?? []) {
+          assertActive();
+          cards.push(...await conceptCards({ league }, true));
+          assertActive();
+        }
+        for (const rarity of next.rarities ?? []) {
+          assertActive();
+          cards.push(...await conceptCards({ rarity: rarity.id }, true));
+          assertActive();
+        }
         for (const card of cards) {
           rememberCard(card);
           if (card.isCollected) owned.add(card.definitionId);
         }
-        saveLedger(owned);
+        saveLedger(owned, storage3);
         categoryCards = [...knownCards.values()];
         sets = buildSets(next, categoryCards);
         setStatus(`${fmt(sets.length)} colecciones \xB7 cartas actualizadas`);
@@ -58718,7 +58852,7 @@ button:disabled { opacity:.5; cursor:default; }
       }
     }
     function toggleQueuedCollection(setId, grade) {
-      if (busy) return;
+      if (busy || !isActive()) return;
       const entry = purchaseQueue.find((item) => item.setId === setId);
       purchaseQueue = entry?.grade === grade ? purchaseQueue.filter((item) => item.setId !== setId) : updatePurchaseQueue(purchaseQueue, { setId, grade });
       persistPreferences();
@@ -58818,7 +58952,7 @@ button:disabled { opacity:.5; cursor:default; }
       footer.append(el("span", "Una compra por carta compartida. Revisa precios y gasto m\xE1ximo antes de iniciar."), review);
     }
     async function prepareQueueTrade() {
-      if (busy) return;
+      if (busy || !isActive()) return;
       busy = true;
       error = false;
       status = "Revisando tus cartas de las colecciones seleccionadas\u2026";
@@ -58826,12 +58960,13 @@ button:disabled { opacity:.5; cursor:default; }
       try {
         const before = collectionPurchaseQueue(purchaseQueue, owned, completedGalleryGrades(owned, [...knownCards.values()]), confirmedClaims);
         const hydrated = await conceptCardsByIdsPartial(before.items.map((item) => item.definitionId));
+        assertActive();
         if (hydrated.length !== before.items.length) throw new Error(`EA devolvi\xF3 ${hydrated.length}/${before.items.length} cartas; vuelve a revisar la cola.`);
         for (const card of hydrated) {
           rememberCard(card);
           if (card.isCollected) owned.add(card.definitionId);
         }
-        saveLedger(owned);
+        saveLedger(owned, storage3);
         const queue = collectionPurchaseQueue(purchaseQueue, owned, completedGalleryGrades(owned, [...knownCards.values()]), confirmedClaims);
         if (queue.blocked) throw new Error("Cambia o quita los grados sin alineaci\xF3n publicada.");
         if (!queue.items.length) {
@@ -58976,7 +59111,7 @@ button:disabled { opacity:.5; cursor:default; }
         const text = el("div");
         text.append(
           el("strong", `${ready ? "\u2713 " : ""}${index + 1}. ${step.name} \xB7 grado ${step.grade} \xB7 +${fmt(step.tokens)} fichas`),
-          el("small", step.missingItems.length ? `${step.missingItems.length} cartas por obtener \xB7 ${fmt(step.purchaseCoins)} precio total FUT.GG` : "Listo seg\xFAn tus cartas \xB7 revisa el canje")
+          el("small", step.missingItems.length ? `${step.missingItems.length} cartas por obtener \xB7 ${fmt(step.purchaseCoins)} precio total FUT.GG` : "Completado")
         );
         card.append(
           text,
@@ -59024,6 +59159,7 @@ button:disabled { opacity:.5; cursor:default; }
       };
     }
     async function openSet(set, grade) {
+      if (!isActive()) return;
       if (tradeDialog && !tradeDialog.running) cancelTradeConfirmation();
       selected = set;
       plannedGrade = grade === void 0 ? bestPublishedGrade(set)?.grade ?? null : grade;
@@ -59041,13 +59177,13 @@ button:disabled { opacity:.5; cursor:default; }
         const referenceIds = referenceItems(set).map((item) => item.definitionId);
         if (referenceIds.length) {
           const extra = await conceptCardsByIdsPartial(referenceIds);
-          if (requestId !== priceRequestId || selected !== set) return;
+          if (!isActive() || requestId !== priceRequestId || selected !== set) return;
           set.cards = [...new Map([...set.cards, ...extra].map((card) => [card.definitionId, card])).values()];
           for (const card of extra) {
             rememberCard(card);
             if (card.isCollected) owned.add(card.definitionId);
           }
-          saveLedger(owned);
+          saveLedger(owned, storage3);
         }
         const priceIds = referenceCards(set).filter((card) => !owned.has(card.definitionId)).map((card) => card.definitionId);
         if (!priceIds.length) {
@@ -59055,12 +59191,12 @@ button:disabled { opacity:.5; cursor:default; }
           return;
         }
         const found = await fetchEnhancerPrices(priceIds);
-        if (requestId !== priceRequestId || selected !== set) return;
+        if (!isActive() || requestId !== priceRequestId || selected !== set) return;
         prices = found;
         status = `${found.size}/${priceIds.length} precios de las cartas faltantes recibidos de Enhancer.`;
         error = false;
       } catch (cause) {
-        if (requestId !== priceRequestId || selected !== set) return;
+        if (!isActive() || requestId !== priceRequestId || selected !== set) return;
         status = `No se pudieron obtener precios: ${cause instanceof Error ? cause.message : String(cause)}`;
         error = true;
       } finally {
@@ -59092,7 +59228,7 @@ button:disabled { opacity:.5; cursor:default; }
       }
     }
     function startTradeFromReview() {
-      if (busy) return;
+      if (busy || !isActive()) return;
       const ids = [...chosen].filter((id) => tradeReference(id) && !owned.has(id));
       if (tradeIsQueue && ids.length !== [...chosen].filter((id) => !owned.has(id)).length)
         return setStatus("Completa los precios manuales pendientes antes de iniciar la cola.", true);
@@ -59207,7 +59343,7 @@ button:disabled { opacity:.5; cursor:default; }
       dialog.action.textContent = dialog.running ? "Ocultar progreso" : "Cerrar";
     }
     async function executeConfirmedTrade(ids, quote) {
-      if (busy) return;
+      if (busy || !isActive()) return;
       const settings = quote.settings;
       activeTradeQuote = quote;
       busy = true;
@@ -59217,6 +59353,7 @@ button:disabled { opacity:.5; cursor:default; }
       setStatus("Buscando cartas con los topes confirmados\u2026");
       try {
         await buyAndList(ids, settings, (result) => {
+          if (!isActive()) return;
           tradeProgress.set(result.definitionId, result.message);
           tradeResultState.set(result.definitionId, result.state);
           tradeActuals.set(result.definitionId, result);
@@ -59231,13 +59368,13 @@ button:disabled { opacity:.5; cursor:default; }
             owned.add(result.definitionId);
             const card = tradeCard(result.definitionId);
             if (card) rememberCard(card);
-            saveLedger(owned);
+            saveLedger(owned, storage3);
           }
           refreshTradeProgressDialog(result.definitionId);
         }, (progress) => {
           tradeProgress.set(progress.definitionId, progress.message);
           refreshTradeProgressDialog(progress.definitionId);
-        }, () => stopRequested);
+        }, () => stopRequested || !isActive());
         setStatus(tradeStopReason ?? (stopRequested ? "Compras detenidas. Las cartas pendientes quedan en la cola." : "Lote terminado. Revisa el estado de cada carta y la lista de transferibles."));
       } catch (cause) {
         setStatus(`El lote se detuvo: ${cause instanceof Error ? cause.message : String(cause)}`, true);
@@ -59462,7 +59599,7 @@ button:disabled { opacity:.5; cursor:default; }
         if (owned.has(card.definitionId) && card.isCollected !== true && !current.has(card.definitionId)) {
           row.append(button("Quitar del historial", () => {
             owned.delete(card.definitionId);
-            saveLedger(owned);
+            saveLedger(owned, storage3);
             render();
           }));
         }
@@ -59479,10 +59616,15 @@ button:disabled { opacity:.5; cursor:default; }
       return list;
     }
     function render() {
+      if (disposed) return;
       body.replaceChildren();
       footer.replaceChildren();
       panel.classList.toggle("trade-panel", tradeView);
       title.textContent = tradeView ? tradeIsQueue ? `Comprar cola \xB7 ${activeQueueRows.length} colecciones` : `Comprar ${playerCount(chosen.size)}` : queueOpen ? "Cola de colecciones" : selected?.name ?? category?.name ?? "Colecciones";
+      if (!storage3.isCurrent()) {
+        body.append(el("p", "Esperando la cuenta de EA\u2026", "status"));
+        return;
+      }
       if (tradeView) {
         body.append(el("p", status, `status${error ? " error" : ""}`));
         renderTrade();
@@ -59818,6 +59960,9 @@ button:disabled { opacity:.5; cursor:default; }
     }
     void syncClub();
     return { open, destroy() {
+      disposed = true;
+      stopRequested = true;
+      priceRequestId++;
       window.removeEventListener("resize", onResize);
       host.remove();
     } };
