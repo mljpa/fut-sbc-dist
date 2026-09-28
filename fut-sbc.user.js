@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         FUT SBC Solver v2
 // @namespace    https://github.com/mljpa/fut-sbc-solver-v2
-// @version      0.2.30
+// @version      0.2.31
 // @description  Userscript to solve EA SPORTS FC 26 SBCs with your own club
 // @match        https://www.ea.com/*/ea-sports-fc/ultimate-team/web-app*
 // @match        https://www.ea.com/ea-sports-fc/ultimate-team/web-app*
@@ -57379,24 +57379,6 @@ Consume las cartas que use. Esto NO se puede deshacer.
     save(key, cards);
     return cards;
   }
-  async function conceptCardsByIds(ids) {
-    if (!ids.length || ids.length > 250 || ids.some((id) => !Number.isSafeInteger(id) || id <= 0)) throw new Error("IDs de Gallery inv\xE1lidos");
-    const Item = itemService3();
-    if (!Item.searchConceptItems) throw new Error("EA no expone searchConceptItems");
-    const c = criteria();
-    c["count"] = 250;
-    c["defId"] = [...ids];
-    const res = await toPromise(Item.searchConceptItems(c));
-    if (res.success === false || !Array.isArray(res.data?.items)) throw new Error(`EA rechaz\xF3 las cartas del conjunto (${res.status ?? "sin estado"})`);
-    const requested = new Set(ids);
-    const found = /* @__PURE__ */ new Map();
-    for (const raw of res.data.items) {
-      const card = galleryCardFromRaw(raw);
-      if (card && requested.has(card.definitionId)) found.set(card.definitionId, card);
-    }
-    if (found.size !== requested.size) throw new Error(`EA devolvi\xF3 ${found.size}/${requested.size} cartas del conjunto`);
-    return ids.map((id) => found.get(id));
-  }
   async function conceptCardsByIdsPartial(ids) {
     const unique = [...new Set(ids)].filter((id) => Number.isSafeInteger(id) && id > 0);
     const Item = itemService3();
@@ -57450,7 +57432,7 @@ Consume las cartas que use. Esto NO se puede deshacer.
     if (!slug) return [];
     return catalog_snapshot_default.sets.filter((raw) => raw.category === slug).map((raw) => {
       const recommended = "recommended" in raw ? raw.recommended : void 0;
-      const recommendedIds = new Set(recommended?.items.map((item) => item.definitionId) ?? []);
+      const recommendedIds = new Set(raw.costTiers.flatMap((tier2) => tier2.items.map((item) => item.definitionId)));
       const clubIds = new Set(raw.candidateClubEaIds);
       const leagueId = LEAGUE_SET_IDS[raw.name];
       const rarityId = RARITY_SET_IDS[raw.name];
@@ -57922,15 +57904,6 @@ Consume las cartas que use. Esto NO se puede deshacer.
   }
 
   // src/gallery/budget-plan.ts
-  function circulatingCoins(prices) {
-    let taxSpent = 0;
-    let peak = 0;
-    for (const price of [...prices].sort((a, b) => b - a)) {
-      peak = Math.max(peak, price + taxSpent);
-      taxSpent += price * 0.05;
-    }
-    return Math.ceil(peak);
-  }
   function claimedTokens(set, claimed) {
     const index = set.grades.findIndex((grade) => grade.name === claimed[String(set.id)]);
     return index < 0 ? 0 : set.grades.slice(0, index + 1).reduce((sum, grade) => sum + grade.tokens, 0);
@@ -58021,149 +57994,6 @@ Consume las cartas que use. Esto NO se puede deshacer.
     const total = availableInStore;
     return { total, remaining: Math.max(0, target - total) };
   }
-  function galleryRouteRows(plan, claimed, recorded = /* @__PURE__ */ new Set()) {
-    const rows = plan.sets.map((item) => {
-      const set = catalog_snapshot_default.sets.find((candidate) => candidate.id === item.setId);
-      const grade = claimed[String(item.setId)];
-      return {
-        ...item,
-        state: item.missingItems.length ? "missing" : "ready",
-        inPlan: true,
-        ...grade ? { completedGrade: grade } : {},
-        readyTokens: set ? claimedTokens(set, claimed) : 0
-      };
-    });
-    const present = new Set(rows.map((row) => row.setId));
-    for (const set of catalog_snapshot_default.sets) {
-      if (present.has(set.id)) continue;
-      const grade = claimed[String(set.id)];
-      if (grade) {
-        rows.push({
-          setId: set.id,
-          name: set.name,
-          category: set.category,
-          grade,
-          tokens: 0,
-          missingItems: [],
-          purchaseCoins: 0,
-          unpricedCards: 0,
-          state: "complete",
-          inPlan: false,
-          completedGrade: grade,
-          readyTokens: claimedTokens(set, claimed)
-        });
-        continue;
-      }
-      const tier2 = set.costTiers.filter((candidate) => candidate.items.length === set.requiredCards).sort((a, b) => {
-        const missingA = a.items.filter((item) => !recorded.has(item.definitionId));
-        const missingB = b.items.filter((item) => !recorded.has(item.definitionId));
-        return missingA.length - missingB.length || b.tokens - a.tokens || missingA.reduce((sum, item) => sum + (item.price ?? 0), 0) - missingB.reduce((sum, item) => sum + (item.price ?? 0), 0);
-      })[0];
-      if (!tier2) {
-        rows.push({
-          setId: set.id,
-          name: set.name,
-          category: set.category,
-          grade: "",
-          tokens: 0,
-          missingItems: [],
-          purchaseCoins: 0,
-          unpricedCards: 0,
-          state: "catalog",
-          inPlan: false,
-          readyTokens: 0
-        });
-        continue;
-      }
-      const missingItems = tier2.items.filter((item) => !recorded.has(item.definitionId)).map((item) => ({ definitionId: item.definitionId, price: item.price }));
-      rows.push({
-        setId: set.id,
-        name: set.name,
-        category: set.category,
-        grade: tier2.grade,
-        tokens: tier2.tokens,
-        missingItems,
-        purchaseCoins: missingItems.reduce((sum, item) => sum + (item.price ?? 0), 0),
-        unpricedCards: missingItems.filter((item) => item.price === null).length,
-        state: missingItems.length ? "missing" : "ready",
-        inPlan: false,
-        readyTokens: 0
-      });
-    }
-    return rows;
-  }
-  function pointFor(choices2, recorded, claimed, cap) {
-    const sets = [];
-    const uniquePrices = /* @__PURE__ */ new Map();
-    const unpriced = /* @__PURE__ */ new Set();
-    let gainedTokens = 0;
-    for (const { set, tier: tier2 } of choices2) {
-      const missingItems = tier2.items.filter((item) => !recorded.has(item.definitionId)).map((item) => ({ definitionId: item.definitionId, price: item.price }));
-      const tokens = Math.max(0, tier2.tokens - claimedTokens(set, claimed));
-      if (tokens === 0) continue;
-      gainedTokens += tokens;
-      for (const item of missingItems) {
-        if (item.price === null) unpriced.add(item.definitionId);
-        else uniquePrices.set(item.definitionId, Math.max(uniquePrices.get(item.definitionId) ?? 0, item.price));
-      }
-      sets.push({
-        setId: set.id,
-        name: set.name,
-        category: set.category,
-        grade: tier2.grade,
-        tokens,
-        missingItems,
-        unpricedCards: missingItems.filter((item) => item.price === null).length,
-        purchaseCoins: missingItems.reduce((sum, item) => sum + (item.price ?? 0), 0)
-      });
-    }
-    const prices = [...uniquePrices.values()];
-    const genuinelyUnpriced = [...unpriced].filter((id) => !uniquePrices.has(id));
-    const tax = Math.ceil(prices.reduce((sum, price) => sum + price, 0) * 0.05);
-    return {
-      cap,
-      sets,
-      gainedTokens,
-      uniqueCards: uniquePrices.size + genuinelyUnpriced.length,
-      coinsNeeded: Math.max(cap, circulatingCoins(prices)),
-      tax,
-      unpricedCards: genuinelyUnpriced.length,
-      reachesGoal: false
-    };
-  }
-  function galleryBudgetPlan(recorded, claimed, tokenBalance, target, coinBudget = null) {
-    const need = target === null ? Number.POSITIVE_INFINITY : Math.max(0, target - tokenBalance);
-    const empty = { sets: [], gainedTokens: 0, uniqueCards: 0, coinsNeeded: 0, tax: 0, unpricedCards: 0, reachesGoal: need === 0 };
-    if (need === 0 || target === null && coinBudget === null) return empty;
-    const tiers2 = catalog_snapshot_default.sets.flatMap((set) => {
-      const alreadyClaimed = set.grades.findIndex((grade) => grade.name === claimed[String(set.id)]);
-      return set.costTiers.filter((tier2) => tier2.items.length === set.requiredCards && set.grades.findIndex((grade) => grade.name === tier2.grade) > alreadyClaimed).map((tier2) => ({
-        set,
-        tier: tier2,
-        cap: circulatingCoins(tier2.items.filter((item) => !recorded.has(item.definitionId)).map((item) => item.price ?? 0))
-      }));
-    });
-    tiers2.sort((a, b) => a.cap - b.cap || a.tier.totalScore - b.tier.totalScore || a.set.id - b.set.id);
-    const selected = /* @__PURE__ */ new Map();
-    const points = [];
-    for (let i = 0; i < tiers2.length; ) {
-      const cap = tiers2[i].cap;
-      while (i < tiers2.length && tiers2[i].cap === cap) {
-        const choice = tiers2[i++];
-        const previous = selected.get(choice.set.id);
-        if (!previous || choice.tier.tokens >= previous.tier.tokens) selected.set(choice.set.id, choice);
-      }
-      points.push(pointFor(selected.values(), recorded, claimed, cap));
-    }
-    const affordable = points.filter((point) => coinBudget === null || point.coinsNeeded <= coinBudget);
-    const chosen = target === null ? affordable.sort((a, b) => b.gainedTokens - a.gainedTokens || a.coinsNeeded - b.coinsNeeded)[0] : affordable.filter((point) => point.gainedTokens >= need).sort((a, b) => a.coinsNeeded - b.coinsNeeded || a.sets.length - b.sets.length)[0] ?? affordable.sort((a, b) => b.gainedTokens - a.gainedTokens || a.coinsNeeded - b.coinsNeeded)[0];
-    if (!chosen) return empty;
-    return {
-      ...chosen,
-      sets: [...chosen.sets].sort((a, b) => b.tokens - a.tokens || a.missingItems.length - b.missingItems.length || a.purchaseCoins - b.purchaseCoins || a.name.localeCompare(b.name, "es")),
-      reachesGoal: chosen.gainedTokens >= need
-    };
-  }
 
   // src/gallery/token-balance.ts
   function readGalleryTokenBalance(source = globalThis.services) {
@@ -58215,61 +58045,98 @@ Consume las cartas que use. Esto NO se puede deshacer.
       };
     });
   }
-  function matchesGalleryRouteFilter(row, claim, filter) {
-    if (filter === "all") return true;
-    if (filter === "complete") return Boolean(claim.calculatedGrade);
-    if (filter === "upgrade") return Boolean(claim.calculatedGrade && claim.nextGrade);
-    if (filter === "confirmed" || filter === "pending" || filter === "unverified") return claim.claimState === filter;
-    if (filter === "missing") return !claim.calculatedGrade && row.state === "missing" && row.tokens > 0;
-    return row.state === filter;
-  }
 
-  // src/gallery/verified-sets.ts
-  var IPSWICH_IDS = [
-    50563169,
-    236699,
-    246321,
-    255434,
-    234569,
-    50571021,
-    243675,
-    261336,
-    231633,
-    235405,
-    239356,
-    242908,
-    246685,
-    267680,
-    75318,
-    76803,
-    248602,
-    256051,
-    71110,
-    206561,
-    213418,
-    223877,
-    223909,
-    235458,
-    233851,
-    231005,
-    250816,
-    265801,
-    271150,
-    264200,
-    263376,
-    173533
-  ];
-  async function loadVerifiedSets(category) {
-    if (category.id !== "eng") return [];
-    const cards = await conceptCardsByIds(IPSWICH_IDS);
-    const definition = buildSets(category, cards).find((set) => set.id === "team:94");
-    if (!definition) throw new Error("Ipswich no est\xE1 en el cat\xE1logo de referencia");
-    return [{ ...definition, cards, verified: true }];
+  // src/gallery/grade-route.ts
+  function galleryGradeOptions(setId, owned, completed) {
+    const set = catalog_snapshot_default.sets.find((entry) => entry.id === setId);
+    if (!set) return [];
+    const fromGrade = completed[String(setId)] ?? null;
+    const fromIndex = set.grades.findIndex((grade) => grade.name === fromGrade);
+    const alreadyEarned = set.grades.slice(0, fromIndex + 1).reduce((sum, grade) => sum + grade.tokens, 0);
+    return set.grades.map((grade, index) => {
+      const tier2 = set.costTiers.find((entry) => entry.grade === grade.name && entry.items.length === set.requiredCards);
+      const accumulatedTokens = set.grades.slice(0, index + 1).reduce((sum, entry) => sum + entry.tokens, 0);
+      const missingItems = (tier2?.items ?? []).filter((item) => !owned.has(item.definitionId)).map((item) => ({ definitionId: item.definitionId, price: item.price }));
+      return {
+        setId,
+        name: set.name,
+        category: set.category,
+        grade: grade.name,
+        fromGrade,
+        tokens: Math.max(0, accumulatedTokens - alreadyEarned),
+        accumulatedTokens,
+        requiredCards: set.requiredCards,
+        available: Boolean(tier2),
+        completed: index <= fromIndex,
+        missingItems,
+        purchaseCoins: missingItems.reduce((sum, item) => sum + (item.price ?? 0), 0),
+        unpricedCards: missingItems.filter((item) => item.price === null).length
+      };
+    });
   }
-  function mergeVerifiedSets(approximate, verified) {
-    const byId = new Map(approximate.map((set) => [set.id, set]));
-    for (const set of verified) byId.set(set.id, { ...byId.get(set.id), ...set, cards: set.cards, verified: true });
-    return [...byId.values()].sort((a, b) => a.name.localeCompare(b.name, "es"));
+  function costs(prices) {
+    let loss = 0;
+    let coins = 0;
+    for (const price of [...prices].sort((a, b) => b - a)) {
+      coins = Math.max(coins, price + loss);
+      loss += price * 0.05;
+    }
+    return { coins: Math.ceil(coins), tax: Math.ceil(loss) };
+  }
+  function compare(a, b) {
+    return a.coins - b.coins || a.tax - b.tax || a.prices.size - b.prices.size || a.steps.length - b.steps.length || a.gained - b.gained;
+  }
+  function selectGradeRoute(options, need, budget = null) {
+    const empty = {
+      sets: [],
+      gainedTokens: 0,
+      uniqueCards: 0,
+      coinsNeeded: 0,
+      tax: 0,
+      unpricedCards: 0,
+      reachesGoal: need === 0
+    };
+    if (need === 0 || need === null && budget === null) return empty;
+    const groups = /* @__PURE__ */ new Map();
+    for (const option of options) {
+      if (!option.available || option.completed || option.tokens <= 0 || option.unpricedCards) continue;
+      groups.set(option.setId, [...groups.get(option.setId) ?? [], option]);
+    }
+    const limit = need ?? [...groups.values()].reduce((sum, group) => sum + Math.max(...group.map((option) => option.tokens)), 0);
+    let states = /* @__PURE__ */ new Map([[0, [{ steps: [], prices: /* @__PURE__ */ new Map(), gained: 0, coins: 0, tax: 0 }]]]);
+    for (const group of groups.values()) {
+      const next = new Map([...states].map(([tokens, paths]) => [tokens, [...paths]]));
+      for (const paths of states.values()) for (const path of paths) for (const option of group) {
+        const prices = new Map(path.prices);
+        for (const item of option.missingItems) prices.set(item.definitionId, Math.max(prices.get(item.definitionId) ?? 0, item.price));
+        const cost = costs(prices.values());
+        if (budget !== null && cost.coins > budget) continue;
+        const candidate = { steps: [...path.steps, option], prices, gained: path.gained + option.tokens, ...cost };
+        const key = Math.min(limit, candidate.gained);
+        const alternatives = [...next.get(key) ?? [], candidate].sort(compare);
+        const unique = new Map(alternatives.map((entry) => [entry.steps.map((step) => `${step.setId}:${step.grade}`).join(","), entry]));
+        next.set(key, [...unique.values()].slice(0, 2));
+      }
+      states = next;
+    }
+    const max = Math.max(...states.keys());
+    const best = states.get(max).sort(compare)[0];
+    return {
+      sets: best.steps,
+      gainedTokens: best.gained,
+      uniqueCards: best.prices.size,
+      coinsNeeded: best.coins,
+      tax: best.tax,
+      unpricedCards: 0,
+      reachesGoal: need !== null && best.gained >= need
+    };
+  }
+  function galleryGradeRoute(owned, completed, balance, target, budget = null) {
+    return selectGradeRoute(
+      catalog_snapshot_default.sets.flatMap((set) => galleryGradeOptions(set.id, owned, completed)),
+      target === null ? null : Math.max(0, target - balance),
+      budget
+    );
   }
 
   // src/gallery/index.ts
@@ -58381,6 +58248,8 @@ button:disabled { opacity:.5; cursor:default; }
 .bar { width:100%; height:7px; overflow:hidden; border-radius:4px; background:var(--line); }
 .bar span { display:block; height:100%; background:var(--accent); }
 .back { margin-bottom:12px; }
+.set-title { padding:0; border:0; background:none; color:var(--fg); text-align:left; font-weight:700; }
+.grade-tabs { flex-wrap:wrap; margin:4px 0; }
 .tabs { display:flex; gap:5px; margin-bottom:12px; }
 .tabs button.active { background:var(--accent); color:var(--accent-fg); border-color:var(--accent); }
 .list { display:flex; flex-direction:column; gap:6px; }
@@ -58531,7 +58400,7 @@ button:disabled { opacity:.5; cursor:default; }
     panel.setAttribute("aria-label", "Mi Gallery");
     const head = el("div", void 0, "head");
     const title = el("h2", "Mi Gallery");
-    const version = el("a", `v${"0.2.30"}`, "version");
+    const version = el("a", `v${"0.2.31"}`, "version");
     version.href = "https://raw.githubusercontent.com/mljpa/fut-sbc-dist/main/fut-sbc.user.js";
     version.target = "_blank";
     version.rel = "noopener noreferrer";
@@ -58646,9 +58515,16 @@ button:disabled { opacity:.5; cursor:default; }
     let selected = null;
     let plannerOpen = false;
     let returnToPlan = false;
-    let expandedPlanSetId = null;
-    const planCardNames = /* @__PURE__ */ new Map();
     let plannedGrade = null;
+    let routeCache = null;
+    function markGrade(setId, grade) {
+      const next = { ...confirmedClaims };
+      if (grade === null) delete next[String(setId)];
+      else next[String(setId)] = grade;
+      confirmedClaims = next;
+      saveConfirmedClaims(confirmedClaims);
+      render();
+    }
     let tab = "missing";
     let filter = "";
     let collectionFilter = savedPreferences.collectionFilter;
@@ -58660,7 +58536,6 @@ button:disabled { opacity:.5; cursor:default; }
     let galleryPlannerMode = savedPreferences.galleryPlannerMode;
     let galleryCoinBudget = savedPreferences.galleryCoinBudget;
     let routeFilter = savedPreferences.routeFilter;
-    let routeVisibleCount = 12;
     let leagueFilter = null;
     let busy = false;
     let lastNearbyRefreshAt = 0;
@@ -58871,56 +58746,30 @@ button:disabled { opacity:.5; cursor:default; }
       chosen.clear();
       manualPrices.clear();
       manualSalePrices.clear();
-      sets = [];
-      categoryCards = [];
+      categoryCards = [...knownCards.values()];
+      sets = buildSets(next, categoryCards);
+      if (!force) {
+        status = "Cat\xE1logo FUT.GG \xB7 elige una colecci\xF3n y un grado";
+        error = false;
+        render();
+        return;
+      }
       busy = true;
-      setStatus(`Leyendo ${next.name} desde EA\u2026`);
+      setStatus(`Actualizando cartas de ${next.name} desde EA\u2026`);
       try {
         const cards = [];
-        if (next.leagues) {
-          for (let i = 0; i < next.leagues.length; i++) {
-            const id = next.leagues[i];
-            status = `Leyendo ${next.name}: liga ${i + 1}/${next.leagues.length}\u2026`;
-            render();
-            cards.push(...await conceptCards({ league: id }, force));
-          }
-        }
-        if (next.rarities) {
-          for (let i = 0; i < next.rarities.length; i++) {
-            const rarity = next.rarities[i];
-            status = `Leyendo ${next.name}: ${rarity.name} (${i + 1}/${next.rarities.length})\u2026`;
-            render();
-            cards.push(...await conceptCards({ rarity: rarity.id }, force));
-          }
-        }
-        const published = buildSets(next, cards);
-        const known = new Set(cards.map((card) => card.definitionId));
-        const extraIds = published.flatMap((set) => set.recommended?.items.map((item) => item.definitionId) ?? []).filter((id) => !known.has(id));
-        if (extraIds.length) {
-          status = `Verificando ${new Set(extraIds).size} cartas de alineaciones de referencia en EA\u2026`;
-          render();
-          try {
-            cards.push(...await conceptCardsByIdsPartial(extraIds));
-          } catch {
-          }
-        }
-        let verified = [];
-        let warning = "";
-        try {
-          verified = await loadVerifiedSets(next);
-        } catch (cause) {
-          warning = ` No se pudo verificar Ipswich: ${cause instanceof Error ? cause.message : String(cause)}.`;
-        }
-        sets = mergeVerifiedSets(buildSets(next, cards), verified);
-        categoryCards = [...new Map([...cards, ...verified.flatMap((set) => set.cards)].map((card) => [card.definitionId, card])).values()];
-        for (const card of [...cards, ...verified.flatMap((set) => set.cards)]) {
+        for (const league of next.leagues ?? []) cards.push(...await conceptCards({ league }, true));
+        for (const rarity of next.rarities ?? []) cards.push(...await conceptCards({ rarity: rarity.id }, true));
+        for (const card of cards) {
           rememberCard(card);
           if (card.isCollected) owned.add(card.definitionId);
         }
         saveLedger(owned);
-        setStatus(`${fmt(sets.length)} colecciones del cat\xE1logo p\xFAblico. Las cartas elegibles son aproximadas${verified.length ? "; Ipswich usa la lista exacta de Enhancer" : ""}.${warning}`, !!warning);
+        categoryCards = [...knownCards.values()];
+        sets = buildSets(next, categoryCards);
+        setStatus(`${fmt(sets.length)} colecciones \xB7 cartas actualizadas`);
       } catch (cause) {
-        setStatus(`No se pudo cargar ${next.name}: ${cause instanceof Error ? cause.message : String(cause)}`, true);
+        setStatus(`No se pudieron actualizar las cartas: ${cause instanceof Error ? cause.message : String(cause)}`, true);
       } finally {
         busy = false;
         render();
@@ -58947,30 +58796,6 @@ button:disabled { opacity:.5; cursor:default; }
       returnToPlan = true;
       await openSet(set, item.grade || void 0);
     }
-    async function expandPlanSet(item) {
-      const scroll = body.scrollTop;
-      if (expandedPlanSetId === item.setId) {
-        expandedPlanSetId = null;
-        render();
-        body.scrollTop = scroll;
-        return;
-      }
-      expandedPlanSetId = item.setId;
-      render();
-      body.scrollTop = scroll;
-      const ids = item.missingItems.map((entry) => entry.definitionId).filter((id) => !planCardNames.has(id));
-      if (!ids.length) return;
-      try {
-        for (const card of await conceptCardsByIdsPartial(ids)) planCardNames.set(card.definitionId, card.name);
-      } catch {
-      }
-      for (const id of ids) if (!planCardNames.has(id)) planCardNames.set(id, `Carta ${id}`);
-      if (expandedPlanSetId === item.setId) {
-        const nextScroll = body.scrollTop;
-        render();
-        body.scrollTop = nextScroll;
-      }
-    }
     function tradeReference(id) {
       const enhancer = prices.get(id);
       if (enhancer) return enhancer;
@@ -58979,7 +58804,7 @@ button:disabled { opacity:.5; cursor:default; }
       return manualTradeReference(id, price);
     }
     function referenceItems(set) {
-      return set.costTiers.find((tier2) => tier2.grade === plannedGrade)?.items ?? set.recommended?.items ?? [];
+      return plannedGrade === null ? set.recommended?.items ?? [] : set.costTiers.find((tier2) => tier2.grade === plannedGrade && tier2.items.length === set.requiredCards)?.items ?? [];
     }
     function referenceCards(set) {
       if (plannedGrade === null) return cardsToComplete(set, owned);
@@ -59019,10 +58844,15 @@ button:disabled { opacity:.5; cursor:default; }
           const extra = await conceptCardsByIdsPartial(missingIds);
           if (requestId !== priceRequestId || selected !== set) return;
           set.cards.push(...extra);
+          for (const card of extra) {
+            rememberCard(card);
+            if (card.isCollected) owned.add(card.definitionId);
+          }
+          saveLedger(owned);
         }
         const priceIds = referenceCards(set).filter((card) => !owned.has(card.definitionId)).map((card) => card.definitionId);
         if (!priceIds.length) {
-          status = plannedGrade ? "Las cartas de esta alineaci\xF3n ya est\xE1n registradas. Comprueba el grado en EA." : setProgress(set, owned) >= set.requiredCards ? "El set tiene suficientes cartas registradas. Comprueba el grado en Gallery de FC Enhancer." : "No se encontraron cartas candidatas para llenar los cupos pendientes. Actualiza el cat\xE1logo.";
+          status = plannedGrade && !referenceIds.length ? "Sin alineaci\xF3n publicada para este grado." : plannedGrade ? "Alineaci\xF3n revisada con tu historial de cartas." : setProgress(set, owned) >= set.requiredCards ? "El set tiene suficientes cartas registradas. Elige el grado objetivo." : "No se encontraron cartas candidatas para llenar los cupos pendientes. Actualiza el cat\xE1logo.";
           return;
         }
         const found = await fetchEnhancerPrices(priceIds);
@@ -59528,8 +59358,6 @@ button:disabled { opacity:.5; cursor:default; }
           const completedGrades = completedGalleryGrades(owned, [...knownCards.values()]);
           const claimRows = galleryClaimRows(owned, completedGrades, confirmedClaims);
           routeDebug.__futGalleryRoute = claimRows;
-          const claimsById = new Map(claimRows.map((row) => [row.setId, row]));
-          const completedTotal = claimedGalleryTokens(completedGrades);
           const goal = galleryTokenTarget;
           const { total: progressTotal, remaining } = galleryTokenProgress(currentTokenBalance, goal);
           const progress = el("div", void 0, "route-progress");
@@ -59544,138 +59372,65 @@ button:disabled { opacity:.5; cursor:default; }
           const progressFill = el("span");
           progressFill.style.width = `${Math.min(100, goal > 0 ? progressTotal / goal * 100 : 100)}%`;
           progressBar.append(progressFill);
-          progress.append(progressMain, progressBar, el("small", `Cartas: ${fmt(completedTotal)} fichas potenciales \xB7 Tienda: ${fmt(currentTokenBalance)} disponibles`));
+          progress.append(progressMain, progressBar);
           body.append(progress);
           if (routeSyncNote) body.append(el("p", routeSyncNote, routeSyncGain > 0 ? "route-sync-gain" : "note"));
           body.append(balanceSource, updateCollection);
-          if (currentTokenBalance > completedTotal) body.append(el(
-            "p",
-            "El historial local de cartas est\xE1 incompleto frente a tu saldo. Verifica los sets antes de comprar.",
-            "note"
-          ));
           if (galleryPlannerMode === "coins" && galleryCoinBudget === null) {
             body.append(el("p", "Ingresa tus monedas disponibles para ver los sets que puedes financiar.", "note"));
             return;
           }
-          const route = galleryBudgetPlan(
+          const key = JSON.stringify([
+            [...owned].sort((a, b) => a - b),
+            confirmedClaims,
+            progressTotal,
+            galleryPlannerMode,
+            galleryTokenTarget,
+            galleryCoinBudget
+          ]);
+          if (routeCache?.key !== key) routeCache = { key, plan: galleryGradeRoute(
             owned,
-            completedGrades,
+            confirmedClaims,
             progressTotal,
             galleryPlannerMode === "coins" ? null : galleryTokenTarget,
             galleryCoinBudget
-          );
-          const routeRows = galleryRouteRows(route, completedGrades, owned).sort((a, b) => Number(Boolean(b.completedGrade)) - Number(Boolean(a.completedGrade)) || { complete: 0, ready: 1, missing: 2, catalog: 3 }[a.state] - { complete: 0, ready: 1, missing: 2, catalog: 3 }[b.state] || Number(b.inPlan) - Number(a.inPlan) || (a.state === "missing" && b.state === "missing" ? a.missingItems.length - b.missingItems.length : 0) || b.tokens - a.tokens);
+          ) };
+          const route = routeCache.plan;
           const summary = el("div", void 0, "route-summary");
-          const completeRows = routeRows.filter((row) => Boolean(row.completedGrade));
           summary.append(
-            el("span", `${fmt(routeRows.length)} colecciones \xB7 faltan ${fmt(remaining)} fichas`),
-            button(`${fmt(completeRows.length)} grados calculados \xB7 ${fmt(completedTotal)} fichas seg\xFAn cartas`, () => {
-              routeFilter = "complete";
-              routeVisibleCount = 12;
-              persistPreferences();
-              render();
-            }, "route-update"),
-            el("span", `${fmt(claimRows.filter((row) => row.claimState === "confirmed").length)} canjes registrados \xB7 ${fmt(claimRows.filter((row) => row.claimState === "pending").length)} mejoras por canjear \xB7 ${fmt(claimRows.filter((row) => row.claimState === "unverified").length)} por verificar`),
-            button("Ver lista en consola", () => {
-              console.info("Mi ruta: los canjes registrados son confirmaciones tuyas; las cartas por s\xED solas no prueban un canje.");
-              for (const [label, rows] of [
-                ["Canjes registrados", claimRows.filter((row) => row.claimState === "confirmed")],
-                ["Mejoras por canjear", claimRows.filter((row) => row.claimState === "pending")],
-                ["Canje por verificar", claimRows.filter((row) => row.claimState === "unverified")],
-                ["Pueden subir de grado", claimRows.filter((row) => row.calculatedGrade && row.nextGrade)],
-                ["Pendientes de cartas", claimRows.filter((row) => row.claimState === "not-ready")]
-              ]) {
-                console.info(`${label}: ${rows.length}`);
-                console.table(rows);
-              }
-              console.info("Datos actuales: window.__futGalleryRoute");
+            el("strong", `Ruta estimada \xB7 +${fmt(route.gainedTokens)} fichas \xB7 ${route.sets.length} etapas`),
+            el("span", `${fmt(route.uniqueCards)} cartas \xB7 ${fmt(route.coinsNeeded)} monedas para compra/reventa \xB7 ${fmt(route.tax)} comisi\xF3n estimada`),
+            button("Ver estados en consola", () => {
+              console.table(claimRows);
             }, "route-update")
           );
           body.append(summary);
-          body.append(el("p", "Las alineaciones sugeridas son opciones para revisar. Algunas ya pueden estar completas o canjeadas; confirma el estado antes de comprar.", "note"));
-          const details = el("details", void 0, "route-details");
-          details.append(
-            el("summary", "C\xF3mo se calcula"),
-            el("p", `La meta usa las fichas disponibles en la tienda. Las fichas potenciales se estiman con las cartas registradas y las recompensas de FUT.GG; no prueban que el grado ya se haya canjeado. Comprueba el canje en Gallery de FC Enhancer.`),
-            el("p", `Las alineaciones FUT.GG suman hasta +${fmt(route.gainedTokens)} fichas potenciales seg\xFAn el historial local. No equivalen a una ruta de compra confirmada. ${fmt(route.uniqueCards)} cartas sin registrar \xB7 ${fmt(route.coinsNeeded)} monedas de referencia \xB7 ${route.unpricedCards} sin precio.`)
-          );
-          body.append(details);
-          const routeControls = el("div", void 0, "set-controls");
-          const routeLabel = el("label", "Mostrar sets");
-          const routeSelect = el("select");
-          for (const [value, label] of [["all", "Todos"], ["unverified", "Canje por verificar"], ["pending", "Mejora por canjear"], ["confirmed", "Canje registrado"], ["upgrade", "Puede subir de grado"], ["missing", "Sin grado calculado"], ["complete", "Grado calculado"]]) {
-            const option = el("option", `${label} \xB7 ${routeRows.filter((row) => matchesGalleryRouteFilter(row, claimsById.get(row.setId), value)).length}`);
-            option.value = value;
-            routeSelect.append(option);
-          }
-          routeSelect.value = routeFilter;
-          routeSelect.addEventListener("change", () => {
-            const scroll = body.scrollTop;
-            routeFilter = routeSelect.value;
-            routeVisibleCount = 12;
-            persistPreferences();
-            render();
-            body.scrollTop = scroll;
-          });
-          routeLabel.append(routeSelect);
-          routeControls.append(routeLabel);
-          body.append(routeControls);
+          if (galleryPlannerMode === "target" && !route.reachesGoal)
+            body.append(el("p", `Con estas opciones faltan ${fmt(Math.max(0, remaining - route.gainedTokens))} fichas para la meta.`, "note"));
+          body.append(el("p", "Marca en Colecciones los grados ya completados. Precios FUT.GG de referencia; las cartas obtenidas se descuentan.", "note"));
           const list = el("div", void 0, "plan-list");
-          const shownRoute = routeRows.filter((row) => matchesGalleryRouteFilter(row, claimsById.get(row.setId), routeFilter));
-          for (const item of shownRoute.slice(0, routeVisibleCount)) {
-            const claim = claimsById.get(item.setId);
-            const card = el("div", void 0, `plan-set ${item.state}`);
+          for (const step of route.sets) {
+            const item = step;
+            const card = el("div", void 0, "plan-set");
             const head2 = el("div", void 0, "plan-set-head");
-            const summary2 = el("div");
-            const gradeText = item.state === "catalog" ? "sin alineaci\xF3n publicada" : item.state === "complete" ? `grado estimado ${item.grade} \xB7 ${fmt(item.readyTokens)} fichas potenciales` : item.completedGrade ? `grado ${item.completedGrade} calculado \xB7 posible mejora a ${item.grade} (+${fmt(item.tokens)})` : `objetivo ${item.grade} \xB7 +${fmt(item.tokens)} fichas potenciales`;
-            summary2.append(el("strong", `${item.name} \xB7 ${gradeText}`));
-            const stateText = claim.claimState === "confirmed" ? `\u2713 Canje registrado: grado ${claim.confirmedGrade}` : claim.claimState === "pending" ? `Grado ${claim.calculatedGrade} calculado \xB7 +${fmt(claim.potentialTokens)} fichas por canjear` : claim.claimState === "unverified" ? `Grado ${claim.calculatedGrade} calculado \xB7 confirma si ya lo canjeaste` : item.state === "complete" ? "\u2713 Cartas completas \xB7 revisa el canje" : item.state === "catalog" ? "Colecci\xF3n disponible \xB7 abre el set para ver sus cartas" : item.state === "ready" ? "Cartas completas \xB7 revisa el canje en Gallery" : `${item.missingItems.length} cartas de la alineaci\xF3n FUT.GG sin registrar \xB7 verifica antes de comprar`;
-            summary2.append(el("small", stateText, "plan-state"));
-            if (item.inPlan) summary2.append(el("small", "Opci\xF3n FUT.GG por revisar"));
-            if (item.completedGrade && item.state !== "complete") summary2.append(el("small", `Grado ${item.completedGrade} calculado \xB7 ${fmt(item.readyTokens)} fichas seg\xFAn cartas \xB7 revisa el canje en Gallery`));
-            if (claim.calculatedGrade && claim.nextGrade) summary2.append(el("small", `Puede subir a ${claim.nextGrade}: ${fmt(claim.nextMissing ?? 0)} cartas de la alineaci\xF3n FUT.GG \xB7 +${fmt(claim.nextTokens)} fichas`));
-            head2.append(summary2);
-            if (claim.calculatedGrade && claim.claimState !== "confirmed") head2.append(button(`Ya canje\xE9 ${claim.calculatedGrade}`, () => {
-              confirmedClaims = { ...confirmedClaims, [String(item.setId)]: claim.calculatedGrade };
-              saveConfirmedClaims(confirmedClaims);
-              render();
-            }));
-            if (claim.claimState === "confirmed") head2.append(button("Deshacer registro", () => {
-              const next = { ...confirmedClaims };
-              delete next[String(item.setId)];
-              confirmedClaims = next;
-              saveConfirmedClaims(confirmedClaims);
-              render();
-            }));
-            if (item.state === "missing") {
-              const expand2 = button(expandedPlanSetId === item.setId ? "Ocultar" : "Ver cartas", () => {
-                void expandPlanSet(item);
-              });
-              expand2.setAttribute("aria-expanded", String(expandedPlanSetId === item.setId));
-              head2.append(expand2);
-            }
-            head2.append(button("Abrir set", () => {
-              void openPlannedSet(item);
-            }));
+            const text = el("div");
+            text.append(
+              el("strong", `${item.name} \xB7 ${item.fromGrade ? `${item.fromGrade} \u2192 ` : ""}${item.grade} \xB7 +${fmt(item.tokens)} fichas`),
+              el("small", item.missingItems.length ? `${item.missingItems.length} cartas por obtener \xB7 ${fmt(item.purchaseCoins)} precio total de referencia` : "Cartas registradas \xB7 listo para revisar y canjear")
+            );
+            head2.append(
+              text,
+              button("Ver cartas", () => {
+                void openPlannedSet(item);
+              }),
+              button(`Marcar ${item.grade} completado`, () => {
+                markGrade(item.setId, item.grade);
+              })
+            );
             card.append(head2);
-            if (expandedPlanSetId === item.setId) {
-              const items = el("ol", void 0, "plan-items");
-              for (const missing of item.missingItems) {
-                const row = el("li", planCardNames.get(missing.definitionId) ?? `Carta ${missing.definitionId}`);
-                row.append(el("small", missing.price === null ? " \xB7 sin precio" : ` \xB7 ${fmt(missing.price)} monedas ref.`));
-                items.append(row);
-              }
-              card.append(item.missingItems.length ? items : el("p", "Todas las cartas de esta alineaci\xF3n ya est\xE1n registradas. Comprueba el grado antes de canjear.", "note"));
-            }
             list.append(card);
           }
-          if (!shownRoute.length) list.append(el("p", "No hay sets con ese estado en la ruta.", "empty"));
-          if (shownRoute.length > routeVisibleCount) list.append(button(`Ver m\xE1s (${fmt(shownRoute.length - routeVisibleCount)})`, () => {
-            const scroll = body.scrollTop;
-            routeVisibleCount += 20;
-            render();
-            body.scrollTop = scroll;
-          }, "route-update"));
+          if (!route.sets.length) list.append(el("p", remaining === 0 && galleryPlannerMode === "target" ? "\u2713 Meta alcanzada" : "Sin etapas disponibles con estos grados y presupuesto.", "empty"));
           body.append(list);
           return;
         }
@@ -59773,11 +59528,21 @@ button:disabled { opacity:.5; cursor:default; }
         for (const set of shown) {
           const got2 = setProgress(set, owned);
           const pct = set.requiredCards ? Math.round(got2 / set.requiredCards * 100) : 0;
-          const card = button("", () => {
+          const card = el("div", void 0, "set-card");
+          card.append(button(set.name, () => {
             returnToPlan = false;
             void openSet(set);
-          }, "set-card");
-          card.append(el("strong", set.name));
+          }, "set-title"));
+          const grades = el("div", void 0, "tabs grade-tabs");
+          for (const option of galleryGradeOptions(set.catalogId, owned, confirmedClaims)) {
+            const grade = button(`${option.grade}${option.completed ? " \u2713" : ""}`, () => {
+              returnToPlan = false;
+              void openSet(set, option.grade);
+            });
+            grade.title = `${option.accumulatedTokens} fichas acumuladas${option.available ? "" : " \xB7 sin alineaci\xF3n publicada"}`;
+            grades.append(grade);
+          }
+          card.append(grades);
           const leagueId = set.cards[0]?.leagueId;
           if (leagues.length > 1 && leagueId && LEAGUE_NAMES[leagueId]) card.append(el("small", LEAGUE_NAMES[leagueId]));
           card.append(el("small", `${got2}/${set.requiredCards} cartas`));
@@ -59811,39 +59576,37 @@ button:disabled { opacity:.5; cursor:default; }
         for (const leagueSet of leagueSets) body.append(el("p", `${leagueSet.name}: ${setProgress(leagueSet, owned)}/${leagueSet.requiredCards} cartas registradas.`, "note"));
       }
       const lineup = selected.costTiers.find((tier2) => tier2.grade === plannedGrade);
-      if (lineup && plannedGrade) {
-        const target = el("div", void 0, "grade-target");
-        const registered = lineup.items.filter((item) => owned.has(item.definitionId)).length;
-        const threshold = selected.grades.find((grade) => grade.name === plannedGrade)?.threshold;
-        target.append(el("strong", `Objetivo ${plannedGrade} \xB7 ${fmt(lineup.tokens)} fichas acumuladas`));
-        target.append(el("small", `${registered}/${lineup.items.length} cartas de FUT.GG registradas${threshold ? ` \xB7 ${fmt(lineup.totalScore)}/${fmt(threshold)} puntos en la alineaci\xF3n publicada` : ""}`));
-        body.append(target);
-      }
-      const gradeDetails = el("details", void 0, "trade-advanced");
-      gradeDetails.append(el("summary", "Cambiar objetivo o ver grados"));
-      gradeDetails.append(el("p", `Fichas por grado: ${selected.grades.map((grade) => `${grade.name} +${grade.tokens}`).join(" \xB7 ")}. Revisa el grado y su canje en Gallery de FC Enhancer.`, "note"));
-      const completedGrade = completedGalleryGrades(owned, [...knownCards.values()])[String(selected.catalogId)];
-      if (completedGrade) gradeDetails.append(el("p", `Grado ${completedGrade} calculado con tus cartas. Revisa en Gallery si ya lo canjeaste.`, "note"));
-      if (selected.costTiers.some((tier2) => tier2.tokens > 0 && tier2.items.length === selected.requiredCards)) {
-        const target = el("label", "Modo: ");
-        const grade = el("select");
-        const recommendedOption = el("option", "Completar cupos");
-        recommendedOption.value = "";
-        grade.append(recommendedOption);
-        for (const tier2 of selected.costTiers.filter((candidate) => candidate.tokens > 0 && candidate.items.length === selected.requiredCards)) {
-          const option = el("option", `Mejorar a grado ${tier2.grade} \xB7 alineaci\xF3n FUT.GG`);
-          option.value = tier2.grade;
-          grade.append(option);
-        }
-        grade.value = plannedGrade ?? "";
-        grade.addEventListener("change", () => {
-          void openSet(selected, grade.value || null);
+      const options = galleryGradeOptions(selected.catalogId, owned, confirmedClaims);
+      const gradeTabs = el("div", void 0, "tabs grade-tabs");
+      for (const option of options) {
+        const grade = button(`${option.grade}${option.completed ? " \u2713" : ""}`, () => {
+          void openSet(selected, option.grade);
         });
-        target.append(grade);
-        gradeDetails.append(target);
+        grade.title = `${option.accumulatedTokens} fichas acumuladas`;
+        if (option.grade === plannedGrade) grade.classList.add("active");
+        gradeTabs.append(grade);
       }
-      if (lineup) gradeDetails.append(el("p", `La alineaci\xF3n publicada apunta a grado ${lineup.grade}; el grado final y los precios pueden variar.`, "note"));
-      body.append(gradeDetails);
+      body.append(gradeTabs);
+      const targetOption = options.find((option) => option.grade === plannedGrade);
+      if (targetOption) {
+        const target = el("div", void 0, "grade-target");
+        target.append(el("strong", `Grado ${targetOption.grade} \xB7 +${fmt(targetOption.tokens)} fichas nuevas \xB7 ${fmt(targetOption.accumulatedTokens)} acumuladas`));
+        if (targetOption.available) target.append(el("small", `${targetOption.requiredCards - targetOption.missingItems.length}/${targetOption.requiredCards} cartas de la alineaci\xF3n obtenidas \xB7 ${fmt(targetOption.purchaseCoins)} precio total FUT.GG${targetOption.unpricedCards ? ` \xB7 ${targetOption.unpricedCards} sin precio` : ""}`));
+        else target.append(el("small", "Sin alineaci\xF3n publicada para este grado"));
+        const marks = el("div", void 0, "trade-actions");
+        if (!targetOption.completed) marks.append(button(`Marcar ${targetOption.grade} completado`, () => {
+          markGrade(selected.catalogId, targetOption.grade);
+        }));
+        else marks.append(el("span", `\u2713 Completado hasta ${targetOption.fromGrade}`));
+        if (targetOption.fromGrade) marks.append(button("Quitar marca", () => {
+          markGrade(selected.catalogId, null);
+        }));
+        target.append(marks);
+        body.append(target);
+        body.append(el("p", "La marca guarda tu avance; actualiza el saldo despu\xE9s de canjear en consola.", "note"));
+        const unresolved = targetOption.missingItems.filter((item) => !selected.cards.some((card) => card.definitionId === item.definitionId));
+        if (unresolved.length) body.append(el("p", `EA a\xFAn no carg\xF3 ${unresolved.length} cartas sugeridas: ${unresolved.map((item) => item.definitionId).join(", ")}.`, "note"));
+      }
       if (tab === "missing") {
         const missing = referenceCards(selected).filter((card) => !owned.has(card.definitionId));
         const groups = lineup ? groupTargetCards(missing, new Map(lineup.items.map((item) => [item.definitionId, item.score]))) : null;
@@ -59865,17 +59628,17 @@ button:disabled { opacity:.5; cursor:default; }
         if (missing.length) {
           const gap = Math.max(0, selected.requiredCards - got);
           if (!plannedGrade && missing.length < gap) body.append(el("p", `S\xF3lo hay ${missing.length} cartas candidatas para ${gap} cupos pendientes. Actualiza el cat\xE1logo antes de comprar.`, "status error"));
-          const costs = el("div", void 0, "gallery-costs");
+          const costs2 = el("div", void 0, "gallery-costs");
           const total = referenceTotal(missing, prices);
           const cost = el("div", void 0, "gallery-cost");
-          cost.append(el("strong", plannedGrade ? `Mejora opcional \xB7 ${playerCount(missing.length)} sin registrar` : `${playerCount(missing.length)} sugeridos para completar`));
+          cost.append(el("strong", plannedGrade ? `Grado ${plannedGrade} \xB7 ${playerCount(missing.length)} por obtener` : `${playerCount(missing.length)} sugeridos para completar`));
           cost.append(el("span", priceLoading ? "Consultando precios\u2026" : total.priced === 0 ? "Sin precios de referencia" : `${fmt(total.amount)} monedas de referencia`));
           if (!priceLoading && total.priced < missing.length)
             cost.append(el("small", `Subtotal de ${total.priced}/${missing.length} cartas con precio.`));
           if (groups?.key.length) cost.append(el("small", `Carta clave: ${groups.key.map((card) => `${card.name} (${prices.has(card.definitionId) ? fmt(prices.get(card.definitionId).price) : "precio pendiente"})`).join(" \xB7 ")}.`));
-          costs.append(cost);
-          body.append(costs);
-        } else body.append(el("p", plannedGrade ? "Todas las cartas de esta alineaci\xF3n ya est\xE1n registradas." : got >= selected.requiredCards ? "Ya tienes suficientes cartas para llenar los cupos. Comprueba el grado en Gallery de FC Enhancer; si quieres mejorarlo, abre \xABGrados y mejoras\xBB." : "No hay cartas candidatas para llenar los cupos pendientes. Actualiza el cat\xE1logo.", "note"));
+          costs2.append(cost);
+          body.append(costs2);
+        } else body.append(el("p", plannedGrade ? !targetOption?.available ? "No hay cartas sugeridas para este grado." : targetOption.missingItems.length ? "Quedan cartas por cargar desde EA." : "\u2713 Cartas de esta alineaci\xF3n obtenidas." : got >= selected.requiredCards ? "Ya tienes suficientes cartas para llenar los cupos. Elige un grado para ver su alineaci\xF3n." : "No hay cartas candidatas para llenar los cupos pendientes. Actualiza el cat\xE1logo.", "note"));
         const selectedTotal = referenceTotal(selectedCards, prices);
         const footerCopy = el("div", void 0, "footer-copy");
         footerCopy.append(el("strong", `${playerCount(selectedCards.length)} \xB7 ${selectedTotal.priced === 0 && selectedCards.length > 0 ? "sin precios de referencia" : `${fmt(selectedTotal.amount)} monedas de referencia`}`));
