@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         FUT SBC Solver v2
 // @namespace    https://github.com/mljpa/fut-sbc-solver-v2
-// @version      0.2.45
+// @version      0.2.46
 // @description  Userscript to solve EA SPORTS FC 26 SBCs with your own club
 // @match        https://www.ea.com/*/ea-sports-fc/ultimate-team/web-app*
 // @match        https://www.ea.com/ea-sports-fc/ultimate-team/web-app*
@@ -375,14 +375,23 @@
   }
   var CHALLENGE_VC_NAMES = /* @__PURE__ */ new Set([
     "UTSBCSquadOverviewViewController",
-    "UTSBCSquadDetailPanelViewController"
+    "UTSBCSquadDetailPanelViewController",
+    "UTOneClickSBCWorkAreaViewController",
+    "UTOneClickSBCWorkAreaSplitViewController"
   ]);
+  function extractChallengeFromNode(n) {
+    const ch = n["_challenge"];
+    if (looksLikeChallenge(ch)) return ch;
+    const vm = n["viewModel"] ?? n["getViewModel"]?.();
+    if (vm && looksLikeChallenge(vm["_challenge"])) return vm["_challenge"];
+    return null;
+  }
   function findLiveChallenge() {
     const hits = findViewControllers(
-      (n) => CHALLENGE_VC_NAMES.has(constructorName(n)) && looksLikeChallenge(n["_challenge"])
+      (n) => CHALLENGE_VC_NAMES.has(constructorName(n)) && extractChallengeFromNode(n) !== null
     );
     if (hits.length === 0) return null;
-    const challengeOf = (h) => h["_challenge"];
+    const challengeOf = (h) => extractChallengeFromNode(h);
     const inProgress = hits.find((h) => {
       try {
         return challengeOf(h).isInProgress?.() === true;
@@ -2100,6 +2109,14 @@
   }
 
   // src/ea/apply-streamlined.ts
+  function findLiveOneClickVC() {
+    const hits = findViewControllers(
+      (n) => constructorName(n) === "UTOneClickSBCWorkAreaViewController" && !!(n["viewModel"] ?? n["getViewModel"]?.())
+    );
+    if (hits.length === 0) return null;
+    const inDom = hits.find((h) => isInDom(h));
+    return inDom ?? hits[hits.length - 1] ?? null;
+  }
   async function applyStreamlinedSolution(challenge, solution, clubItems) {
     if (!challenge.isStreamlined) {
       return {
@@ -2112,6 +2129,27 @@
         ok: false,
         reason: `Soluci\xF3n incompleta: ${solution.totalScore} / ${solution.targetScore} pts.`
       };
+    }
+    const oneClickVC = findLiveOneClickVC();
+    const vm = oneClickVC?.["viewModel"] ?? oneClickVC?.["getViewModel"]?.();
+    if (vm && typeof vm.selectItem === "function") {
+      try {
+        vm.clearSelection?.();
+        for (const player of solution.items) {
+          const item = vm._itemEntityMap?.get(player.id) ?? clubItems.get(player.id);
+          if (item) {
+            vm.selectItem(item);
+          }
+        }
+        const currentScore2 = typeof vm.getSelectedScore === "function" ? vm.getSelectedScore() : solution.totalScore;
+        return {
+          ok: true,
+          currentScore: currentScore2,
+          targetScore: challenge.targetScore
+        };
+      } catch (err) {
+        console.warn("[fut-sbc] OneClick apply via vm.selectItem fall\xF3:", err);
+      }
     }
     const vc = findLiveOverviewVC(challenge.id);
     const eaChallenge = vc?._challenge ?? challenge.raw;
@@ -58775,7 +58813,7 @@ button:disabled { opacity:.5; cursor:default; }
     panel.setAttribute("aria-label", "Colecciones");
     const head = el("div", void 0, "head");
     const title = el("h2", "Colecciones");
-    const version = el("a", `v${"0.2.45"}`, "version");
+    const version = el("a", `v${"0.2.46"}`, "version");
     version.href = "https://raw.githubusercontent.com/mljpa/fut-sbc-dist/main/fut-sbc.user.js";
     version.target = "_blank";
     version.rel = "noopener noreferrer";
@@ -61957,7 +61995,7 @@ Total SBC enviados: ${submitted}`);
       const challenge = await getOpenChallenge().catch(() => null);
       window.__futChallenge = challenge;
       const pitch = document.querySelector(
-        ".ut-squad-pitch-view.sbc, .ut-squad-pitch-view, .ut-sbc-squad-overview"
+        ".ut-squad-pitch-view.sbc, .ut-squad-pitch-view, .ut-one-click-sbc-work-area-view, .ut-sbc-squad-overview"
       );
       if (challenge && pitch && challenge.id !== mountedFor) {
         handle?.destroy();
