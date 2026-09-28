@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         FUT SBC Solver v2
 // @namespace    https://github.com/mljpa/fut-sbc-solver-v2
-// @version      0.2.46
+// @version      0.2.47
 // @description  Userscript to solve EA SPORTS FC 26 SBCs with your own club
 // @match        https://www.ea.com/*/ea-sports-fc/ultimate-team/web-app*
 // @match        https://www.ea.com/ea-sports-fc/ultimate-team/web-app*
@@ -341,9 +341,9 @@
     if (slotPositions.length === constraints.slots) {
       constraints.slotPositions = slotPositions;
     }
-    const isStreamlined = typeof raw.isStreamlined === "function" ? raw.isStreamlined() : Number(raw.targetScore ?? 0) > 0;
-    const targetScore = Number(raw.targetScore ?? 0);
-    const currentScore = Number(raw.currentScore ?? 0);
+    const targetScore = Number(raw.scoreRequirement ?? raw.targetScore ?? 0);
+    const currentScore = Number(raw.submittedScore ?? raw.currentScore ?? 0);
+    const isStreamlined = targetScore > 0 || typeof raw.isStreamlined === "function" && raw.isStreamlined();
     return {
       id: Number(raw.id ?? -1),
       setId: Number(raw.setId ?? -1),
@@ -58813,7 +58813,7 @@ button:disabled { opacity:.5; cursor:default; }
     panel.setAttribute("aria-label", "Colecciones");
     const head = el("div", void 0, "head");
     const title = el("h2", "Colecciones");
-    const version = el("a", `v${"0.2.46"}`, "version");
+    const version = el("a", `v${"0.2.47"}`, "version");
     version.href = "https://raw.githubusercontent.com/mljpa/fut-sbc-dist/main/fut-sbc.user.js";
     version.target = "_blank";
     version.rel = "noopener noreferrer";
@@ -60843,12 +60843,25 @@ button:disabled { opacity:.5; cursor:default; }
     if (rating === 94) return 7e3;
     return 9e3;
   }
-  function qualityMatches(player, filter) {
-    if (filter === "any") return true;
-    return player.quality === filter;
+  function matchesFilters(player, opts) {
+    if (opts?.qualityFilter && opts.qualityFilter !== "any" && player.quality !== opts.qualityFilter) {
+      return false;
+    }
+    if (opts?.maxOvr != null && player.rating > opts.maxOvr) {
+      return false;
+    }
+    if (opts?.minOvr != null && player.rating < opts.minOvr) {
+      return false;
+    }
+    if (opts?.exactOvr != null && player.rating !== opts.exactOvr) {
+      return false;
+    }
+    return true;
   }
-  function solveStreamlined(players, targetScore, qualityFilter = "any", cardCost2) {
-    const eligible = players.filter((p) => qualityMatches(p, qualityFilter));
+  function solveStreamlined(players, targetScore, options, legacyCardCost) {
+    const opts = typeof options === "string" ? { qualityFilter: options, cardCost: legacyCardCost } : options ?? {};
+    const cardCost2 = opts.cardCost;
+    const eligible = players.filter((p) => matchesFilters(p, opts));
     if (eligible.length === 0) {
       return {
         items: [],
@@ -61519,7 +61532,13 @@ button:disabled { opacity:.5; cursor:default; }
             const qualReq = challenge.constraints.counted.find((r) => r.kind === "quality");
             const qualFilter = qualReq?.value ?? "any";
             const { cardCost: cardCost2 } = costsFor(pool);
-            const stRes = solveStreamlined(pool, target, qualFilter, cardCost2);
+            const stRes = solveStreamlined(pool, target, {
+              qualityFilter: qualFilter,
+              maxOvr: challenge.constraints.maxOvrPerPlayer,
+              minOvr: challenge.constraints.minOvrPerPlayer,
+              exactOvr: challenge.constraints.exactOvr,
+              cardCost: cardCost2
+            });
             if (!stRes.ok) {
               handle()?.showError(
                 `Puntaje insuficiente: solo se alcanzan ${stRes.totalScore} de ${target} pts con tus cartas disponibles.`
