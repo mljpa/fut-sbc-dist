@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         FUT SBC Solver v2
 // @namespace    https://github.com/mljpa/fut-sbc-solver-v2
-// @version      0.2.36
+// @version      0.2.37
 // @description  Userscript to solve EA SPORTS FC 26 SBCs with your own club
 // @match        https://www.ea.com/*/ea-sports-fc/ultimate-team/web-app*
 // @match        https://www.ea.com/ea-sports-fc/ultimate-team/web-app*
@@ -58253,6 +58253,8 @@ button:disabled { opacity:.5; cursor:default; }
 .token-plan-step div { flex:1; min-width:0; }
 .token-plan-step strong,.token-plan-step small { display:block; }
 .token-suggestions small { color:var(--muted); }
+.token-plan-step.ready { border-color:var(--accent); background:color-mix(in srgb,var(--accent) 9%,var(--bg)); }
+.token-plan-step.ready strong,.token-plan-step.ready small { color:var(--accent); }
 .token-suggestions button:focus-visible,.token-goal-form input:focus-visible,.token-goal-form select:focus-visible { outline:2px solid var(--accent); outline-offset:2px; }
 @media(max-width:600px) { .token-plan-step { flex-wrap:wrap; } .token-goal-form label { flex:1; } }
 .set-card.queued { border-color:var(--accent); }
@@ -58428,7 +58430,7 @@ button:disabled { opacity:.5; cursor:default; }
     panel.setAttribute("aria-label", "Colecciones");
     const head = el("div", void 0, "head");
     const title = el("h2", "Colecciones");
-    const version = el("a", `v${"0.2.36"}`, "version");
+    const version = el("a", `v${"0.2.37"}`, "version");
     version.href = "https://raw.githubusercontent.com/mljpa/fut-sbc-dist/main/fut-sbc.user.js";
     version.target = "_blank";
     version.rel = "noopener noreferrer";
@@ -58969,9 +58971,11 @@ button:disabled { opacity:.5; cursor:default; }
       const steps = [...plan.sets].sort((a, b) => a.missingItems.length - b.missingItems.length || b.tokens - a.tokens);
       for (const [index, step] of steps.slice(0, planVisibleCount).entries()) {
         const card = el("div", void 0, "token-plan-step");
+        const ready = step.missingItems.length === 0;
+        if (ready) card.classList.add("ready");
         const text = el("div");
         text.append(
-          el("strong", `${index + 1}. ${step.name} \xB7 grado ${step.grade} \xB7 +${fmt(step.tokens)} fichas`),
+          el("strong", `${ready ? "\u2713 " : ""}${index + 1}. ${step.name} \xB7 grado ${step.grade} \xB7 +${fmt(step.tokens)} fichas`),
           el("small", step.missingItems.length ? `${step.missingItems.length} cartas por obtener \xB7 ${fmt(step.purchaseCoins)} precio total FUT.GG` : "Listo seg\xFAn tus cartas \xB7 revisa el canje")
         );
         card.append(
