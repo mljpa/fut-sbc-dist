@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         FUT SBC Solver v2
 // @namespace    https://github.com/mljpa/fut-sbc-solver-v2
-// @version      0.2.38
+// @version      0.2.39
 // @description  Userscript to solve EA SPORTS FC 26 SBCs with your own club
 // @match        https://www.ea.com/*/ea-sports-fc/ultimate-team/web-app*
 // @match        https://www.ea.com/ea-sports-fc/ultimate-team/web-app*
@@ -5024,14 +5024,6 @@ Consume las cartas que use. Esto NO se puede deshacer.
   }
   function assertGalleryAccount(account) {
     if (!account || galleryAccountId() !== account) throw new Error("La cuenta de EA cambi\xF3; vuelve a abrir Colecciones.");
-  }
-  function legacyGalleryIds(storage3) {
-    try {
-      const value = JSON.parse((storage3 ?? localStorage).getItem("fut-sbc-gallery:owned:fc27") ?? "null");
-      return Array.isArray(value) ? [...new Set(value.filter((id) => Number.isSafeInteger(id) && id > 0))] : [];
-    } catch {
-      return [];
-    }
   }
 
   // src/gallery/catalog-snapshot.json
@@ -57529,6 +57521,60 @@ Consume las cartas que use. Esto NO se puede deshacer.
     return b.rating - a.rating || a.definitionId - b.definitionId;
   }
 
+  // src/gallery/history-sync.ts
+  function galleryHistoryPlayerIds() {
+    const rows = getGlobal("repositories")?.Item?.getStaticData?.();
+    if (!Array.isArray(rows) || !rows.length) throw new Error("EA a\xFAn no carg\xF3 el cat\xE1logo de jugadores; vuelve a sincronizar.");
+    return [...new Set(rows.map((row) => row.id).filter((id) => typeof id === "number" && Number.isSafeInteger(id) && id > 0))];
+  }
+  async function syncGalleryHistory(onCards, onProgress, shouldStop = () => false) {
+    const account = galleryAccountId();
+    assertGalleryAccount(account);
+    const ids = galleryHistoryPlayerIds();
+    if (!ids.length) throw new Error("El cat\xE1logo de EA no tiene IDs v\xE1lidos.");
+    const Item = getGlobal("services")?.Item;
+    const DTO = getGlobal("UTSearchCriteriaDTO");
+    if (!Item?.searchConceptItems || !DTO) throw new Error("EA no expone la consulta de conceptos.");
+    const batches = Math.ceil(ids.length / 1e3);
+    const obtained = /* @__PURE__ */ new Set();
+    let checked = 0;
+    let requests = 0;
+    for (let start = 0; start < ids.length; start += 1e3) {
+      const seen = /* @__PURE__ */ new Set();
+      let ended = false;
+      for (let page = 0; page < 40; page++) {
+        if (shouldStop()) return false;
+        assertGalleryAccount(account);
+        if (requests++) await delay(1e3);
+        if (shouldStop()) return false;
+        assertGalleryAccount(account);
+        const c = new DTO();
+        Object.assign(c, { type: "player", count: 250, offset: page * 250, defId: ids.slice(start, start + 1e3) });
+        const res = await toPromise(Item.searchConceptItems(c));
+        assertGalleryAccount(account);
+        if (shouldStop()) return false;
+        if (res.success === false || !Array.isArray(res.data?.items)) throw new Error(`EA rechaz\xF3 la sincronizaci\xF3n (${res.status ?? "sin estado"}).`);
+        if (res.data.items.some((item) => !item || typeof item !== "object" || typeof item.isCollected !== "boolean"))
+          throw new Error("EA devolvi\xF3 cartas sin estado de colecci\xF3n; vuelve a sincronizar.");
+        const cards = res.data.items.map(galleryCardFromRaw).filter((card) => Boolean(card));
+        const fresh = cards.filter((card) => !seen.has(card.definitionId));
+        for (const card of fresh) seen.add(card.definitionId);
+        const collected = fresh.filter((card) => card.isCollected === true);
+        for (const card of collected) obtained.add(card.definitionId);
+        checked += fresh.length;
+        onCards(collected);
+        onProgress({ batch: Math.floor(start / 1e3) + 1, batches, checked, obtained: obtained.size });
+        if (res.data.endOfList === true || res.data.items.length < 250) {
+          ended = true;
+          break;
+        }
+        if (!fresh.length) throw new Error("EA repiti\xF3 una p\xE1gina del historial; vuelve a sincronizar.");
+      }
+      if (!ended) throw new Error("El historial de un lote no termin\xF3 de cargar; vuelve a sincronizar.");
+    }
+    return true;
+  }
+
   // src/gallery/enhancer-prices.ts
   var URL = "https://enhancer-api.futnext.com/players/v2/prices";
   var CACHE_MS2 = 15 * 60 * 1e3;
@@ -58537,7 +58583,7 @@ button:disabled { opacity:.5; cursor:default; }
     panel.setAttribute("aria-label", "Colecciones");
     const head = el("div", void 0, "head");
     const title = el("h2", "Colecciones");
-    const version = el("a", `v${"0.2.38"}`, "version");
+    const version = el("a", `v${"0.2.39"}`, "version");
     version.href = "https://raw.githubusercontent.com/mljpa/fut-sbc-dist/main/fut-sbc.user.js";
     version.target = "_blank";
     version.rel = "noopener noreferrer";
@@ -58677,6 +58723,8 @@ button:disabled { opacity:.5; cursor:default; }
     let cardSort = savedPreferences.cardSort;
     let leagueFilter = null;
     let busy = false;
+    let historySyncRunning = false;
+    let historyStopRequested = false;
     let tradeView = false;
     let advancedTradeOpen = savedPreferences.advancedTradeOpen;
     let chosen = /* @__PURE__ */ new Set();
@@ -58750,7 +58798,7 @@ button:disabled { opacity:.5; cursor:default; }
       }
     }
     shadow.addEventListener("keydown", onConfirmationKeydown);
-    async function syncClub() {
+    async function syncClub(forceHistory = false) {
       if (busy || !isActive()) return;
       busy = true;
       setStatus("Leyendo tu club desde EA\u2026");
@@ -58763,7 +58811,6 @@ button:disabled { opacity:.5; cursor:default; }
           ({ players, items } = await fetchClubPlayers());
           assertActive();
         }
-        if (players.length === 0) throw new Error("EA no devolvi\xF3 cartas del club");
         current = new Set(players.map((p) => p.definitionId));
         for (const id of current) owned.add(id);
         for (const raw of items.values()) {
@@ -58771,19 +58818,34 @@ button:disabled { opacity:.5; cursor:default; }
           if (card) rememberCard(card);
         }
         saveLedger(owned, storage3);
-        if (storage3.getItem("legacy-history-verified:v1") !== "1") {
-          const candidates = legacyGalleryIds();
-          if (candidates.length) {
-            setStatus("Verificando el historial anterior con las cartas de esta cuenta\u2026");
-            const history = await conceptCardsByIdsPartial(candidates);
-            assertActive();
-            for (const card of history) {
-              rememberCard(card);
-              if (card.isCollected === true) owned.add(card.definitionId);
-            }
-            saveLedger(owned, storage3);
+        const lastHistorySync = Number(storage3.getItem("history-sync:last-complete") ?? 0);
+        if (forceHistory || !lastHistorySync || Date.now() - lastHistorySync > 15 * 60 * 1e3) {
+          storage3.setItem("history-sync:last-complete", "0");
+          historySyncRunning = true;
+          historyStopRequested = false;
+          setStatus("Sincronizando todas las cartas obtenidas de esta cuenta\u2026");
+          const complete = await syncGalleryHistory(
+            (cards) => {
+              assertActive();
+              for (const card of cards) {
+                rememberCard(card);
+                owned.add(card.definitionId);
+              }
+              saveLedger(owned, storage3);
+              storage3.setItem("fut-sbc-gallery:catalog:fc27:v2:history", JSON.stringify({ at: Date.now(), cards: [...knownCards.values()] }));
+            },
+            (progress) => {
+              setStatus(`Historial ${progress.batch}/${progress.batches} \xB7 ${fmt(progress.checked)} cartas revisadas \xB7 ${fmt(owned.size)} obtenidas`);
+            },
+            () => historyStopRequested || !isActive()
+          );
+          assertActive();
+          historySyncRunning = false;
+          if (complete) storage3.setItem("history-sync:last-complete", String(Date.now()));
+          else {
+            setStatus("Sincronizaci\xF3n detenida. El avance queda guardado; vuelve a sincronizar para completar el historial.");
+            return;
           }
-          storage3.setItem("legacy-history-verified:v1", "1");
         }
         if (category) {
           categoryCards = [...knownCards.values()];
@@ -58797,6 +58859,7 @@ button:disabled { opacity:.5; cursor:default; }
         setStatus(`No se pudo leer el club: ${cause instanceof Error ? cause.message : String(cause)}`, true);
       } finally {
         busy = false;
+        historySyncRunning = false;
         render();
       }
     }
@@ -59656,11 +59719,19 @@ button:disabled { opacity:.5; cursor:default; }
         render();
       }, "back"));
       tools.append(el("span", void 0, "spacer"));
-      const sync = button(busy ? "Cargando\u2026" : "Sincronizar club", () => {
-        void syncClub();
+      const sync = button(busy ? "Cargando\u2026" : "Sincronizar colecciones", () => {
+        void syncClub(true);
       });
       sync.disabled = busy;
       tools.append(sync);
+      if (historySyncRunning) {
+        const stopHistory = button(historyStopRequested ? "Deteniendo\u2026" : "Detener sincronizaci\xF3n", () => {
+          historyStopRequested = true;
+          render();
+        });
+        stopHistory.disabled = historyStopRequested;
+        tools.append(stopHistory);
+      }
       const queueButton = button(`Cola (${purchaseQueue.length})`, () => {
         queueOpen = true;
         render();
@@ -59677,7 +59748,7 @@ button:disabled { opacity:.5; cursor:default; }
       body.append(tools);
       if (busy || error || selected) body.append(el("p", status, `status${error ? " error" : ""}`));
       if (!category) {
-        body.append(tokenSuggestions(calculatedGrades));
+        if (!historySyncRunning) body.append(tokenSuggestions(calculatedGrades));
         body.append(el("p", `${fmt(owned.size)} cartas registradas \xB7 Elige una categor\xEDa para ver equipos y sets.`, "set-count"));
         const grid = el("div", void 0, "grid");
         for (const c of CATEGORIES) {
