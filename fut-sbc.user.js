@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         FUT SBC Solver v2
 // @namespace    https://github.com/mljpa/fut-sbc-solver-v2
-// @version      0.2.43
+// @version      0.2.44
 // @description  Userscript to solve EA SPORTS FC 26 SBCs with your own club
 // @match        https://www.ea.com/*/ea-sports-fc/ultimate-team/web-app*
 // @match        https://www.ea.com/ea-sports-fc/ultimate-team/web-app*
@@ -58310,9 +58310,15 @@ Consume las cartas que use. Esto NO se puede deshacer.
     };
   }
   function collectionTokenOptions(owned, completed, calculated, maxCollectionCoins = null) {
+    const lineupGrades = completedGalleryGrades(owned);
+    const attained = {};
+    for (const set of catalog_snapshot_default.sets) {
+      const key = String(set.id);
+      const index = Math.max(...[completed[key], calculated[key], lineupGrades[key]].map((name) => set.grades.findIndex((grade) => grade.name === name)));
+      if (index >= 0) attained[key] = set.grades[index].name;
+    }
     return catalog_snapshot_default.sets.flatMap((set) => {
-      const currentIndex = set.grades.findIndex((grade) => grade.name === calculated[String(set.id)]);
-      return galleryGradeOptions(set.id, owned, completed).map((option, index) => index <= currentIndex ? { ...option, available: true, missingItems: [], purchaseCoins: 0, unpricedCards: 0 } : option);
+      return galleryGradeOptions(set.id, owned, attained).map((option) => option.completed ? { ...option, available: true, missingItems: [], purchaseCoins: 0, unpricedCards: 0 } : option);
     }).filter((option) => maxCollectionCoins === null || option.unpricedCards === 0 && option.purchaseCoins <= maxCollectionCoins);
   }
 
@@ -58651,7 +58657,7 @@ button:disabled { opacity:.5; cursor:default; }
     panel.setAttribute("aria-label", "Colecciones");
     const head = el("div", void 0, "head");
     const title = el("h2", "Colecciones");
-    const version = el("a", `v${"0.2.43"}`, "version");
+    const version = el("a", `v${"0.2.44"}`, "version");
     version.href = "https://raw.githubusercontent.com/mljpa/fut-sbc-dist/main/fut-sbc.user.js";
     version.target = "_blank";
     version.rel = "noopener noreferrer";
@@ -59247,7 +59253,7 @@ button:disabled { opacity:.5; cursor:default; }
       block.append(summary);
       if (collectionMaxCoins !== null) block.append(el("p", `Hasta ${fmt(collectionMaxCoins)} monedas por colecci\xF3n \xB7 Coste de cartas faltantes`, "set-count"));
       if (!plan.reachesGoal) block.append(el("p", `Las opciones disponibles cubren +${fmt(plan.gainedTokens)}; faltan ${fmt(Math.max(0, plan.remaining - plan.gainedTokens))} fichas.`, "note"));
-      block.append(el("p", "Fichas adicionales \xB7 Completado = grado alcanzado; revisa el canje \xB7 Precios estimados.", "note"));
+      block.append(el("p", "Solo grados pendientes \xB7 Las mejoras suman \xFAnicamente fichas adicionales \xB7 Precios estimados.", "note"));
       const controls = el("div", void 0, "set-controls");
       const selectControl = (label, values, value, change) => {
         const field2 = el("label", label), select = el("select");
