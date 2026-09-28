@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         FUT SBC Solver v2
 // @namespace    https://github.com/mljpa/fut-sbc-solver-v2
-// @version      0.2.41
+// @version      0.2.42
 // @description  Userscript to solve EA SPORTS FC 26 SBCs with your own club
 // @match        https://www.ea.com/*/ea-sports-fc/ultimate-team/web-app*
 // @match        https://www.ea.com/ea-sports-fc/ultimate-team/web-app*
@@ -57949,6 +57949,7 @@ Consume las cartas que use. Esto NO se puede deshacer.
     collectionTokenGoal: null,
     collectionBuyQueue: [],
     collectionPlanPriority: "coins",
+    collectionMaxCoins: null,
     collectionPlanBaseline: {},
     galleryTokenBalance: 0,
     galleryBalanceMode: "ea",
@@ -57986,6 +57987,7 @@ Consume las cartas que use. Esto NO se puede deshacer.
       collectionBuyQueue: Array.isArray(raw.collectionBuyQueue) ? [...new Map(raw.collectionBuyQueue.filter((entry) => Number.isSafeInteger(entry?.setId) && entry.setId > 0 && ["D", "C", "B", "A", "S"].includes(entry.grade)).map((entry) => [entry.setId, { setId: entry.setId, grade: entry.grade }])).values()] : [],
       collectionTokenGoal: Number.isSafeInteger(raw.collectionTokenGoal) && raw.collectionTokenGoal > 0 ? Math.min(1e6, raw.collectionTokenGoal) : null,
       collectionPlanPriority: ["cards", "purchase"].includes(String(raw.collectionPlanPriority)) ? raw.collectionPlanPriority : "coins",
+      collectionMaxCoins: Number.isSafeInteger(raw.collectionMaxCoins) && raw.collectionMaxCoins >= 0 && raw.collectionMaxCoins <= 15e6 ? raw.collectionMaxCoins : null,
       collectionPlanBaseline: Object.fromEntries(Object.entries(record(raw.collectionPlanBaseline)).filter(([id, grade]) => /^\d+$/.test(id) && ["D", "C", "B", "A", "S"].includes(String(grade)))),
       galleryTokenBalance: integer(raw.galleryTokenBalance, 0, 1e6, 0),
       galleryBalanceMode: raw.galleryBalanceMode === "manual" ? "manual" : "ea",
@@ -58286,10 +58288,10 @@ Consume las cartas que use. Esto NO se puede deshacer.
   }
 
   // src/gallery/collection-plan.ts
-  function collectionTokenPlan(owned, completed, calculated, goal, baseline, priority = "coins") {
+  function collectionTokenPlan(owned, completed, calculated, goal, baseline, priority = "coins", maxCollectionCoins = null) {
     const registered = Math.max(0, claimedGalleryTokens(completed) - claimedGalleryTokens(baseline));
     const remaining = Math.max(0, goal - registered);
-    const options = collectionTokenOptions(owned, completed, calculated);
+    const options = collectionTokenOptions(owned, completed, calculated, maxCollectionCoins);
     const plan = selectGradeRoute(options, remaining, null, priority);
     const prices = /* @__PURE__ */ new Map();
     for (const step of plan.sets) for (const item of step.missingItems)
@@ -58301,11 +58303,11 @@ Consume las cartas que use. Esto NO se puede deshacer.
       purchaseCoins: [...prices.values()].reduce((sum, price) => sum + price, 0)
     };
   }
-  function collectionTokenOptions(owned, completed, calculated) {
+  function collectionTokenOptions(owned, completed, calculated, maxCollectionCoins = null) {
     return catalog_snapshot_default.sets.flatMap((set) => {
       const currentIndex = set.grades.findIndex((grade) => grade.name === calculated[String(set.id)]);
       return galleryGradeOptions(set.id, owned, completed).map((option, index) => index <= currentIndex ? { ...option, available: true, missingItems: [], purchaseCoins: 0, unpricedCards: 0 } : option);
-    });
+    }).filter((option) => maxCollectionCoins === null || option.unpricedCards === 0 && option.purchaseCoins <= maxCollectionCoins);
   }
 
   // src/gallery/suggestion-view.ts
@@ -58317,16 +58319,14 @@ Consume las cartas que use. Esto NO se puede deshacer.
     }
     return coins;
   }
-  function visibleSuggestions(steps, sort, priority, minTokens, query) {
-    const normalize = (value) => value.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
-    const needle = normalize(query.trim());
+  function visibleSuggestions(steps, sort, priority, minTokens, maxCollectionCoins) {
     const metric = (step) => {
       if (sort === "tokens") return -step.tokens;
       if (sort === "cards" || sort === "priority" && priority === "cards") return step.missingItems.length;
       if (sort === "cost" || priority === "purchase") return step.unpricedCards ? Infinity : step.purchaseCoins;
       return financing(step);
     };
-    return steps.filter((step) => step.tokens >= minTokens && normalize(step.name).includes(needle)).sort((a, b) => metric(a) - metric(b) || b.tokens - a.tokens || a.purchaseCoins - b.purchaseCoins || a.name.localeCompare(b.name));
+    return steps.filter((step) => step.tokens >= minTokens && (maxCollectionCoins === null || step.unpricedCards === 0 && step.purchaseCoins <= maxCollectionCoins)).sort((a, b) => metric(a) - metric(b) || b.tokens - a.tokens || a.purchaseCoins - b.purchaseCoins || a.name.localeCompare(b.name));
   }
 
   // src/gallery/purchase-queue.ts
@@ -58645,7 +58645,7 @@ button:disabled { opacity:.5; cursor:default; }
     panel.setAttribute("aria-label", "Colecciones");
     const head = el("div", void 0, "head");
     const title = el("h2", "Colecciones");
-    const version = el("a", `v${"0.2.41"}`, "version");
+    const version = el("a", `v${"0.2.42"}`, "version");
     version.href = "https://raw.githubusercontent.com/mljpa/fut-sbc-dist/main/fut-sbc.user.js";
     version.target = "_blank";
     version.rel = "noopener noreferrer";
@@ -58770,7 +58770,7 @@ button:disabled { opacity:.5; cursor:default; }
     let planVisibleCount = 5;
     let suggestionSort = "priority";
     let suggestionMinTokens = 0;
-    let suggestionQuery = "";
+    let collectionMaxCoins = savedPreferences.collectionMaxCoins;
     let suggestionScope = "route";
     let returnToHome = false;
     let tokenPlanCache = null;
@@ -58812,7 +58812,7 @@ button:disabled { opacity:.5; cursor:default; }
     let status = "Sincroniza el club para registrar las cartas que tienes ahora. El historial queda guardado en este navegador.";
     let error = false;
     function persistPreferences() {
-      const safe = decodeGalleryPreferences({ ...savedPreferences, trade: tradeSettings, collectionFilter, collectionSort, cardSort, advancedTradeOpen, collectionTokenGoal, collectionPlanPriority, collectionPlanBaseline, collectionBuyQueue: purchaseQueue });
+      const safe = decodeGalleryPreferences({ ...savedPreferences, trade: tradeSettings, collectionFilter, collectionSort, cardSort, advancedTradeOpen, collectionTokenGoal, collectionPlanPriority, collectionMaxCoins, collectionPlanBaseline, collectionBuyQueue: purchaseQueue });
       tradeSettings = { ...tradeSettings, ...safe.trade };
       saveGalleryPreferences(safe, storage3);
     }
@@ -59225,11 +59225,12 @@ button:disabled { opacity:.5; cursor:default; }
         calculatedGrades,
         collectionTokenGoal,
         collectionPlanBaseline,
-        collectionPlanPriority
+        collectionPlanPriority,
+        collectionMaxCoins
       ]);
       if (tokenPlanCache?.key !== key) tokenPlanCache = {
         key,
-        plan: collectionTokenPlan(owned, confirmedClaims, calculatedGrades, collectionTokenGoal, collectionPlanBaseline, collectionPlanPriority)
+        plan: collectionTokenPlan(owned, confirmedClaims, calculatedGrades, collectionTokenGoal, collectionPlanBaseline, collectionPlanPriority, collectionMaxCoins)
       };
       const plan = tokenPlanCache.plan;
       const summary = el("div", void 0, "token-plan-summary");
@@ -59238,6 +59239,7 @@ button:disabled { opacity:.5; cursor:default; }
         el("small", `${plan.sets.length} colecciones \xB7 ${fmt(plan.uniqueCards)} cartas por obtener \xB7 ${fmt(plan.coinsNeeded)} monedas para compra/reventa \xB7 ${fmt(plan.purchaseCoins)} precio total FUT.GG`)
       );
       block.append(summary);
+      if (collectionMaxCoins !== null) block.append(el("p", `Hasta ${fmt(collectionMaxCoins)} monedas por colecci\xF3n \xB7 Coste de cartas faltantes`, "set-count"));
       if (!plan.reachesGoal) block.append(el("p", `Las opciones disponibles cubren +${fmt(plan.gainedTokens)}; faltan ${fmt(Math.max(0, plan.remaining - plan.gainedTokens))} fichas.`, "note"));
       block.append(el("p", "Fichas adicionales \xB7 Completado = grado alcanzado; revisa el canje \xB7 Precios estimados.", "note"));
       const controls = el("div", void 0, "set-controls");
@@ -59280,29 +59282,43 @@ button:disabled { opacity:.5; cursor:default; }
       });
       minimum.append(minInput);
       controls.append(minimum);
-      const searchField = el("label", "Buscar colecci\xF3n");
-      searchField.className = "set-search";
-      const search2 = el("input");
-      search2.type = "search";
-      search2.className = "suggestion-search";
-      search2.placeholder = "Ej. Deportivo";
-      search2.value = suggestionQuery;
-      search2.addEventListener("input", () => {
-        const cursor = search2.selectionStart;
-        suggestionQuery = search2.value;
+      const maxField = el("label", "M\xE1ximo por colecci\xF3n");
+      const maxInput = el("input");
+      maxInput.type = "number";
+      maxInput.min = "0";
+      maxInput.max = "15000000";
+      maxInput.step = "1";
+      maxInput.placeholder = "Sin l\xEDmite \xB7 Ej. 170000";
+      maxInput.value = collectionMaxCoins === null ? "" : String(collectionMaxCoins);
+      const applyLimit = () => {
+        if (!isActive() || !maxInput.checkValidity()) return;
+        const value = maxInput.value === "" ? null : Number(maxInput.value);
+        if (value !== null && !Number.isSafeInteger(value)) return;
+        if (value === collectionMaxCoins) return;
+        const draftGoal = Number(input.value);
+        if (Number.isSafeInteger(draftGoal) && draftGoal > 0 && draftGoal <= 1e6 && draftGoal !== collectionTokenGoal) {
+          collectionPlanBaseline = { ...confirmedClaims };
+          collectionTokenGoal = draftGoal;
+        }
+        collectionMaxCoins = value;
         planVisibleCount = 5;
+        persistPreferences();
         render();
-        const next = shadow.querySelector(".suggestion-search");
-        next?.focus();
-        if (cursor !== null) next?.setSelectionRange(cursor, cursor);
+      };
+      maxInput.addEventListener("change", applyLimit);
+      maxInput.addEventListener("keydown", (event) => {
+        if (event.key === "Enter") {
+          event.preventDefault();
+          applyLimit();
+        }
       });
-      searchField.append(search2);
-      controls.append(searchField);
+      maxField.append(maxInput);
+      controls.append(maxField);
       block.append(controls);
-      const candidates = suggestionScope === "route" ? plan.sets : collectionTokenOptions(owned, confirmedClaims, calculatedGrades).filter((step) => step.available && !step.completed && step.tokens > 0);
-      const steps = visibleSuggestions(candidates, suggestionSort, collectionPlanPriority, suggestionMinTokens, suggestionQuery);
+      const candidates = suggestionScope === "route" ? plan.sets : collectionTokenOptions(owned, confirmedClaims, calculatedGrades, collectionMaxCoins).filter((step) => step.available && !step.completed && step.tokens > 0);
+      const steps = visibleSuggestions(candidates, suggestionSort, collectionPlanPriority, suggestionMinTokens, collectionMaxCoins);
       block.append(el("p", suggestionScope === "route" ? `${steps.length} de ${plan.sets.length} sugerencias` : `${steps.length} ${steps.length === 1 ? "alternativa" : "alternativas"} \xB7 Cada grado es una opci\xF3n; no se suman al objetivo.`, "set-count"));
-      if (!steps.length) block.append(el("p", "No hay resultados con estos filtros. Prueba Todas las alternativas o baja las fichas m\xEDnimas.", "note"));
+      if (!steps.length) block.append(el("p", "No hay resultados con estos filtros. Sube el l\xEDmite de monedas o baja las fichas m\xEDnimas.", "note"));
       for (const [index, step] of steps.slice(0, planVisibleCount).entries()) {
         const card = el("div", void 0, "token-plan-step");
         const ready = step.missingItems.length === 0;
