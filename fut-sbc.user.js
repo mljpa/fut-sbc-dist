@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         FUT SBC Solver v2
 // @namespace    https://github.com/mljpa/fut-sbc-solver-v2
-// @version      0.2.40
+// @version      0.2.41
 // @description  Userscript to solve EA SPORTS FC 26 SBCs with your own club
 // @match        https://www.ea.com/*/ea-sports-fc/ultimate-team/web-app*
 // @match        https://www.ea.com/ea-sports-fc/ultimate-team/web-app*
@@ -57527,7 +57527,7 @@ Consume las cartas que use. Esto NO se puede deshacer.
     if (!Array.isArray(rows) || !rows.length) throw new Error("EA a\xFAn no carg\xF3 el cat\xE1logo de jugadores; vuelve a sincronizar.");
     return [...new Set(rows.map((row) => row.id).filter((id) => typeof id === "number" && Number.isSafeInteger(id) && id > 0))];
   }
-  async function syncGalleryHistory(onCards, onProgress, shouldStop = () => false) {
+  async function syncGalleryHistory(onCards, onProgress, shouldStop = () => false, resume = {}) {
     const account = galleryAccountId();
     assertGalleryAccount(account);
     const ids = galleryHistoryPlayerIds();
@@ -57536,10 +57536,12 @@ Consume las cartas que use. Esto NO se puede deshacer.
     const DTO = getGlobal("UTSearchCriteriaDTO");
     if (!Item?.searchConceptItems || !DTO) throw new Error("EA no expone la consulta de conceptos.");
     const batches = Math.ceil(ids.length / 1e3);
+    const startBatch = resume.startBatch ?? 0;
+    if (!Number.isSafeInteger(startBatch) || startBatch < 0 || startBatch > batches) throw new Error("Punto de sincronizaci\xF3n inv\xE1lido.");
     const obtained = /* @__PURE__ */ new Set();
     let checked = 0;
     let requests = 0;
-    for (let start = 0; start < ids.length; start += 1e3) {
+    for (let start = startBatch * 1e3; start < ids.length; start += 1e3) {
       const seen = /* @__PURE__ */ new Set();
       let ended = false;
       for (let page = 0; page < 40; page++) {
@@ -57571,8 +57573,43 @@ Consume las cartas que use. Esto NO se puede deshacer.
         if (!fresh.length) throw new Error("EA repiti\xF3 una p\xE1gina del historial; vuelve a sincronizar.");
       }
       if (!ended) throw new Error("El historial de un lote no termin\xF3 de cargar; vuelve a sincronizar.");
+      resume.onBatchComplete?.(Math.floor(start / 1e3) + 1);
     }
     return true;
+  }
+
+  // src/gallery/history-cache.ts
+  var COMPLETE = "history-sync:last-complete";
+  var CHECKPOINT = "history-sync:checkpoint:v1";
+  function hasGalleryHistory(storage3) {
+    const at = Number(storage3.getItem(COMPLETE));
+    return Number.isFinite(at) && at > 0;
+  }
+  function signature(ids) {
+    let hash = 2166136261;
+    for (const id of ids) hash = Math.imul(hash ^ id, 16777619);
+    return `${ids.length}:${hash >>> 0}`;
+  }
+  function historyResumeBatch(storage3, ids) {
+    try {
+      const saved = JSON.parse(storage3.getItem(CHECKPOINT) ?? "null");
+      const batches = Math.ceil(ids.length / 1e3);
+      return saved?.catalog === signature(ids) && Number.isSafeInteger(saved.batch) && saved.batch >= 0 && saved.batch <= batches ? saved.batch : 0;
+    } catch {
+      return 0;
+    }
+  }
+  function saveHistoryBatch(storage3, ids, batch) {
+    storage3.setItem(CHECKPOINT, JSON.stringify({ catalog: signature(ids), batch }));
+  }
+  function startHistoryScan(storage3, ids, force) {
+    const batch = force ? 0 : historyResumeBatch(storage3, ids);
+    storage3.setItem(COMPLETE, "0");
+    saveHistoryBatch(storage3, ids, batch);
+    return batch;
+  }
+  function finishHistoryScan(storage3) {
+    storage3.setItem(COMPLETE, String(Date.now()));
   }
 
   // src/gallery/enhancer-prices.ts
@@ -58608,7 +58645,7 @@ button:disabled { opacity:.5; cursor:default; }
     panel.setAttribute("aria-label", "Colecciones");
     const head = el("div", void 0, "head");
     const title = el("h2", "Colecciones");
-    const version = el("a", `v${"0.2.40"}`, "version");
+    const version = el("a", `v${"0.2.41"}`, "version");
     version.href = "https://raw.githubusercontent.com/mljpa/fut-sbc-dist/main/fut-sbc.user.js";
     version.target = "_blank";
     version.rel = "noopener noreferrer";
@@ -58791,7 +58828,6 @@ button:disabled { opacity:.5; cursor:default; }
     function open() {
       backdrop.classList.add("open");
       render();
-      if (isActive() && !owned.size) void syncClub();
     }
     function cancelTradeConfirmation() {
       if (tradeDialog?.running) {
@@ -58847,12 +58883,12 @@ button:disabled { opacity:.5; cursor:default; }
           if (card) rememberCard(card);
         }
         saveLedger(owned, storage3);
-        const lastHistorySync = Number(storage3.getItem("history-sync:last-complete") ?? 0);
-        if (forceHistory || !lastHistorySync || Date.now() - lastHistorySync > 15 * 60 * 1e3) {
-          storage3.setItem("history-sync:last-complete", "0");
+        if (forceHistory || !hasGalleryHistory(storage3)) {
+          const historyIds = galleryHistoryPlayerIds();
+          const startBatch = startHistoryScan(storage3, historyIds, forceHistory);
           historySyncRunning = true;
           historyStopRequested = false;
-          setStatus("Sincronizando todas las cartas obtenidas de esta cuenta\u2026");
+          setStatus(startBatch ? `Retomando historial desde el lote ${startBatch + 1}\u2026` : forceHistory ? "Revisando todo el historial de esta cuenta\u2026" : "Sincronizando por primera vez el historial de esta cuenta\u2026");
           const complete = await syncGalleryHistory(
             (cards) => {
               assertActive();
@@ -58866,11 +58902,18 @@ button:disabled { opacity:.5; cursor:default; }
             (progress) => {
               setStatus(`Historial ${progress.batch}/${progress.batches} \xB7 ${fmt(progress.checked)} cartas revisadas \xB7 ${fmt(owned.size)} obtenidas`);
             },
-            () => historyStopRequested || !isActive()
+            () => historyStopRequested || !isActive(),
+            {
+              startBatch,
+              onBatchComplete: (batch) => {
+                assertActive();
+                saveHistoryBatch(storage3, historyIds, batch);
+              }
+            }
           );
           assertActive();
           historySyncRunning = false;
-          if (complete) storage3.setItem("history-sync:last-complete", String(Date.now()));
+          if (complete) finishHistoryScan(storage3);
           else {
             setStatus("Sincronizaci\xF3n detenida. El avance queda guardado; vuelve a sincronizar para completar el historial.");
             return;
@@ -58883,7 +58926,8 @@ button:disabled { opacity:.5; cursor:default; }
           if (selected) selected.cards = refreshed.get(selected.catalogId) ?? selected.cards;
         }
         saveLedger(owned, storage3);
-        setStatus(`${fmt(players.length)} cartas actuales; ${fmt(owned.size)} definiciones registradas en el historial local.`);
+        storage3.setItem("fut-sbc-gallery:catalog:fc27:v2:history", JSON.stringify({ at: Date.now(), cards: [...knownCards.values()] }));
+        setStatus(`${fmt(owned.size)} cartas registradas \xB7 Club actualizado`);
       } catch (cause) {
         setStatus(`No se pudo leer el club: ${cause instanceof Error ? cause.message : String(cause)}`, true);
       } finally {
@@ -59329,7 +59373,8 @@ button:disabled { opacity:.5; cursor:default; }
       const requestId = ++priceRequestId;
       render();
       try {
-        const referenceIds = referenceItems(set).map((item) => item.definitionId);
+        const publishedIds = referenceItems(set).map((item) => item.definitionId);
+        const referenceIds = publishedIds.filter((id) => !owned.has(id) || !knownCards.has(id));
         if (referenceIds.length) {
           const extra = await conceptCardsByIdsPartial(referenceIds);
           if (!isActive() || requestId !== priceRequestId || selected !== set) return;
@@ -59342,7 +59387,7 @@ button:disabled { opacity:.5; cursor:default; }
         }
         const priceIds = referenceCards(set).filter((card) => !owned.has(card.definitionId)).map((card) => card.definitionId);
         if (!priceIds.length) {
-          status = plannedGrade && !referenceIds.length ? "Sin alineaci\xF3n publicada para este grado." : plannedGrade ? "Alineaci\xF3n revisada con tu historial de cartas." : setProgress(set, owned) >= set.requiredCards ? "El set tiene suficientes cartas registradas. Elige el grado objetivo." : "No se encontraron cartas candidatas para llenar los cupos pendientes. Actualiza el cat\xE1logo.";
+          status = plannedGrade && !publishedIds.length ? "Sin alineaci\xF3n publicada para este grado." : plannedGrade ? "Alineaci\xF3n revisada con tu historial de cartas." : setProgress(set, owned) >= set.requiredCards ? "El set tiene suficientes cartas registradas. Elige el grado objetivo." : "No se encontraron cartas candidatas para llenar los cupos pendientes. Actualiza el cat\xE1logo.";
           return;
         }
         const found = await fetchEnhancerPrices(priceIds);
@@ -59811,11 +59856,16 @@ button:disabled { opacity:.5; cursor:default; }
         render();
       }, "back"));
       tools.append(el("span", void 0, "spacer"));
-      const sync = button(busy ? "Cargando\u2026" : "Sincronizar colecciones", () => {
-        void syncClub(true);
+      const sync = button(busy ? "Cargando\u2026" : "Actualizar nuevas", () => {
+        void syncClub();
       });
       sync.disabled = busy;
       tools.append(sync);
+      const fullSync = button("Revisar historial completo", () => {
+        void syncClub(true);
+      });
+      fullSync.disabled = busy;
+      tools.append(fullSync);
       if (historySyncRunning) {
         const stopHistory = button(historyStopRequested ? "Deteniendo\u2026" : "Detener sincronizaci\xF3n", () => {
           historyStopRequested = true;
