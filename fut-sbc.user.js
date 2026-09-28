@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         FUT SBC Solver v2
 // @namespace    https://github.com/mljpa/fut-sbc-solver-v2
-// @version      0.2.39
+// @version      0.2.40
 // @description  Userscript to solve EA SPORTS FC 26 SBCs with your own club
 // @match        https://www.ea.com/*/ea-sports-fc/ultimate-team/web-app*
 // @match        https://www.ea.com/ea-sports-fc/ultimate-team/web-app*
@@ -57948,7 +57948,7 @@ Consume las cartas que use. Esto NO se puede deshacer.
       advancedTradeOpen: raw.advancedTradeOpen === true,
       collectionBuyQueue: Array.isArray(raw.collectionBuyQueue) ? [...new Map(raw.collectionBuyQueue.filter((entry) => Number.isSafeInteger(entry?.setId) && entry.setId > 0 && ["D", "C", "B", "A", "S"].includes(entry.grade)).map((entry) => [entry.setId, { setId: entry.setId, grade: entry.grade }])).values()] : [],
       collectionTokenGoal: Number.isSafeInteger(raw.collectionTokenGoal) && raw.collectionTokenGoal > 0 ? Math.min(1e6, raw.collectionTokenGoal) : null,
-      collectionPlanPriority: raw.collectionPlanPriority === "cards" ? "cards" : "coins",
+      collectionPlanPriority: ["cards", "purchase"].includes(String(raw.collectionPlanPriority)) ? raw.collectionPlanPriority : "coins",
       collectionPlanBaseline: Object.fromEntries(Object.entries(record(raw.collectionPlanBaseline)).filter(([id, grade]) => /^\d+$/.test(id) && ["D", "C", "B", "A", "S"].includes(String(grade)))),
       galleryTokenBalance: integer(raw.galleryTokenBalance, 0, 1e6, 0),
       galleryBalanceMode: raw.galleryBalanceMode === "manual" ? "manual" : "ea",
@@ -58198,6 +58198,7 @@ Consume las cartas que use. Esto NO se puede deshacer.
     return { coins: Math.ceil(coins), tax: Math.ceil(loss) };
   }
   function compare(a, b, priority) {
+    if (priority === "purchase") return a.purchase - b.purchase || a.coins - b.coins || a.prices.size - b.prices.size || a.steps.length - b.steps.length || a.gained - b.gained;
     if (priority === "cards") return a.prices.size - b.prices.size || a.coins - b.coins || a.tax - b.tax || a.steps.length - b.steps.length || a.gained - b.gained;
     return a.coins - b.coins || a.tax - b.tax || a.prices.size - b.prices.size || a.steps.length - b.steps.length || a.gained - b.gained;
   }
@@ -58218,7 +58219,7 @@ Consume las cartas que use. Esto NO se puede deshacer.
       groups.set(option.setId, [...groups.get(option.setId) ?? [], option]);
     }
     const limit = need ?? [...groups.values()].reduce((sum, group) => sum + Math.max(...group.map((option) => option.tokens)), 0);
-    let states = /* @__PURE__ */ new Map([[0, [{ steps: [], prices: /* @__PURE__ */ new Map(), gained: 0, coins: 0, tax: 0 }]]]);
+    let states = /* @__PURE__ */ new Map([[0, [{ steps: [], prices: /* @__PURE__ */ new Map(), gained: 0, coins: 0, tax: 0, purchase: 0 }]]]);
     for (const group of groups.values()) {
       const next = new Map([...states].map(([tokens, paths]) => [tokens, [...paths]]));
       for (const paths of states.values()) for (const path of paths) for (const option of group) {
@@ -58226,7 +58227,7 @@ Consume las cartas que use. Esto NO se puede deshacer.
         for (const item of option.missingItems) prices.set(item.definitionId, Math.max(prices.get(item.definitionId) ?? 0, item.price));
         const cost = costs(prices.values());
         if (budget !== null && cost.coins > budget) continue;
-        const candidate = { steps: [...path.steps, option], prices, gained: path.gained + option.tokens, ...cost };
+        const candidate = { steps: [...path.steps, option], prices, gained: path.gained + option.tokens, purchase: [...prices.values()].reduce((sum, price) => sum + price, 0), ...cost };
         const key = Math.min(limit, candidate.gained);
         const alternatives = [...next.get(key) ?? [], candidate].sort((a, b) => compare(a, b, priority));
         const unique = new Map(alternatives.map((entry) => [entry.steps.map((step) => `${step.setId}:${step.grade}`).join(","), entry]));
@@ -58251,10 +58252,7 @@ Consume las cartas que use. Esto NO se puede deshacer.
   function collectionTokenPlan(owned, completed, calculated, goal, baseline, priority = "coins") {
     const registered = Math.max(0, claimedGalleryTokens(completed) - claimedGalleryTokens(baseline));
     const remaining = Math.max(0, goal - registered);
-    const options = catalog_snapshot_default.sets.flatMap((set) => {
-      const currentIndex = set.grades.findIndex((grade) => grade.name === calculated[String(set.id)]);
-      return galleryGradeOptions(set.id, owned, completed).map((option, index) => index <= currentIndex ? { ...option, available: true, missingItems: [], purchaseCoins: 0, unpricedCards: 0 } : option);
-    });
+    const options = collectionTokenOptions(owned, completed, calculated);
     const plan = selectGradeRoute(options, remaining, null, priority);
     const prices = /* @__PURE__ */ new Map();
     for (const step of plan.sets) for (const item of step.missingItems)
@@ -58265,6 +58263,33 @@ Consume las cartas que use. Esto NO se puede deshacer.
       remaining,
       purchaseCoins: [...prices.values()].reduce((sum, price) => sum + price, 0)
     };
+  }
+  function collectionTokenOptions(owned, completed, calculated) {
+    return catalog_snapshot_default.sets.flatMap((set) => {
+      const currentIndex = set.grades.findIndex((grade) => grade.name === calculated[String(set.id)]);
+      return galleryGradeOptions(set.id, owned, completed).map((option, index) => index <= currentIndex ? { ...option, available: true, missingItems: [], purchaseCoins: 0, unpricedCards: 0 } : option);
+    });
+  }
+
+  // src/gallery/suggestion-view.ts
+  function financing(step) {
+    let loss = 0, coins = 0;
+    for (const price of step.missingItems.map((item) => item.price ?? Infinity).sort((a, b) => b - a)) {
+      coins = Math.max(coins, price + loss);
+      loss += price * 0.05;
+    }
+    return coins;
+  }
+  function visibleSuggestions(steps, sort, priority, minTokens, query) {
+    const normalize = (value) => value.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+    const needle = normalize(query.trim());
+    const metric = (step) => {
+      if (sort === "tokens") return -step.tokens;
+      if (sort === "cards" || sort === "priority" && priority === "cards") return step.missingItems.length;
+      if (sort === "cost" || priority === "purchase") return step.unpricedCards ? Infinity : step.purchaseCoins;
+      return financing(step);
+    };
+    return steps.filter((step) => step.tokens >= minTokens && normalize(step.name).includes(needle)).sort((a, b) => metric(a) - metric(b) || b.tokens - a.tokens || a.purchaseCoins - b.purchaseCoins || a.name.localeCompare(b.name));
   }
 
   // src/gallery/purchase-queue.ts
@@ -58583,7 +58608,7 @@ button:disabled { opacity:.5; cursor:default; }
     panel.setAttribute("aria-label", "Colecciones");
     const head = el("div", void 0, "head");
     const title = el("h2", "Colecciones");
-    const version = el("a", `v${"0.2.39"}`, "version");
+    const version = el("a", `v${"0.2.40"}`, "version");
     version.href = "https://raw.githubusercontent.com/mljpa/fut-sbc-dist/main/fut-sbc.user.js";
     version.target = "_blank";
     version.rel = "noopener noreferrer";
@@ -58706,6 +58731,10 @@ button:disabled { opacity:.5; cursor:default; }
     let collectionPlanPriority = savedPreferences.collectionPlanPriority;
     let collectionPlanBaseline = savedPreferences.collectionPlanBaseline;
     let planVisibleCount = 5;
+    let suggestionSort = "priority";
+    let suggestionMinTokens = 0;
+    let suggestionQuery = "";
+    let suggestionScope = "route";
     let returnToHome = false;
     let tokenPlanCache = null;
     function markGrade(setId, grade) {
@@ -59110,14 +59139,15 @@ button:disabled { opacity:.5; cursor:default; }
       field.append(input);
       const priorityLabel = el("label", "Priorizar");
       const priority = el("select");
-      for (const [value, label] of [["coins", "Menor coste de compra/reventa"], ["cards", "Menos cartas por obtener"]]) {
+      for (const [value, label] of [["purchase", "Menor coste total de cartas"], ["coins", "Menos monedas para compra/reventa"], ["cards", "Menos cartas por obtener"]]) {
         const option = el("option", label);
         option.value = value;
         priority.append(option);
       }
       priority.value = collectionPlanPriority;
       priority.addEventListener("change", () => {
-        collectionPlanPriority = priority.value === "coins" ? "coins" : "cards";
+        collectionPlanPriority = priority.value;
+        planVisibleCount = 5;
         persistPreferences();
         if (collectionTokenGoal !== null && Number(input.value) === collectionTokenGoal) render();
       });
@@ -59165,8 +59195,70 @@ button:disabled { opacity:.5; cursor:default; }
       );
       block.append(summary);
       if (!plan.reachesGoal) block.append(el("p", `Las opciones disponibles cubren +${fmt(plan.gainedTokens)}; faltan ${fmt(Math.max(0, plan.remaining - plan.gainedTokens))} fichas.`, "note"));
-      block.append(el("p", "Son fichas adicionales. Los grados ya marcados se descuentan; los listos por tus cartas requieren revisar el canje. Precios estimados.", "note"));
-      const steps = [...plan.sets].sort((a, b) => a.missingItems.length - b.missingItems.length || b.tokens - a.tokens);
+      block.append(el("p", "Fichas adicionales \xB7 Completado = grado alcanzado; revisa el canje \xB7 Precios estimados.", "note"));
+      const controls = el("div", void 0, "set-controls");
+      const selectControl = (label, values, value, change) => {
+        const field2 = el("label", label), select = el("select");
+        for (const [id, text] of values) {
+          const option = el("option", text);
+          option.value = id;
+          select.append(option);
+        }
+        select.value = value;
+        select.addEventListener("change", () => {
+          change(select.value);
+          planVisibleCount = 5;
+          render();
+        });
+        field2.append(select);
+        controls.append(field2);
+      };
+      selectControl("Mostrar", [["route", "Ruta sugerida"], ["alternatives", "Todas las alternativas"]], suggestionScope, (value) => {
+        suggestionScope = value;
+      });
+      selectControl("Ordenar", [["priority", "Seg\xFAn prioridad"], ["cost", "Menor coste total"], ["tokens", "M\xE1s fichas"], ["cards", "Menos cartas faltantes"]], suggestionSort, (value) => {
+        suggestionSort = value;
+      });
+      const minimum = el("label", "Fichas m\xEDnimas");
+      const minInput = el("input");
+      minInput.type = "number";
+      minInput.min = "0";
+      minInput.max = "1000000";
+      minInput.step = "1";
+      minInput.className = "suggestion-min-tokens";
+      minInput.value = String(suggestionMinTokens);
+      minInput.style.width = "100px";
+      minInput.addEventListener("input", () => {
+        suggestionMinTokens = Math.min(1e6, Math.max(0, Math.floor(Number(minInput.value) || 0)));
+        planVisibleCount = 5;
+        render();
+        shadow.querySelector(".suggestion-min-tokens")?.focus();
+      });
+      minimum.append(minInput);
+      controls.append(minimum);
+      const searchField = el("label", "Buscar colecci\xF3n");
+      searchField.className = "set-search";
+      const search2 = el("input");
+      search2.type = "search";
+      search2.className = "suggestion-search";
+      search2.placeholder = "Ej. Deportivo";
+      search2.value = suggestionQuery;
+      search2.addEventListener("input", () => {
+        const cursor = search2.selectionStart;
+        suggestionQuery = search2.value;
+        planVisibleCount = 5;
+        render();
+        const next = shadow.querySelector(".suggestion-search");
+        next?.focus();
+        if (cursor !== null) next?.setSelectionRange(cursor, cursor);
+      });
+      searchField.append(search2);
+      controls.append(searchField);
+      block.append(controls);
+      const candidates = suggestionScope === "route" ? plan.sets : collectionTokenOptions(owned, confirmedClaims, calculatedGrades).filter((step) => step.available && !step.completed && step.tokens > 0);
+      const steps = visibleSuggestions(candidates, suggestionSort, collectionPlanPriority, suggestionMinTokens, suggestionQuery);
+      block.append(el("p", suggestionScope === "route" ? `${steps.length} de ${plan.sets.length} sugerencias` : `${steps.length} ${steps.length === 1 ? "alternativa" : "alternativas"} \xB7 Cada grado es una opci\xF3n; no se suman al objetivo.`, "set-count"));
+      if (!steps.length) block.append(el("p", "No hay resultados con estos filtros. Prueba Todas las alternativas o baja las fichas m\xEDnimas.", "note"));
       for (const [index, step] of steps.slice(0, planVisibleCount).entries()) {
         const card = el("div", void 0, "token-plan-step");
         const ready = step.missingItems.length === 0;
@@ -59174,7 +59266,7 @@ button:disabled { opacity:.5; cursor:default; }
         const text = el("div");
         text.append(
           el("strong", `${ready ? "\u2713 " : ""}${index + 1}. ${step.name} \xB7 grado ${step.grade} \xB7 +${fmt(step.tokens)} fichas`),
-          el("small", step.missingItems.length ? `${step.missingItems.length} cartas por obtener \xB7 ${fmt(step.purchaseCoins)} precio total FUT.GG` : "Completado")
+          el("small", step.missingItems.length ? `${step.missingItems.length} cartas por obtener \xB7 ${step.unpricedCards ? "Precio incompleto" : `${fmt(step.purchaseCoins)} monedas \xB7 ${fmt(Math.ceil(step.purchaseCoins / step.tokens))} por ficha`}` : "Completado")
         );
         card.append(
           text,
