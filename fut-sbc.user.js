@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         FUT SBC Solver v2
 // @namespace    https://github.com/mljpa/fut-sbc-solver-v2
-// @version      0.2.32
+// @version      0.2.33
 // @description  Userscript to solve EA SPORTS FC 26 SBCs with your own club
 // @match        https://www.ea.com/*/ea-sports-fc/ultimate-team/web-app*
 // @match        https://www.ea.com/ea-sports-fc/ultimate-team/web-app*
@@ -57849,7 +57849,12 @@ Consume las cartas que use. Esto NO se puede deshacer.
     });
   }
   function setProgress(set, owned) {
-    return Math.min(set.requiredCards, set.cards.filter((card) => owned.has(card.definitionId)).length);
+    const eligible = /* @__PURE__ */ new Set([
+      ...set.cards.map((card) => card.definitionId),
+      ...set.costTiers.flatMap((tier2) => tier2.items.map((item) => item.definitionId)),
+      ...set.recommended?.items.map((item) => item.definitionId) ?? []
+    ]);
+    return Math.min(set.requiredCards, [...eligible].filter((id) => owned.has(id)).length);
   }
   function cardsToComplete(set, owned) {
     const missingSlots = Math.max(0, set.requiredCards - setProgress(set, owned));
@@ -57920,6 +57925,92 @@ Consume las cartas que use. Esto NO se puede deshacer.
       (storage3 ?? localStorage).setItem(KEY2, JSON.stringify(claims));
     } catch {
     }
+  }
+
+  // src/gallery/budget-plan.ts
+  function percent(count, tiers2) {
+    return tiers2.reduce((rate, [minimum, value]) => count >= minimum ? value : rate, 0);
+  }
+  var GROUP_TIERS = [[5, 1], [10, 2], [20, 4]];
+  function groupBonus(items, key, tiers2, distinct) {
+    const groups = /* @__PURE__ */ new Map();
+    for (const item of items) {
+      const id = key(item.card);
+      if (id > 0) groups.set(id, [...groups.get(id) ?? [], item]);
+    }
+    if (distinct) {
+      const selected = [...groups.values()].map((group) => group.sort((a, b) => b.score - a.score)[0]);
+      return Math.floor(selected.reduce((total, item) => total + item.score, 0) * percent(selected.length, tiers2) / 100);
+    }
+    return Math.max(0, ...[...groups.values()].map((group) => Math.floor(
+      group.reduce((total, item) => total + item.score, 0) * percent(group.length, tiers2) / 100
+    )));
+  }
+  function tagBonus(items) {
+    const tag = (predicate, tiers2) => {
+      const matched = items.filter((item) => predicate(item.card));
+      return Math.floor(matched.reduce((total, item) => total + item.score, 0) * percent(matched.length, tiers2) / 100);
+    };
+    const nation = (card) => card.nationId ?? 0;
+    const club = (card) => card.teamId;
+    const league = (card) => card.leagueId;
+    const bonuses = [
+      groupBonus(items, nation, GROUP_TIERS, false),
+      groupBonus(items, nation, GROUP_TIERS, true),
+      groupBonus(items, club, GROUP_TIERS, false),
+      groupBonus(items, club, GROUP_TIERS, true),
+      groupBonus(items, league, [[5, 1], [10, 2], [20, 8]], false),
+      groupBonus(items, league, GROUP_TIERS, true),
+      tag((card) => card.rating >= 75, GROUP_TIERS),
+      tag((card) => card.rarityId === 12, [[2, 8], [4, 12], [6, 20]]),
+      tag((card) => card.rarityId === 72, [[2, 8], [4, 12], [6, 20]]),
+      tag((card) => card.rarityId === 3, [[3, 4], [6, 8], [10, 15]])
+    ];
+    return bonuses.sort((a, b) => b - a).slice(0, 10).reduce((total, bonus) => total + bonus, 0);
+  }
+  function completedGalleryGrades(recorded, cards = []) {
+    const result = {};
+    const knownScores = /* @__PURE__ */ new Map();
+    for (const set of catalog_snapshot_default.sets) for (const tier2 of set.costTiers) for (const item of tier2.items)
+      knownScores.set(item.definitionId, Math.max(knownScores.get(item.definitionId) ?? 0, item.score));
+    for (const set of catalog_snapshot_default.sets) {
+      const complete = set.costTiers.filter((tier2) => tier2.items.length === set.requiredCards && tier2.items.every((item) => recorded.has(item.definitionId)));
+      const highest = complete.sort((a, b) => set.grades.findIndex((grade) => grade.name === b.grade) - set.grades.findIndex((grade) => grade.name === a.grade))[0];
+      if (highest) result[String(set.id)] = highest.grade;
+      const recommended = "recommended" in set ? set.recommended : void 0;
+      if (recommended && recommended.items.length === set.requiredCards && recommended.items.every((item) => recorded.has(item.definitionId))) {
+        const grade = [...set.grades].reverse().find((candidate) => recommended.totalScore >= candidate.threshold);
+        if (grade && set.grades.findIndex((candidate) => candidate.name === grade.name) > set.grades.findIndex((candidate) => candidate.name === result[String(set.id)]))
+          result[String(set.id)] = grade.name;
+      }
+    }
+    if (!cards.length) return result;
+    for (const category of CATEGORIES) for (const set of buildSets(category, [...cards])) {
+      const scored = set.cards.filter((card) => recorded.has(card.definitionId)).map((card) => ({ card, score: card.gradingScore || knownScores.get(card.definitionId) || 0 })).filter((item) => item.score > 0).sort((a, b) => b.score - a.score).slice(0, set.requiredCards);
+      if (scored.length < set.requiredCards) continue;
+      const score = scored.reduce((total, item) => total + item.score, 0) + tagBonus(scored);
+      const grade = [...set.grades].reverse().find((candidate) => score >= candidate.threshold);
+      if (!grade) continue;
+      const previousIndex = set.grades.findIndex((candidate) => candidate.name === result[String(set.catalogId)]);
+      const nextIndex = set.grades.findIndex((candidate) => candidate.name === grade.name);
+      if (nextIndex > previousIndex) result[String(set.catalogId)] = grade.name;
+    }
+    return result;
+  }
+
+  // src/gallery/grade-track.ts
+  function collectionGradeTrack(set, owned, calculated) {
+    const index = set.grades.findIndex((grade) => grade.name === calculated);
+    const next = set.grades[index + 1] ?? null;
+    const lineup = next ? set.costTiers.find((tier2) => tier2.grade === next.name && tier2.items.length === set.requiredCards) : void 0;
+    return {
+      grade: index >= 0 ? calculated : null,
+      obtained: setProgress(set, owned),
+      required: set.requiredCards,
+      nextGrade: next?.name ?? null,
+      nextMissing: lineup ? lineup.items.filter((item) => !owned.has(item.definitionId)).length : null,
+      nextTokens: next?.tokens ?? 0
+    };
   }
 
   // src/gallery/grade-route.ts
@@ -58029,6 +58120,10 @@ button:disabled { opacity:.5; cursor:default; }
 .set-title { padding:0; border:0; background:none; color:var(--fg); text-align:left; font-weight:700; }
 .grade-tabs { flex-wrap:wrap; margin:4px 0; }
 .tabs { display:flex; gap:5px; margin-bottom:12px; }
+.tabs button.current-grade { outline:2px solid var(--accent); outline-offset:2px; }
+.grade-track { padding:10px 13px; margin:8px 0 12px; border-left:3px solid var(--accent); background:var(--soft); display:flex; flex-direction:column; gap:4px; }
+.grade-track button { align-self:flex-start; border:1px solid var(--line); border-radius:5px; padding:6px 9px; background:var(--bg); color:var(--fg); }
+.grade-track small { color:var(--muted); }
 .tabs button.active { background:var(--accent); color:var(--accent-fg); border-color:var(--accent); }
 .list { display:flex; flex-direction:column; gap:6px; }
 .row { display:flex; align-items:center; gap:12px; }
@@ -58178,7 +58273,7 @@ button:disabled { opacity:.5; cursor:default; }
     panel.setAttribute("aria-label", "Colecciones");
     const head = el("div", void 0, "head");
     const title = el("h2", "Colecciones");
-    const version = el("a", `v${"0.2.32"}`, "version");
+    const version = el("a", `v${"0.2.33"}`, "version");
     version.href = "https://raw.githubusercontent.com/mljpa/fut-sbc-dist/main/fut-sbc.user.js";
     version.target = "_blank";
     version.rel = "noopener noreferrer";
@@ -58488,11 +58583,10 @@ button:disabled { opacity:.5; cursor:default; }
       render();
       try {
         const referenceIds = referenceItems(set).map((item) => item.definitionId);
-        const missingIds = referenceIds.filter((id) => !set.cards.some((card) => card.definitionId === id));
-        if (missingIds.length) {
-          const extra = await conceptCardsByIdsPartial(missingIds);
+        if (referenceIds.length) {
+          const extra = await conceptCardsByIdsPartial(referenceIds);
           if (requestId !== priceRequestId || selected !== set) return;
-          set.cards.push(...extra);
+          set.cards = [...new Map([...set.cards, ...extra].map((card) => [card.definitionId, card])).values()];
           for (const card of extra) {
             rememberCard(card);
             if (card.isCollected) owned.add(card.definitionId);
@@ -58888,6 +58982,7 @@ button:disabled { opacity:.5; cursor:default; }
         renderTrade();
         return;
       }
+      const calculatedGrades = completedGalleryGrades(owned, [...knownCards.values()]);
       const tools = el("div", void 0, "tools");
       if (selected) tools.append(button("\u2190 Colecciones", () => {
         priceRequestId++;
@@ -59011,24 +59106,31 @@ button:disabled { opacity:.5; cursor:default; }
         body.append(el("p", `${shown.length} de ${sets.length} colecciones \xB7 progreso estimado`, "set-count"));
         const grid = el("div", void 0, "grid");
         for (const set of shown) {
-          const got2 = setProgress(set, owned);
+          const track2 = collectionGradeTrack(set, owned, calculatedGrades[String(set.catalogId)] ?? null);
+          const got2 = track2.obtained;
           const pct = set.requiredCards ? Math.round(got2 / set.requiredCards * 100) : 0;
           const card = el("div", void 0, "set-card");
           card.append(button(set.name, () => {
             void openSet(set);
           }, "set-title"));
+          card.append(el("small", track2.grade ? `Tus cartas: grado ${track2.grade} estimado` : `${got2 >= set.requiredCards ? "Grado por determinar" : "En progreso"} \xB7 ${got2}/${set.requiredCards} cartas`));
           const grades = el("div", void 0, "tabs grade-tabs");
           for (const option of galleryGradeOptions(set.catalogId, owned, confirmedClaims)) {
             const grade = button(`${option.grade}${option.completed ? " \u2713" : ""}`, () => {
               void openSet(set, option.grade);
             });
             grade.title = `${option.accumulatedTokens} fichas acumuladas${option.available ? "" : " \xB7 sin alineaci\xF3n publicada"}`;
+            if (option.grade === track2.grade) {
+              grade.classList.add("current-grade");
+              grade.setAttribute("aria-current", "step");
+              grade.title += " \xB7 tu grado estimado";
+            }
             grades.append(grade);
           }
           card.append(grades);
           const leagueId = set.cards[0]?.leagueId;
           if (leagues.length > 1 && leagueId && LEAGUE_NAMES[leagueId]) card.append(el("small", LEAGUE_NAMES[leagueId]));
-          card.append(el("small", `${got2}/${set.requiredCards} cartas`));
+          if (track2.grade) card.append(el("small", `${got2}/${set.requiredCards} cartas`));
           const bar = el("div", void 0, "bar");
           const fill = el("span");
           fill.style.width = `${pct}%`;
@@ -59050,7 +59152,18 @@ button:disabled { opacity:.5; cursor:default; }
         } else body.append(grid);
         return;
       }
-      const got = setProgress(selected, owned);
+      const track = collectionGradeTrack(selected, owned, calculatedGrades[String(selected.catalogId)] ?? null);
+      const got = track.obtained;
+      const progress = el("div", void 0, "grade-track");
+      progress.append(el("strong", track.grade ? `Tu grado estimado: ${track.grade}` : `${got >= selected.requiredCards ? "Grado por determinar" : "En progreso"} \xB7 ${got}/${selected.requiredCards} cartas`));
+      if (track.nextGrade) progress.append(el("small", track.nextMissing === null ? `Siguiente: ${track.nextGrade} \xB7 sin alineaci\xF3n publicada` : `${track.nextGrade}: ${track.nextMissing} cartas de la alineaci\xF3n FUT.GG por obtener${track.nextTokens ? ` \xB7 +${fmt(track.nextTokens)} fichas` : ""}`));
+      else progress.append(el("small", "\u2713 Grado m\xE1ximo estimado"));
+      const refreshProgress = button(priceLoading ? "Actualizando\u2026" : "Actualizar progreso", () => {
+        void openSet(selected, plannedGrade);
+      });
+      refreshProgress.disabled = busy || priceLoading;
+      progress.append(refreshProgress);
+      body.append(progress);
       body.append(el("p", `${got}/${selected.requiredCards} cartas registradas \xB7 ${Math.max(0, selected.requiredCards - got)} cupos pendientes${selected.verified ? "" : " (elegibilidad aproximada)"}`, "metric"));
       if (!category?.leagueSets && !category?.rarities) {
         const leaguesCategory = CATEGORIES.find((candidate) => candidate.leagueSets);
@@ -59067,6 +59180,12 @@ button:disabled { opacity:.5; cursor:default; }
         });
         grade.title = `${option.accumulatedTokens} fichas acumuladas`;
         if (option.grade === plannedGrade) grade.classList.add("active");
+        grade.setAttribute("aria-pressed", String(option.grade === plannedGrade));
+        if (option.grade === track.grade) {
+          grade.classList.add("current-grade");
+          grade.setAttribute("aria-current", "step");
+          grade.title += " \xB7 tu grado estimado";
+        }
         gradeTabs.append(grade);
       }
       body.append(gradeTabs);
@@ -59086,7 +59205,7 @@ button:disabled { opacity:.5; cursor:default; }
         }));
         target.append(marks);
         body.append(target);
-        body.append(el("p", "La marca guarda tu avance; actualiza el saldo despu\xE9s de canjear en consola.", "note"));
+        body.append(el("p", "Grado estimado por tus cartas \xB7 \u2713 es tu marca de completado, no una lectura del canje.", "note"));
         const unresolved = targetOption.missingItems.filter((item) => !selected.cards.some((card) => card.definitionId === item.definitionId));
         if (unresolved.length) body.append(el("p", `EA a\xFAn no carg\xF3 ${unresolved.length} cartas sugeridas: ${unresolved.map((item) => item.definitionId).join(", ")}.`, "note"));
       }
