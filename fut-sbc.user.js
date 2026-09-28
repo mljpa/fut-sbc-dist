@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         FUT SBC Solver v2
 // @namespace    https://github.com/mljpa/fut-sbc-solver-v2
-// @version      0.2.31
+// @version      0.2.32
 // @description  Userscript to solve EA SPORTS FC 26 SBCs with your own club
 // @match        https://www.ea.com/*/ea-sports-fc/ultimate-team/web-app*
 // @match        https://www.ea.com/ea-sports-fc/ultimate-team/web-app*
@@ -57903,106 +57903,6 @@ Consume las cartas que use. Esto NO se puede deshacer.
     }).map(({ set }) => set);
   }
 
-  // src/gallery/budget-plan.ts
-  function claimedTokens(set, claimed) {
-    const index = set.grades.findIndex((grade) => grade.name === claimed[String(set.id)]);
-    return index < 0 ? 0 : set.grades.slice(0, index + 1).reduce((sum, grade) => sum + grade.tokens, 0);
-  }
-  function percent(count, tiers2) {
-    return tiers2.reduce((rate, [minimum, value]) => count >= minimum ? value : rate, 0);
-  }
-  var GROUP_TIERS = [[5, 1], [10, 2], [20, 4]];
-  function groupBonus(items, key, tiers2, distinct) {
-    const groups = /* @__PURE__ */ new Map();
-    for (const item of items) {
-      const id = key(item.card);
-      if (id > 0) groups.set(id, [...groups.get(id) ?? [], item]);
-    }
-    if (distinct) {
-      const selected = [...groups.values()].map((group) => group.sort((a, b) => b.score - a.score)[0]);
-      return Math.floor(selected.reduce((total, item) => total + item.score, 0) * percent(selected.length, tiers2) / 100);
-    }
-    return Math.max(0, ...[...groups.values()].map((group) => Math.floor(
-      group.reduce((total, item) => total + item.score, 0) * percent(group.length, tiers2) / 100
-    )));
-  }
-  function tagBonus(items) {
-    const tag = (predicate, tiers2) => {
-      const matched = items.filter((item) => predicate(item.card));
-      return Math.floor(matched.reduce((total, item) => total + item.score, 0) * percent(matched.length, tiers2) / 100);
-    };
-    const nation = (card) => card.nationId ?? 0;
-    const club = (card) => card.teamId;
-    const league = (card) => card.leagueId;
-    const bonuses = [
-      groupBonus(items, nation, GROUP_TIERS, false),
-      groupBonus(items, nation, GROUP_TIERS, true),
-      groupBonus(items, club, GROUP_TIERS, false),
-      groupBonus(items, club, GROUP_TIERS, true),
-      groupBonus(items, league, [[5, 1], [10, 2], [20, 8]], false),
-      groupBonus(items, league, GROUP_TIERS, true),
-      tag((card) => card.rating >= 75, GROUP_TIERS),
-      tag((card) => card.rarityId === 12, [[2, 8], [4, 12], [6, 20]]),
-      tag((card) => card.rarityId === 72, [[2, 8], [4, 12], [6, 20]]),
-      tag((card) => card.rarityId === 3, [[3, 4], [6, 8], [10, 15]])
-    ];
-    return bonuses.sort((a, b) => b - a).slice(0, 10).reduce((total, bonus) => total + bonus, 0);
-  }
-  function completedGalleryGrades(recorded, cards = []) {
-    const result = {};
-    const knownScores = /* @__PURE__ */ new Map();
-    for (const set of catalog_snapshot_default.sets) for (const tier2 of set.costTiers) for (const item of tier2.items)
-      knownScores.set(item.definitionId, Math.max(knownScores.get(item.definitionId) ?? 0, item.score));
-    for (const set of catalog_snapshot_default.sets) {
-      const complete = set.costTiers.filter((tier2) => tier2.items.length === set.requiredCards && tier2.items.every((item) => recorded.has(item.definitionId)));
-      const highest = complete.sort((a, b) => set.grades.findIndex((grade) => grade.name === b.grade) - set.grades.findIndex((grade) => grade.name === a.grade))[0];
-      if (highest) result[String(set.id)] = highest.grade;
-      const recommended = "recommended" in set ? set.recommended : void 0;
-      if (recommended && recommended.items.length === set.requiredCards && recommended.items.every((item) => recorded.has(item.definitionId))) {
-        const grade = [...set.grades].reverse().find((candidate) => recommended.totalScore >= candidate.threshold);
-        if (grade && set.grades.findIndex((candidate) => candidate.name === grade.name) > set.grades.findIndex((candidate) => candidate.name === result[String(set.id)]))
-          result[String(set.id)] = grade.name;
-      }
-    }
-    if (!cards.length) return result;
-    for (const category of CATEGORIES) for (const set of buildSets(category, [...cards])) {
-      const scored = set.cards.filter((card) => recorded.has(card.definitionId)).map((card) => ({ card, score: card.gradingScore || knownScores.get(card.definitionId) || 0 })).filter((item) => item.score > 0).sort((a, b) => b.score - a.score).slice(0, set.requiredCards);
-      if (scored.length < set.requiredCards) continue;
-      const score = scored.reduce((total, item) => total + item.score, 0) + tagBonus(scored);
-      const grade = [...set.grades].reverse().find((candidate) => score >= candidate.threshold);
-      if (!grade) continue;
-      const previousIndex = set.grades.findIndex((candidate) => candidate.name === result[String(set.catalogId)]);
-      const nextIndex = set.grades.findIndex((candidate) => candidate.name === grade.name);
-      if (nextIndex > previousIndex) result[String(set.catalogId)] = grade.name;
-    }
-    return result;
-  }
-  function claimedGalleryTokens(claimed) {
-    return catalog_snapshot_default.sets.reduce((total, set) => total + claimedTokens(set, claimed), 0);
-  }
-  function nearbyGalleryCardIds(recorded, grades, maxMissing = 5, maxIds = 200) {
-    const candidates = catalog_snapshot_default.sets.flatMap((set) => set.costTiers.filter((tier2) => tier2.items.length === set.requiredCards && tier2.tokens > claimedTokens(set, grades)).map((tier2) => ({ tier: tier2, missing: tier2.items.map((item) => item.definitionId).filter((id) => !recorded.has(id)) })).filter(({ missing }) => missing.length > 0 && missing.length <= maxMissing));
-    candidates.sort((a, b) => a.missing.length - b.missing.length || b.tier.tokens - a.tier.tokens);
-    const ids = /* @__PURE__ */ new Set();
-    for (const { missing } of candidates) {
-      for (const id of missing) if (ids.size < maxIds) ids.add(id);
-      if (ids.size >= maxIds) break;
-    }
-    return [...ids];
-  }
-  function galleryTokenProgress(availableInStore, target) {
-    const total = availableInStore;
-    return { total, remaining: Math.max(0, target - total) };
-  }
-
-  // src/gallery/token-balance.ts
-  function readGalleryTokenBalance(source = globalThis.services) {
-    const eventToken = source?.EventToken;
-    if (!eventToken?.areDefinitionsLoaded?.() || eventToken.getDefinition?.("EVENT_TOKEN_1")?.displayName !== "Gallery Token") return null;
-    const balance = eventToken.getBalance?.("EVENT_TOKEN_1");
-    return typeof balance === "number" && Number.isSafeInteger(balance) && balance >= 0 ? balance : null;
-  }
-
   // src/gallery/claim-tracking.ts
   var KEY2 = "fut-sbc-gallery:confirmed-claims:fc27";
   var GRADES = ["D", "C", "B", "A", "S"];
@@ -58020,30 +57920,6 @@ Consume las cartas que use. Esto NO se puede deshacer.
       (storage3 ?? localStorage).setItem(KEY2, JSON.stringify(claims));
     } catch {
     }
-  }
-  function galleryClaimRows(recorded, calculated, confirmed) {
-    return catalog_snapshot_default.sets.map((set) => {
-      const calculatedGrade = calculated[String(set.id)] ?? null;
-      const confirmedGrade = confirmed[String(set.id)] ?? null;
-      const gradeIndex = (name) => set.grades.findIndex((grade) => grade.name === name);
-      const tokensThrough = (name) => set.grades.slice(0, gradeIndex(name) + 1).reduce((sum, grade) => sum + grade.tokens, 0);
-      const calculatedIndex = gradeIndex(calculatedGrade);
-      const confirmedIndex = gradeIndex(confirmedGrade);
-      const claimState = confirmedIndex >= 0 && confirmedIndex >= calculatedIndex ? "confirmed" : calculatedIndex < 0 ? "not-ready" : confirmedIndex >= 0 ? "pending" : "unverified";
-      const better = set.costTiers.filter((tier2) => tier2.items.length === set.requiredCards && gradeIndex(tier2.grade) > calculatedIndex && tier2.tokens > tokensThrough(calculatedGrade)).map((tier2) => ({ tier: tier2, missing: tier2.items.filter((item) => !recorded.has(item.definitionId)).length })).sort((a, b) => a.missing - b.missing || b.tier.tokens - a.tier.tokens)[0];
-      return {
-        setId: set.id,
-        name: set.name,
-        category: set.category,
-        calculatedGrade,
-        confirmedGrade,
-        claimState,
-        potentialTokens: Math.max(0, tokensThrough(calculatedGrade) - tokensThrough(confirmedGrade)),
-        nextGrade: better?.tier.grade ?? null,
-        nextMissing: better?.missing ?? null,
-        nextTokens: better ? Math.max(0, better.tier.tokens - tokensThrough(calculatedGrade)) : 0
-      };
-    });
   }
 
   // src/gallery/grade-route.ts
@@ -58073,70 +57949,6 @@ Consume las cartas que use. Esto NO se puede deshacer.
         unpricedCards: missingItems.filter((item) => item.price === null).length
       };
     });
-  }
-  function costs(prices) {
-    let loss = 0;
-    let coins = 0;
-    for (const price of [...prices].sort((a, b) => b - a)) {
-      coins = Math.max(coins, price + loss);
-      loss += price * 0.05;
-    }
-    return { coins: Math.ceil(coins), tax: Math.ceil(loss) };
-  }
-  function compare(a, b) {
-    return a.coins - b.coins || a.tax - b.tax || a.prices.size - b.prices.size || a.steps.length - b.steps.length || a.gained - b.gained;
-  }
-  function selectGradeRoute(options, need, budget = null) {
-    const empty = {
-      sets: [],
-      gainedTokens: 0,
-      uniqueCards: 0,
-      coinsNeeded: 0,
-      tax: 0,
-      unpricedCards: 0,
-      reachesGoal: need === 0
-    };
-    if (need === 0 || need === null && budget === null) return empty;
-    const groups = /* @__PURE__ */ new Map();
-    for (const option of options) {
-      if (!option.available || option.completed || option.tokens <= 0 || option.unpricedCards) continue;
-      groups.set(option.setId, [...groups.get(option.setId) ?? [], option]);
-    }
-    const limit = need ?? [...groups.values()].reduce((sum, group) => sum + Math.max(...group.map((option) => option.tokens)), 0);
-    let states = /* @__PURE__ */ new Map([[0, [{ steps: [], prices: /* @__PURE__ */ new Map(), gained: 0, coins: 0, tax: 0 }]]]);
-    for (const group of groups.values()) {
-      const next = new Map([...states].map(([tokens, paths]) => [tokens, [...paths]]));
-      for (const paths of states.values()) for (const path of paths) for (const option of group) {
-        const prices = new Map(path.prices);
-        for (const item of option.missingItems) prices.set(item.definitionId, Math.max(prices.get(item.definitionId) ?? 0, item.price));
-        const cost = costs(prices.values());
-        if (budget !== null && cost.coins > budget) continue;
-        const candidate = { steps: [...path.steps, option], prices, gained: path.gained + option.tokens, ...cost };
-        const key = Math.min(limit, candidate.gained);
-        const alternatives = [...next.get(key) ?? [], candidate].sort(compare);
-        const unique = new Map(alternatives.map((entry) => [entry.steps.map((step) => `${step.setId}:${step.grade}`).join(","), entry]));
-        next.set(key, [...unique.values()].slice(0, 2));
-      }
-      states = next;
-    }
-    const max = Math.max(...states.keys());
-    const best = states.get(max).sort(compare)[0];
-    return {
-      sets: best.steps,
-      gainedTokens: best.gained,
-      uniqueCards: best.prices.size,
-      coinsNeeded: best.coins,
-      tax: best.tax,
-      unpricedCards: 0,
-      reachesGoal: need !== null && best.gained >= need
-    };
-  }
-  function galleryGradeRoute(owned, completed, balance, target, budget = null) {
-    return selectGradeRoute(
-      catalog_snapshot_default.sets.flatMap((set) => galleryGradeOptions(set.id, owned, completed)),
-      target === null ? null : Math.max(0, target - balance),
-      budget
-    );
   }
 
   // src/gallery/index.ts
@@ -58210,40 +58022,6 @@ button:disabled { opacity:.5; cursor:default; }
 .set-card small { color:var(--muted); }
 .category-link:hover,.set-card:hover { border-color:var(--accent); }
 .category-link:focus-visible,.set-card:focus-visible { outline:2px solid var(--accent); outline-offset:2px; }
-.plan-controls { display:flex; flex-wrap:wrap; align-items:end; gap:10px; margin:12px 0 14px; }
-.plan-controls label { display:flex; flex-direction:column; gap:4px; color:var(--muted); font-size:12px; }
-.plan-controls input { width:150px; height:38px; padding:7px 9px; background:var(--bg); color:var(--fg); border:1px solid var(--line); border-radius:5px; font-size:14px; }
-.plan-controls button,.route-balance button { height:38px; border:1px solid var(--line); border-radius:5px; padding:7px 10px; background:var(--bg); color:var(--fg); }
-.route-progress { margin:10px 0 14px; padding:16px 18px; background:var(--soft); border:1px solid var(--line); border-radius:6px; }
-.route-progress-main { display:flex; align-items:baseline; justify-content:space-between; gap:8px 20px; flex-wrap:wrap; }
-.route-progress-main strong { font-size:28px; line-height:1.1; font-variant-numeric:tabular-nums; }
-.route-progress-main span { font-weight:650; color:var(--accent); }
-.route-progress .bar { margin:11px 0 7px; height:9px; }
-.route-progress small { color:var(--muted); }
-.route-sync-gain { color:var(--accent); font-size:13px; font-weight:650; }
-.route-balance { display:flex; align-items:center; gap:8px; flex-wrap:wrap; margin:4px 0 12px; color:var(--muted); font-size:12px; }
-.route-balance button { height:auto; padding:4px 8px; }
-.route-update { border:1px solid var(--line); border-radius:5px; padding:6px 10px; background:var(--bg); color:var(--fg); }
-.route-update:focus-visible,.route-balance button:focus-visible { outline:2px solid var(--accent); outline-offset:2px; }
-.route-summary { display:flex; flex-wrap:wrap; gap:5px 18px; margin:0 0 10px; font-size:13px; }
-.route-summary strong { color:var(--fg); }
-.route-details { margin:0 0 12px; color:var(--muted); font-size:12px; }
-.route-details summary { cursor:pointer; }
-.route-details p { margin:6px 0 0; }
-.plan-list { display:flex; flex-direction:column; gap:8px; }
-.plan-set { border:1px solid var(--line); border-radius:6px; background:var(--soft); padding:12px 14px; }
-.plan-set.ready,.plan-set.complete { border-color:var(--accent); background:color-mix(in srgb,var(--accent) 8%,var(--bg)); }
-.plan-set.ready .plan-state,.plan-set.complete .plan-state { color:var(--accent); font-weight:650; }
-.plan-set-head { display:flex; flex-wrap:wrap; align-items:center; gap:8px 12px; }
-.plan-set-head div { flex:1; min-width:0; }
-.plan-set-head strong,.plan-set-head small { display:block; }
-.plan-set-head small { color:var(--muted); }
-.plan-set button { border:1px solid var(--line); border-radius:5px; padding:6px 9px; background:var(--bg); color:var(--fg); }
-.plan-set button:hover { border-color:var(--accent); }
-.plan-set strong { font-size:14px; }
-.plan-items { margin:10px 0 0; padding:8px 0 0 24px; border-top:1px solid var(--line); display:grid; grid-template-columns:repeat(auto-fit,minmax(190px,1fr)); gap:4px 14px; }
-.plan-items li { padding-right:8px; }
-.plan-items small { color:var(--muted); }
 .metric { color:var(--muted); }
 .bar { width:100%; height:7px; overflow:hidden; border-radius:4px; background:var(--line); }
 .bar span { display:block; height:100%; background:var(--accent); }
@@ -58388,7 +58166,7 @@ button:disabled { opacity:.5; cursor:default; }
     const style = el("style");
     style.textContent = CSS2;
     let suppressLauncherClick = false;
-    const launcher = button("Mi Gallery", () => {
+    const launcher = button("Colecciones", () => {
       if (!suppressLauncherClick) open();
     });
     launcher.className = "launcher";
@@ -58397,10 +58175,10 @@ button:disabled { opacity:.5; cursor:default; }
     const panel = el("section", void 0, "panel");
     panel.setAttribute("role", "dialog");
     panel.setAttribute("aria-modal", "true");
-    panel.setAttribute("aria-label", "Mi Gallery");
+    panel.setAttribute("aria-label", "Colecciones");
     const head = el("div", void 0, "head");
-    const title = el("h2", "Mi Gallery");
-    const version = el("a", `v${"0.2.31"}`, "version");
+    const title = el("h2", "Colecciones");
+    const version = el("a", `v${"0.2.32"}`, "version");
     version.href = "https://raw.githubusercontent.com/mljpa/fut-sbc-dist/main/fut-sbc.user.js";
     version.target = "_blank";
     version.rel = "noopener noreferrer";
@@ -58492,7 +58270,6 @@ button:disabled { opacity:.5; cursor:default; }
     launcher.addEventListener("pointercancel", finishDrag);
     const savedPreferences = loadGalleryPreferences();
     let confirmedClaims = loadConfirmedClaims();
-    const routeDebug = window;
     let owned = loadLedger();
     const knownCards = new Map(loadCachedGalleryCards().map((card) => [card.definitionId, card]));
     function rememberCard(card) {
@@ -58513,10 +58290,7 @@ button:disabled { opacity:.5; cursor:default; }
     let categoryCards = [];
     let sets = [];
     let selected = null;
-    let plannerOpen = false;
-    let returnToPlan = false;
     let plannedGrade = null;
-    let routeCache = null;
     function markGrade(setId, grade) {
       const next = { ...confirmedClaims };
       if (grade === null) delete next[String(setId)];
@@ -58530,18 +58304,8 @@ button:disabled { opacity:.5; cursor:default; }
     let collectionFilter = savedPreferences.collectionFilter;
     let collectionSort = savedPreferences.collectionSort;
     let cardSort = savedPreferences.cardSort;
-    let galleryTokenBalance = savedPreferences.galleryTokenBalance;
-    let galleryBalanceMode = savedPreferences.galleryBalanceMode;
-    let galleryTokenTarget = savedPreferences.galleryTokenTarget;
-    let galleryPlannerMode = savedPreferences.galleryPlannerMode;
-    let galleryCoinBudget = savedPreferences.galleryCoinBudget;
-    let routeFilter = savedPreferences.routeFilter;
     let leagueFilter = null;
     let busy = false;
-    let lastNearbyRefreshAt = 0;
-    let nearbyBackoffUntil = 0;
-    let routeSyncNote = "";
-    let routeSyncGain = 0;
     let tradeView = false;
     let advancedTradeOpen = savedPreferences.advancedTradeOpen;
     let chosen = /* @__PURE__ */ new Set();
@@ -58563,7 +58327,7 @@ button:disabled { opacity:.5; cursor:default; }
     let status = "Sincroniza el club para registrar las cartas que tienes ahora. El historial queda guardado en este navegador.";
     let error = false;
     function persistPreferences() {
-      const safe = decodeGalleryPreferences({ trade: tradeSettings, collectionFilter, collectionSort, cardSort, advancedTradeOpen, galleryTokenBalance, galleryBalanceMode, galleryTokenTarget, galleryPlannerMode, galleryCoinBudget, routeFilter });
+      const safe = decodeGalleryPreferences({ ...savedPreferences, trade: tradeSettings, collectionFilter, collectionSort, cardSort, advancedTradeOpen });
       tradeSettings = { ...tradeSettings, ...safe.trade };
       saveGalleryPreferences(safe);
     }
@@ -58579,19 +58343,7 @@ button:disabled { opacity:.5; cursor:default; }
     function open() {
       backdrop.classList.add("open");
       render();
-      if (plannerOpen) void refreshRouteCollection();
     }
-    let observedEaTokenBalance = readGalleryTokenBalance();
-    const balanceTimer = window.setInterval(() => {
-      if (!backdrop.classList.contains("open") || !plannerOpen || selected || tradeView) return;
-      void refreshRouteCollection();
-      const balance = readGalleryTokenBalance();
-      if (balance === observedEaTokenBalance) return;
-      observedEaTokenBalance = balance;
-      const scroll = body.scrollTop;
-      render();
-      body.scrollTop = scroll;
-    }, 3e3);
     function cancelTradeConfirmation() {
       if (tradeDialog?.running) {
         confirmBackdrop.classList.remove("open");
@@ -58652,90 +58404,8 @@ button:disabled { opacity:.5; cursor:default; }
         render();
       }
     }
-    async function refreshGalleryCollection() {
-      if (busy) return;
-      lastNearbyRefreshAt = Date.now();
-      const before = claimedGalleryTokens(completedGalleryGrades(owned, [...knownCards.values()]));
-      busy = true;
-      let added = 0;
-      let clubError = "";
-      let conceptError = "";
-      status = "Actualizando cartas del club y sets cercanos\u2026";
-      render();
-      try {
-        const { players, items } = await fetchClubPlayers();
-        if (!players.length) throw new Error("EA no devolvi\xF3 cartas del club");
-        current = new Set(players.map((player) => player.definitionId));
-        for (const id of current) if (!owned.has(id)) {
-          owned.add(id);
-          added++;
-        }
-        for (const raw of items.values()) {
-          const card = galleryCardFromRaw(raw);
-          if (card) rememberCard(card);
-        }
-      } catch (cause) {
-        clubError = cause instanceof Error ? cause.message : String(cause);
-      }
-      try {
-        const ids = nearbyGalleryCardIds(owned, completedGalleryGrades(owned, [...knownCards.values()]), 5, 80);
-        for (const card of await conceptCardsByIdsPartial(ids)) {
-          rememberCard(card);
-          if (card.isCollected && !owned.has(card.definitionId)) {
-            owned.add(card.definitionId);
-            added++;
-          }
-        }
-        nearbyBackoffUntil = 0;
-      } catch (cause) {
-        conceptError = cause instanceof Error ? cause.message : String(cause);
-        nearbyBackoffUntil = Date.now() + 10 * 6e4;
-      }
-      if (added) saveLedger(owned);
-      busy = false;
-      const gain = claimedGalleryTokens(completedGalleryGrades(owned, [...knownCards.values()])) - before;
-      routeSyncGain = Math.max(0, gain);
-      routeSyncNote = conceptError ? "EA no respondi\xF3 a la revisi\xF3n de conceptos. La ruta usa datos anteriores; verifica un set antes de comprar." : `${added} cartas nuevas \xB7 ${gain > 0 ? `+${fmt(gain)} fichas potenciales` : "sin nuevo grado estimado"}`;
-      setStatus(clubError || conceptError ? `Revisi\xF3n parcial: ${[clubError, conceptError].filter(Boolean).join(" \xB7 ")}` : `Colecci\xF3n actualizada: ${added} cartas nuevas registradas.`, Boolean(clubError || conceptError));
-    }
-    function refreshRouteCollection() {
-      if (busy || !plannerOpen || !backdrop.classList.contains("open") || selected || tradeView) return;
-      void refreshNearbyCollection();
-    }
-    async function refreshNearbyCollection() {
-      if (busy || !plannerOpen || !backdrop.classList.contains("open") || selected || tradeView || Date.now() < nearbyBackoffUntil || Date.now() - lastNearbyRefreshAt < 18e4) return;
-      lastNearbyRefreshAt = Date.now();
-      const before = claimedGalleryTokens(completedGalleryGrades(owned, [...knownCards.values()]));
-      const ids = nearbyGalleryCardIds(owned, completedGalleryGrades(owned, [...knownCards.values()]), 5, 80);
-      if (!ids.length) return;
-      busy = true;
-      routeSyncGain = 0;
-      routeSyncNote = `Revisando ${fmt(ids.length)} cartas cercanas\u2026`;
-      render();
-      try {
-        let added = 0;
-        for (const card of await conceptCardsByIdsPartial(ids)) {
-          rememberCard(card);
-          if (card.isCollected && !owned.has(card.definitionId)) {
-            owned.add(card.definitionId);
-            added++;
-          }
-        }
-        if (added) saveLedger(owned);
-        const gain = claimedGalleryTokens(completedGalleryGrades(owned, [...knownCards.values()])) - before;
-        routeSyncGain = Math.max(0, gain);
-        routeSyncNote = added || gain > 0 ? `${added} cartas nuevas \xB7 ${gain > 0 ? `+${fmt(gain)} fichas potenciales` : "grado pendiente de verificar"}` : "Colecci\xF3n revisada \xB7 sin cambios";
-      } catch (cause) {
-        nearbyBackoffUntil = Date.now() + 10 * 6e4;
-        routeSyncNote = "EA no respondi\xF3 a la revisi\xF3n de conceptos. La ruta usa datos anteriores; verifica un set antes de comprar.";
-      } finally {
-        busy = false;
-        render();
-      }
-    }
     async function loadCategory(next, force = false) {
       if (busy) return;
-      plannerOpen = false;
       priceRequestId++;
       priceLoading = false;
       category = next;
@@ -58774,27 +58444,6 @@ button:disabled { opacity:.5; cursor:default; }
         busy = false;
         render();
       }
-    }
-    async function openPlannedSet(item) {
-      const categoryId = {
-        "premier-league": "eng",
-        laliga: "esp",
-        bundesliga: "ger",
-        "ligue-1": "fra",
-        "serie-a": "ita",
-        leagues: "leagues",
-        rarities: "rarities"
-      };
-      const next = CATEGORIES.find((entry) => entry.id === categoryId[item.category]);
-      if (!next) return;
-      await loadCategory(next);
-      const set = sets.find((entry) => entry.catalogId === item.setId);
-      if (!set) {
-        setStatus(`No se pudo abrir ${item.name} en el cat\xE1logo de EA.`, true);
-        return;
-      }
-      returnToPlan = true;
-      await openSet(set, item.grade || void 0);
     }
     function tradeReference(id) {
       const enhancer = prices.get(id);
@@ -59233,26 +58882,20 @@ button:disabled { opacity:.5; cursor:default; }
       body.replaceChildren();
       footer.replaceChildren();
       panel.classList.toggle("trade-panel", tradeView);
-      title.textContent = tradeView ? `Comprar ${playerCount(chosen.size)}` : selected?.name ?? category?.name ?? "Mi Gallery";
+      title.textContent = tradeView ? `Comprar ${playerCount(chosen.size)}` : selected?.name ?? category?.name ?? "Colecciones";
       if (tradeView) {
         body.append(el("p", status, `status${error ? " error" : ""}`));
         renderTrade();
         return;
       }
       const tools = el("div", void 0, "tools");
-      if (selected) tools.append(button(returnToPlan ? "\u2190 Mi ruta" : "\u2190 Colecciones", () => {
+      if (selected) tools.append(button("\u2190 Colecciones", () => {
         priceRequestId++;
         priceLoading = false;
         selected = null;
         tradeView = false;
         chosen.clear();
         prices.clear();
-        if (returnToPlan) {
-          category = null;
-          sets = [];
-          plannerOpen = true;
-          returnToPlan = false;
-        }
         render();
       }, "back"));
       else if (category) tools.append(button("\u2190 Categor\xEDas", () => {
@@ -59276,164 +58919,6 @@ button:disabled { opacity:.5; cursor:default; }
       body.append(tools);
       if (busy || error || selected) body.append(el("p", status, `status${error ? " error" : ""}`));
       if (!category) {
-        const homeTabs = el("div", void 0, "tabs");
-        for (const [label, openPlan] of [["Colecciones", false], ["Mi ruta", true]]) {
-          const tabButton = button(label, () => {
-            plannerOpen = openPlan;
-            render();
-            if (openPlan) refreshRouteCollection();
-          });
-          if (plannerOpen === openPlan) tabButton.classList.add("active");
-          homeTabs.append(tabButton);
-        }
-        body.append(homeTabs);
-        if (plannerOpen) {
-          const mode2 = el("div", void 0, "tabs");
-          for (const [label, value] of [["Meta de fichas", "target"], ["Saldo de monedas", "coins"]]) {
-            const tabButton = button(label, () => {
-              galleryPlannerMode = value;
-              persistPreferences();
-              render();
-            });
-            if (galleryPlannerMode === value) tabButton.classList.add("active");
-            mode2.append(tabButton);
-          }
-          body.append(mode2);
-          const controls = el("div", void 0, "plan-controls");
-          const numberField = (label, value, change) => {
-            const field = el("label", label);
-            const input = el("input");
-            input.type = "number";
-            input.min = "0";
-            input.step = "1";
-            input.value = value === null ? "" : String(value);
-            input.placeholder = value === null ? "Sin l\xEDmite" : "";
-            input.addEventListener("change", () => {
-              const next = input.value.trim() === "" ? null : Number(input.value);
-              if (next !== null && (!Number.isSafeInteger(next) || next < 0)) return;
-              change(next);
-              persistPreferences();
-              render();
-            });
-            field.append(input);
-            controls.append(field);
-          };
-          const eaTokenBalance = readGalleryTokenBalance();
-          observedEaTokenBalance = eaTokenBalance;
-          const manualBalance = galleryBalanceMode === "manual" || eaTokenBalance === null;
-          const currentTokenBalance = manualBalance ? galleryTokenBalance : eaTokenBalance;
-          if (manualBalance) numberField("Fichas en tienda", galleryTokenBalance, (next) => {
-            galleryTokenBalance = next ?? 0;
-            galleryBalanceMode = "manual";
-          });
-          if (galleryPlannerMode === "target") numberField("Quiero llegar a", galleryTokenTarget, (next) => {
-            galleryTokenTarget = Math.max(1, next ?? 750);
-          });
-          numberField("Monedas disponibles", galleryCoinBudget, (next) => {
-            galleryCoinBudget = next;
-          });
-          body.append(controls);
-          const balanceSource = el("div", void 0, "route-balance");
-          balanceSource.append(el("span", manualBalance ? eaTokenBalance === null ? "Tienda: valor indicado por ti" : `Tienda: valor indicado por ti \xB7 EA lee ${fmt(eaTokenBalance)}` : "Tienda: lectura de EA"));
-          if (eaTokenBalance !== null) {
-            balanceSource.append(button(manualBalance ? "Usar lectura de EA" : "Corregir tienda", () => {
-              if (manualBalance) galleryBalanceMode = "ea";
-              else {
-                galleryBalanceMode = "manual";
-                galleryTokenBalance = eaTokenBalance;
-              }
-              persistPreferences();
-              render();
-            }));
-            if (!manualBalance) balanceSource.append(button("Actualizar", () => {
-              const scroll = body.scrollTop;
-              render();
-              body.scrollTop = scroll;
-            }));
-          }
-          const updateCollection = button(busy ? "Actualizando\u2026" : "Actualizar colecci\xF3n", () => {
-            void refreshGalleryCollection();
-          }, "route-update");
-          updateCollection.disabled = busy;
-          const completedGrades = completedGalleryGrades(owned, [...knownCards.values()]);
-          const claimRows = galleryClaimRows(owned, completedGrades, confirmedClaims);
-          routeDebug.__futGalleryRoute = claimRows;
-          const goal = galleryTokenTarget;
-          const { total: progressTotal, remaining } = galleryTokenProgress(currentTokenBalance, goal);
-          const progress = el("div", void 0, "route-progress");
-          progress.setAttribute("role", "group");
-          progress.setAttribute("aria-label", "Progreso de fichas");
-          const progressMain = el("div", void 0, "route-progress-main");
-          progressMain.append(
-            el("strong", `${fmt(progressTotal)} / ${fmt(goal)}`),
-            el("span", remaining ? `Faltan ${fmt(remaining)}` : "Meta alcanzada")
-          );
-          const progressBar = el("div", void 0, "bar");
-          const progressFill = el("span");
-          progressFill.style.width = `${Math.min(100, goal > 0 ? progressTotal / goal * 100 : 100)}%`;
-          progressBar.append(progressFill);
-          progress.append(progressMain, progressBar);
-          body.append(progress);
-          if (routeSyncNote) body.append(el("p", routeSyncNote, routeSyncGain > 0 ? "route-sync-gain" : "note"));
-          body.append(balanceSource, updateCollection);
-          if (galleryPlannerMode === "coins" && galleryCoinBudget === null) {
-            body.append(el("p", "Ingresa tus monedas disponibles para ver los sets que puedes financiar.", "note"));
-            return;
-          }
-          const key = JSON.stringify([
-            [...owned].sort((a, b) => a - b),
-            confirmedClaims,
-            progressTotal,
-            galleryPlannerMode,
-            galleryTokenTarget,
-            galleryCoinBudget
-          ]);
-          if (routeCache?.key !== key) routeCache = { key, plan: galleryGradeRoute(
-            owned,
-            confirmedClaims,
-            progressTotal,
-            galleryPlannerMode === "coins" ? null : galleryTokenTarget,
-            galleryCoinBudget
-          ) };
-          const route = routeCache.plan;
-          const summary = el("div", void 0, "route-summary");
-          summary.append(
-            el("strong", `Ruta estimada \xB7 +${fmt(route.gainedTokens)} fichas \xB7 ${route.sets.length} etapas`),
-            el("span", `${fmt(route.uniqueCards)} cartas \xB7 ${fmt(route.coinsNeeded)} monedas para compra/reventa \xB7 ${fmt(route.tax)} comisi\xF3n estimada`),
-            button("Ver estados en consola", () => {
-              console.table(claimRows);
-            }, "route-update")
-          );
-          body.append(summary);
-          if (galleryPlannerMode === "target" && !route.reachesGoal)
-            body.append(el("p", `Con estas opciones faltan ${fmt(Math.max(0, remaining - route.gainedTokens))} fichas para la meta.`, "note"));
-          body.append(el("p", "Marca en Colecciones los grados ya completados. Precios FUT.GG de referencia; las cartas obtenidas se descuentan.", "note"));
-          const list = el("div", void 0, "plan-list");
-          for (const step of route.sets) {
-            const item = step;
-            const card = el("div", void 0, "plan-set");
-            const head2 = el("div", void 0, "plan-set-head");
-            const text = el("div");
-            text.append(
-              el("strong", `${item.name} \xB7 ${item.fromGrade ? `${item.fromGrade} \u2192 ` : ""}${item.grade} \xB7 +${fmt(item.tokens)} fichas`),
-              el("small", item.missingItems.length ? `${item.missingItems.length} cartas por obtener \xB7 ${fmt(item.purchaseCoins)} precio total de referencia` : "Cartas registradas \xB7 listo para revisar y canjear")
-            );
-            head2.append(
-              text,
-              button("Ver cartas", () => {
-                void openPlannedSet(item);
-              }),
-              button(`Marcar ${item.grade} completado`, () => {
-                markGrade(item.setId, item.grade);
-              })
-            );
-            card.append(head2);
-            list.append(card);
-          }
-          if (!route.sets.length) list.append(el("p", remaining === 0 && galleryPlannerMode === "target" ? "\u2713 Meta alcanzada" : "Sin etapas disponibles con estos grados y presupuesto.", "empty"));
-          body.append(list);
-          return;
-        }
         body.append(el("p", `${fmt(owned.size)} cartas registradas \xB7 Elige una categor\xEDa para ver equipos y sets.`, "set-count"));
         const grid = el("div", void 0, "grid");
         for (const c of CATEGORIES) {
@@ -59530,13 +59015,11 @@ button:disabled { opacity:.5; cursor:default; }
           const pct = set.requiredCards ? Math.round(got2 / set.requiredCards * 100) : 0;
           const card = el("div", void 0, "set-card");
           card.append(button(set.name, () => {
-            returnToPlan = false;
             void openSet(set);
           }, "set-title"));
           const grades = el("div", void 0, "tabs grade-tabs");
           for (const option of galleryGradeOptions(set.catalogId, owned, confirmedClaims)) {
             const grade = button(`${option.grade}${option.completed ? " \u2713" : ""}`, () => {
-              returnToPlan = false;
               void openSet(set, option.grade);
             });
             grade.title = `${option.accumulatedTokens} fichas acumuladas${option.available ? "" : " \xB7 sin alineaci\xF3n publicada"}`;
@@ -59628,7 +59111,7 @@ button:disabled { opacity:.5; cursor:default; }
         if (missing.length) {
           const gap = Math.max(0, selected.requiredCards - got);
           if (!plannedGrade && missing.length < gap) body.append(el("p", `S\xF3lo hay ${missing.length} cartas candidatas para ${gap} cupos pendientes. Actualiza el cat\xE1logo antes de comprar.`, "status error"));
-          const costs2 = el("div", void 0, "gallery-costs");
+          const costs = el("div", void 0, "gallery-costs");
           const total = referenceTotal(missing, prices);
           const cost = el("div", void 0, "gallery-cost");
           cost.append(el("strong", plannedGrade ? `Grado ${plannedGrade} \xB7 ${playerCount(missing.length)} por obtener` : `${playerCount(missing.length)} sugeridos para completar`));
@@ -59636,8 +59119,8 @@ button:disabled { opacity:.5; cursor:default; }
           if (!priceLoading && total.priced < missing.length)
             cost.append(el("small", `Subtotal de ${total.priced}/${missing.length} cartas con precio.`));
           if (groups?.key.length) cost.append(el("small", `Carta clave: ${groups.key.map((card) => `${card.name} (${prices.has(card.definitionId) ? fmt(prices.get(card.definitionId).price) : "precio pendiente"})`).join(" \xB7 ")}.`));
-          costs2.append(cost);
-          body.append(costs2);
+          costs.append(cost);
+          body.append(costs);
         } else body.append(el("p", plannedGrade ? !targetOption?.available ? "No hay cartas sugeridas para este grado." : targetOption.missingItems.length ? "Quedan cartas por cargar desde EA." : "\u2713 Cartas de esta alineaci\xF3n obtenidas." : got >= selected.requiredCards ? "Ya tienes suficientes cartas para llenar los cupos. Elige un grado para ver su alineaci\xF3n." : "No hay cartas candidatas para llenar los cupos pendientes. Actualiza el cat\xE1logo.", "note"));
         const selectedTotal = referenceTotal(selectedCards, prices);
         const footerCopy = el("div", void 0, "footer-copy");
@@ -59688,9 +59171,7 @@ button:disabled { opacity:.5; cursor:default; }
     }
     void syncClub();
     return { open, destroy() {
-      window.clearInterval(balanceTimer);
       window.removeEventListener("resize", onResize);
-      delete routeDebug.__futGalleryRoute;
       host.remove();
     } };
   }
