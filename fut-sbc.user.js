@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         FUT SBC Solver v2
 // @namespace    https://github.com/mljpa/fut-sbc-solver-v2
-// @version      0.2.49
+// @version      0.2.50
 // @description  Userscript to solve EA SPORTS FC 26 SBCs with your own club
 // @match        https://www.ea.com/*/ea-sports-fc/ultimate-team/web-app*
 // @match        https://www.ea.com/ea-sports-fc/ultimate-team/web-app*
@@ -58834,7 +58834,7 @@ button:disabled { opacity:.5; cursor:default; }
     panel.setAttribute("aria-label", "Colecciones");
     const head = el("div", void 0, "head");
     const title = el("h2", "Colecciones");
-    const version = el("a", `v${"0.2.49"}`, "version");
+    const version = el("a", `v${"0.2.50"}`, "version");
     version.href = "https://raw.githubusercontent.com/mljpa/fut-sbc-dist/main/fut-sbc.user.js";
     version.target = "_blank";
     version.rel = "noopener noreferrer";
@@ -60891,56 +60891,115 @@ button:disabled { opacity:.5; cursor:default; }
         ok: false
       };
     }
+    const MAX_CARDS = 11;
+    const estimatedCost = (p) => {
+      if (cardCost2) return cardCost2(p);
+      const r = p.rating;
+      if (r < 65) return 200;
+      if (r < 75) return 300;
+      if (r <= 80) return 500;
+      if (r === 81) return 650;
+      if (r === 82) return 800;
+      if (r === 83) return 950;
+      if (r === 84) return 2e3;
+      if (r === 85) return 4e3;
+      if (r === 86) return 7e3;
+      return 1e4 + (r - 86) * 5e3;
+    };
     const scored = eligible.map((p) => ({
       player: p,
       score: getItemScore(p.rating),
-      cost: cardCost2 ? cardCost2(p) : 0
+      cost: estimatedCost(p)
     }));
-    if (cardCost2) {
-      scored.sort((a, b) => {
-        if (a.cost !== b.cost) return a.cost - b.cost;
-        return a.player.rating - b.player.rating;
-      });
-    } else {
-      scored.sort((a, b) => a.player.rating - b.player.rating);
-    }
-    const selected = [];
-    let accumulated = 0;
+    scored.sort((a, b) => {
+      const costPerPointA = a.cost / Math.max(1, a.score);
+      const costPerPointB = b.cost / Math.max(1, b.score);
+      if (Math.abs(costPerPointA - costPerPointB) > 0.05) {
+        return costPerPointA - costPerPointB;
+      }
+      return a.cost - b.cost;
+    });
+    let bestSelection = null;
+    let bestCost = Infinity;
+    const current = [];
+    let currentScore = 0;
+    let currentCost = 0;
     for (const candidate of scored) {
-      if (accumulated >= targetScore) break;
-      selected.push(candidate);
-      accumulated += candidate.score;
-    }
-    if (accumulated < targetScore) {
-      const fallbackScored = scored.slice().sort((a, b) => b.score - a.score);
-      selected.length = 0;
-      accumulated = 0;
-      for (const candidate of fallbackScored) {
-        if (accumulated >= targetScore) break;
-        selected.push(candidate);
-        accumulated += candidate.score;
+      if (current.length >= MAX_CARDS && currentScore < targetScore) {
+        break;
+      }
+      current.push(candidate);
+      currentScore += candidate.score;
+      currentCost += candidate.cost;
+      if (currentScore >= targetScore) {
+        break;
       }
     }
-    for (let i = selected.length - 1; i >= 0; i--) {
-      const candidate = selected[i];
-      if (accumulated - candidate.score >= targetScore) {
-        selected.splice(i, 1);
-        accumulated -= candidate.score;
+    if (currentScore >= targetScore) {
+      for (let i = current.length - 1; i >= 0; i--) {
+        const c = current[i];
+        if (currentScore - c.score >= targetScore) {
+          current.splice(i, 1);
+          currentScore -= c.score;
+          currentCost -= c.cost;
+        }
+      }
+      bestSelection = current.slice();
+      bestCost = currentCost;
+    }
+    if (!bestSelection || bestSelection.length > MAX_CARDS) {
+      const byScoreDesc = scored.slice().sort((a, b) => b.score - a.score || a.cost - b.cost);
+      const alt = [];
+      let altScore = 0;
+      let altCost = 0;
+      for (const candidate of byScoreDesc) {
+        if (alt.length >= MAX_CARDS) break;
+        alt.push(candidate);
+        altScore += candidate.score;
+        altCost += candidate.cost;
+        if (altScore >= targetScore) break;
+      }
+      if (altScore >= targetScore) {
+        for (let i = alt.length - 1; i >= 0; i--) {
+          const c = alt[i];
+          if (altScore - c.score >= targetScore) {
+            alt.splice(i, 1);
+            altScore -= c.score;
+            altCost -= c.cost;
+          }
+        }
+        if (!bestSelection || altCost < bestCost) {
+          bestSelection = alt;
+          bestCost = altCost;
+        }
       }
     }
-    if (accumulated < targetScore) {
+    if (!bestSelection) {
+      const fallback = [];
+      let fbScore = 0;
+      for (const c of scored) {
+        fallback.push(c);
+        fbScore += c.score;
+        if (fbScore >= targetScore) break;
+      }
+      if (fbScore >= targetScore) {
+        bestSelection = fallback;
+      }
+    }
+    if (!bestSelection) {
       return {
-        items: selected.map((s) => s.player),
-        totalScore: accumulated,
+        items: [],
+        totalScore: 0,
         targetScore,
         ok: false
       };
     }
-    const items = selected.map((s) => s.player);
+    const items = bestSelection.map((s) => s.player);
+    const totalScore = bestSelection.reduce((sum, s) => sum + s.score, 0);
     const costCoins = cardCost2 ? items.reduce((sum, p) => sum + (cardCost2(p) ?? 0), 0) : void 0;
     return {
       items,
-      totalScore: accumulated,
+      totalScore,
       targetScore,
       ok: true,
       costCoins
