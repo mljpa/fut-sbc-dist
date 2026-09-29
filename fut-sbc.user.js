@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         FUT SBC Solver v2
 // @namespace    https://github.com/mljpa/fut-sbc-solver-v2
-// @version      0.2.53
+// @version      0.2.54
 // @description  Userscript to solve EA SPORTS FC 26 SBCs with your own club
 // @match        https://www.ea.com/*/ea-sports-fc/ultimate-team/web-app*
 // @match        https://www.ea.com/ea-sports-fc/ultimate-team/web-app*
@@ -1442,7 +1442,9 @@
   function noteSubmit() {
     submitTimes.push(Date.now());
   }
-  async function submitChallenge(challenge, selectedItemIds) {
+  async function submitChallenge(challenge, selectedItemIds, options = {}) {
+    const stopped = () => ({ ok: false, stopped: true, reason: "Env\xEDo detenido." });
+    if (options.signal?.aborted) return stopped();
     const blocked = rateLimitReason();
     if (blocked) return { ok: false, reason: blocked };
     const sbc = sbcService();
@@ -1466,6 +1468,7 @@
       };
     }
     const set = await findSet(challenge.setId);
+    if (options.signal?.aborted) return stopped();
     if (!set) {
       return {
         ok: false,
@@ -1498,13 +1501,16 @@
       };
     }
     if (!challenge.isStreamlined && isChemistryMismatch(res.error)) {
+      if (options.signal?.aborted) return stopped();
       const stillBlocked = rateLimitReason();
       if (stillBlocked) {
         return { ok: false, reason: `${stillBlocked} (tras CHEMISTRY_VERSION_MISMATCH)` };
       }
       await delay(CHEM_RETRY_PRE_MS);
+      if (options.signal?.aborted) return stopped();
       await resetChemistry();
       await delay(CHEM_RETRY_POST_MS);
+      if (options.signal?.aborted) return stopped();
       try {
         res = await runSubmit(sbc, eaChallenge, set, chemEnabled);
       } catch (err) {
@@ -4315,7 +4321,7 @@
     const countRow = document.createElement("label");
     countRow.className = "field";
     const countLabel = document.createElement("span");
-    countLabel.textContent = "Soluciones (\xD7N)";
+    countLabel.textContent = "Repeticiones";
     const countInput = document.createElement("input");
     countInput.type = "number";
     countInput.min = "1";
@@ -4407,6 +4413,7 @@
   --accent: #1e7e34;
   --accent-fg: #ffffff;
   --danger: #c0392b;
+  --success: #18732c;
   --shadow: 0 4px 16px rgba(0, 0, 0, 0.18);
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
   font-size: 13px;
@@ -4421,6 +4428,7 @@
     --border: #3c4043;
     --field-bg: #2a2b2e;
     --accent: #2ea043;
+    --success: #6bdc88;
     --shadow: 0 4px 16px rgba(0, 0, 0, 0.55);
   }
 }
@@ -4603,6 +4611,12 @@ input[type="number"] { width: 56px; }
   word-break: break-word;
 }
 .blocker-hint { margin: 10px 0 0; font-size: 11px; color: var(--muted); }
+.blocker-round { padding: 3px 0; }
+.blocker-round.success { color: var(--success); }
+.blocker-round.error { color: var(--danger); }
+.blocker-round.pending, .blocker-round.stopped { color: var(--muted); }
+.repeat-controls { display: flex; align-items: center; gap: 6px; }
+.repeat-controls label { display: flex; align-items: center; gap: 5px; }
 .blocker-actions { display: flex; justify-content: flex-end; margin-top: 12px; }
 
 .card {
@@ -4746,16 +4760,19 @@ ${OPTIONS_CSS}
     const blockerTitle = document.createElement("span");
     blockerTitle.textContent = "Resolviendo y enviando\u2026";
     blockerHead.append(blockerSpinner, blockerTitle);
-    const blockerLog = document.createElement("pre");
+    const blockerLog = document.createElement("div");
     blockerLog.className = "blocker-log";
+    blockerLog.setAttribute("role", "log");
+    blockerLog.setAttribute("aria-live", "polite");
     const blockerHint = document.createElement("p");
     blockerHint.className = "blocker-hint";
     blockerHint.textContent = "No toques nada hasta que termine el ciclo.";
     const blockerActions = document.createElement("div");
     blockerActions.className = "blocker-actions";
     const blockerClose = makeButton("Cerrar");
+    const blockerStop = makeButton("Detener");
     blockerClose.style.display = "none";
-    blockerActions.append(blockerClose);
+    blockerActions.append(blockerStop, blockerClose);
     blockerPanel.append(blockerHead, blockerLog, blockerHint, blockerActions);
     blocker.append(blockerPanel);
     shadow.append(blocker);
@@ -4764,9 +4781,16 @@ ${OPTIONS_CSS}
     }
     blockerClose.addEventListener("click", () => {
       blocker.classList.remove("on");
+      mountHost.style.zIndex = "";
+      if (host.isConnected) host.append(mountHost);
       const fn = onBlockerClose;
       onBlockerClose = null;
       fn?.();
+    });
+    let onBlockerStop = null;
+    blockerStop.addEventListener("click", () => {
+      blockerStop.disabled = true;
+      onBlockerStop?.();
     });
     let settings = loadSettings();
     let busy = false;
@@ -4774,6 +4798,19 @@ ${OPTIONS_CSS}
     let options = null;
     const solveBtn = makeButton("Resolver", "primary");
     const solveNBtn = makeButton(`Resolver \xD7${settings.multiCount}`);
+    const repeatControls = document.createElement("div");
+    repeatControls.className = "repeat-controls";
+    const repeatLabel = document.createElement("label");
+    repeatLabel.textContent = "Veces";
+    const repeatInput = document.createElement("input");
+    repeatInput.type = "number";
+    repeatInput.min = "1";
+    repeatInput.max = "20";
+    repeatInput.step = "1";
+    repeatInput.value = String(settings.multiCount);
+    repeatInput.setAttribute("aria-label", "Repeticiones");
+    repeatLabel.append(repeatInput);
+    repeatControls.append(repeatLabel, solveNBtn);
     const excludeToggle = document.createElement("label");
     excludeToggle.className = "toggle";
     const excludeInput = document.createElement("input");
@@ -4809,7 +4846,7 @@ ${OPTIONS_CSS}
     quick.append(solveBtn);
     bar.append(
       sub,
-      solveNBtn,
+      repeatControls,
       excludeToggle,
       strategySelect,
       combosBtn,
@@ -4820,6 +4857,7 @@ ${OPTIONS_CSS}
     const controls = [
       solveBtn,
       solveNBtn,
+      repeatInput,
       strategySelect,
       combosBtn,
       gearBtn,
@@ -4832,15 +4870,42 @@ ${OPTIONS_CSS}
       for (const c of controls) c.disabled = next;
     }
     let onBlockerClose = null;
-    function showProgress(lines, done, onClose) {
-      blockerLog.textContent = lines.join("\n");
+    function showProgress(progress, onClose, onStop) {
+      const done = !["running", "stopping"].includes(progress.state);
+      if (!blocker.classList.contains("on")) {
+        document.body.append(mountHost);
+        mountHost.style.zIndex = "2147483647";
+      }
+      blockerLog.replaceChildren();
+      for (const round of progress.rounds) {
+        const row = document.createElement("div");
+        row.className = `blocker-round ${round.status}`;
+        const icon = { success: "\u2713", error: "\u2717", pending: "\u25CB", running: "\u25CC", stopped: "\u2212" }[round.status];
+        row.textContent = `${icon} Ronda ${round.round}: ${round.detail}`;
+        blockerLog.append(row);
+      }
+      if (progress.message) {
+        const message = document.createElement("div");
+        message.textContent = progress.message;
+        blockerLog.append(message);
+      }
       blocker.classList.add("on");
       blockerSpinner.classList.toggle("hidden", done);
-      blockerTitle.textContent = done ? "Ciclo terminado" : "Resolviendo y enviando\u2026";
-      blockerHint.textContent = done ? "Al cerrar volv\xE9s a la lista de SBCs." : "No toques nada hasta que termine el ciclo.";
+      const titles = {
+        running: "Resolviendo y enviando\u2026",
+        stopping: "Deteniendo\u2026",
+        completed: "Ciclo terminado",
+        stopped: "Ciclo detenido",
+        failed: "Ciclo interrumpido"
+      };
+      blockerTitle.textContent = `${titles[progress.state]} \xB7 ${progress.completed}/${progress.total}`;
+      blockerHint.textContent = done ? "Al cerrar vuelves a la lista de SBCs." : progress.state === "stopping" ? progress.inFlight ? "Esperando la respuesta del env\xEDo en curso. No se iniciar\xE1 otra ronda." : "Deteniendo antes del pr\xF3ximo env\xEDo." : "Puedes detener el ciclo antes del pr\xF3ximo env\xEDo.";
       blockerClose.textContent = done ? "Cerrar y volver a SBC" : "Cerrar";
       blockerClose.style.display = done ? "" : "none";
+      blockerStop.style.display = done ? "none" : "";
+      blockerStop.disabled = progress.state === "stopping";
       onBlockerClose = onClose ?? null;
+      onBlockerStop = onStop ?? actions.stopMultiple;
     }
     function clearOverlay() {
       if (popover) {
@@ -4907,6 +4972,7 @@ ${OPTIONS_CSS}
     }
     function syncBarFromSettings() {
       solveNBtn.textContent = `Resolver \xD7${settings.multiCount}`;
+      repeatInput.value = String(settings.multiCount);
       excludeInput.checked = settings.excludeActiveSquad;
       strategySelect.value = settings.strategy;
     }
@@ -4928,6 +4994,7 @@ ${OPTIONS_CSS}
       void run(() => actions.solve(settings.strategy, currentExtras()));
     });
     solveNBtn.addEventListener("click", () => {
+      updateRepeatCount();
       const n = settings.multiCount;
       const ok = window.confirm(
         `Resolver y ENVIAR este SBC ${n} ${n === 1 ? "vez" : "veces"}.
@@ -4938,6 +5005,19 @@ Cada vuelta arma la plantilla, la env\xEDa y vuelve a entrar. Consume las cartas
       );
       if (!ok) return;
       void run(() => actions.solveMultiple(settings.strategy, n, currentExtras()));
+    });
+    function updateRepeatCount() {
+      settings = { ...settings, multiCount: clampCount(repeatInput.valueAsNumber) };
+      saveSettings(settings);
+      syncBarFromSettings();
+    }
+    repeatInput.addEventListener("change", updateRepeatCount);
+    repeatInput.addEventListener("input", () => {
+      const n = repeatInput.valueAsNumber;
+      if (!Number.isSafeInteger(n) || n < 1 || n > 20) return;
+      settings = { ...settings, multiCount: n };
+      saveSettings(settings);
+      solveNBtn.textContent = `Resolver \xD7${n}`;
     });
     combosBtn.addEventListener("click", () => {
       void run(() => actions.showCombos());
@@ -4988,7 +5068,8 @@ Cada vuelta arma la plantilla, la env\xEDa y vuelve a entrar. Consume las cartas
       showError,
       showNotice,
       showSolution,
-      showProgress
+      showProgress,
+      isProgressOpen: () => blocker.classList.contains("on")
     };
   }
 
@@ -5325,6 +5406,117 @@ Consume las cartas que use. Esto NO se puede deshacer.
       },
       showProgress
     };
+  }
+
+  // src/ea/repeat-cycle.ts
+  var RepeatStopped = class extends Error {
+  };
+  async function runRepeatCycle(opts) {
+    if (!Number.isSafeInteger(opts.rounds) || opts.rounds < 1 || opts.rounds > 20) {
+      throw new Error("Elige entre 1 y 20 repeticiones.");
+    }
+    const progress = {
+      state: "running",
+      completed: 0,
+      total: opts.rounds,
+      inFlight: false,
+      rounds: [],
+      message: "Preparando\u2026"
+    };
+    let active;
+    const report = () => opts.report({
+      ...progress,
+      rounds: progress.rounds.map((row) => ({ ...row }))
+    });
+    const checkpoint = () => {
+      if (opts.signal?.aborted) throw new RepeatStopped();
+    };
+    const scope = {
+      checkpoint,
+      async wait(task) {
+        checkpoint();
+        const result = await task();
+        checkpoint();
+        return result;
+      },
+      async submit(task) {
+        checkpoint();
+        progress.inFlight = true;
+        report();
+        try {
+          return await task();
+        } finally {
+          progress.inFlight = false;
+        }
+      },
+      stage(detail) {
+        checkpoint();
+        if (active) active.detail = detail;
+        report();
+      }
+    };
+    const stop = () => {
+      progress.state = "stopping";
+      report();
+    };
+    opts.signal?.addEventListener("abort", stop, { once: true });
+    report();
+    try {
+      const remaining = await scope.wait(opts.remaining);
+      if (Number.isNaN(remaining) || remaining < 0) throw new Error("Repeticiones disponibles inv\xE1lidas.");
+      progress.total = Math.min(opts.rounds, Math.floor(remaining));
+      progress.rounds = Array.from({ length: progress.total }, (_, i) => ({
+        round: i + 1,
+        status: "pending",
+        detail: "Pendiente"
+      }));
+      progress.message = void 0;
+      if (progress.total === 0) throw new Error("Este SBC ya no admite m\xE1s repeticiones.");
+      for (const row of progress.rounds) {
+        checkpoint();
+        active = row;
+        row.status = "running";
+        row.detail = "Calculando\u2026";
+        report();
+        const result = await opts.runRound(row.round, scope);
+        if (!result.ok) {
+          row.status = "error";
+          row.detail = result.reason;
+          progress.state = "failed";
+          break;
+        }
+        row.status = "success";
+        row.detail = result.detail;
+        progress.completed++;
+        report();
+        await opts.afterSubmit();
+        if (progress.completed === progress.total) {
+          progress.state = "completed";
+          break;
+        }
+        checkpoint();
+        if (!await scope.wait(opts.reenter)) throw new Error("No se pudo volver a abrir el SBC.");
+      }
+    } catch (err) {
+      if (err instanceof RepeatStopped) {
+        progress.state = "stopped";
+        if (active?.status === "running") {
+          active.status = "stopped";
+          active.detail = "Detenida antes del env\xEDo";
+        }
+      } else {
+        progress.state = "failed";
+        progress.message = err instanceof Error ? err.message : String(err);
+        if (active?.status === "running") {
+          active.status = "error";
+          active.detail = progress.message;
+        }
+      }
+    } finally {
+      opts.signal?.removeEventListener("abort", stop);
+      report();
+    }
+    return progress;
   }
 
   // src/gallery/account-storage.ts
@@ -59016,7 +59208,7 @@ button:disabled { opacity:.5; cursor:default; }
     panel.setAttribute("aria-label", "Colecciones");
     const head = el("div", void 0, "head");
     const title = el("h2", "Colecciones");
-    const version = el("a", `v${"0.2.53"}`, "version");
+    const version = el("a", `v${"0.2.54"}`, "version");
     version.href = "https://raw.githubusercontent.com/mljpa/fut-sbc-dist/main/fut-sbc.user.js";
     version.target = "_blank";
     version.rel = "noopener noreferrer";
@@ -61652,6 +61844,7 @@ button:disabled { opacity:.5; cursor:default; }
   }
   function bootActions(challenge, handle) {
     let lastExtras;
+    let repeatController = null;
     const run = async (fn) => {
       const h = handle();
       try {
@@ -61727,10 +61920,20 @@ button:disabled { opacity:.5; cursor:default; }
        * dry-run variant, because a dry run is just what "Resolver" already does.
        */
       async solveMultiple(strategy, n, extras) {
+        if (repeatController) return;
+        const controller = new AbortController();
+        repeatController = controller;
         await run(async () => {
           lastExtras = extras;
-          await repeatLoop(strategy, n, extras ?? {});
+          try {
+            await repeatLoop(strategy, n, extras ?? {}, controller);
+          } finally {
+            repeatController = null;
+          }
         });
+      },
+      stopMultiple() {
+        repeatController?.abort();
       },
       async apply(solution) {
         await run(() => doApply(solution));
@@ -61847,101 +62050,75 @@ ${priceNote}` : "") + (totalScore > target ? "\nNo existe suma exacta en el pool
       if (res.chemistry != null) parts.push(`qu\xEDmica ${res.chemistry}`);
       if (parts.length) handle()?.showNotice(`Aplicado \u2713  (${parts.join(" \xB7 ")})`);
     }
-    async function repeatLoop(strategy, rounds, extras) {
+    async function repeatLoop(strategy, rounds, extras, controller) {
       let current = challenge;
-      const done = [];
-      handle()?.showProgress(["Preparando\u2026"], false);
-      const repeat = await repeatability(challenge.setId);
-      const budget = repeat && Number.isFinite(repeat.remaining) ? Math.min(rounds, Math.max(0, repeat.remaining)) : rounds;
-      if (budget === 0) {
-        handle()?.showError("Este SBC ya no admite m\xE1s repeticiones.");
-        return;
-      }
-      if (budget < rounds) {
-        console.info(LOG, `set allows ${budget} more, trimming from ${rounds}`);
-      }
-      for (let round = 1; round <= budget; round++) {
-        if (!current) {
-          done.push(`\u2717 ronda ${round}: no se pudo re-entrar al challenge`);
-          break;
-        }
-        resetPoolCache();
-        const pool = await buildPool(current, strategy, extras);
-        if (current.isStreamlined) {
-          const target = current.targetScore ?? 0;
-          const { result: stRes } = await solvePoints(current, pool);
-          if (!stRes.ok) {
-            done.push(`\u2717 ronda ${round}: ${stRes.reason ?? `puntaje insuficiente (${stRes.totalScore}/${target} pts)`}`);
-            break;
+      const final = await runRepeatCycle({
+        rounds,
+        signal: controller.signal,
+        async remaining() {
+          const repeat = await repeatability(challenge.setId);
+          return repeat?.remaining ?? rounds;
+        },
+        report(progress) {
+          handle()?.showProgress(progress, void 0, () => controller.abort());
+        },
+        async runRound(_round, scope) {
+          if (!current) return { ok: false, reason: "No se pudo volver a abrir el SBC." };
+          const ch = current;
+          resetPoolCache();
+          const pool = await scope.wait(() => buildPool(ch, strategy, extras));
+          if (ch.isStreamlined) {
+            const target = ch.targetScore ?? 0;
+            const { result: stRes } = await scope.wait(() => solvePoints(ch, pool));
+            if (!stRes.ok) return {
+              ok: false,
+              reason: stRes.reason ?? `Puntaje insuficiente (${stRes.totalScore}/${target} pts)`
+            };
+            const { items: items2 } = await scope.wait(() => getPool(extras));
+            scope.stage("Seleccionando\u2026");
+            const applied3 = await scope.wait(() => applyStreamlinedSolution(ch, stRes, items2));
+            if (!applied3.ok) return { ok: false, reason: `No se pudo aplicar: ${applied3.reason ?? "?"}` };
+            scope.stage("Enviando\u2026");
+            const sent2 = await scope.submit(() => submitChallenge(ch, stRes.items.map((p) => p.id), {
+              signal: controller.signal
+            }));
+            if (sent2.stopped) scope.checkpoint();
+            if (!sent2.ok) return { ok: false, reason: sent2.softBanned ? "Bloqueo de EA (426/429). Ciclo detenido." : `EA no confirm\xF3 el env\xEDo: ${sent2.violations?.join(", ") || sent2.reason || "?"}` };
+            return { ok: true, detail: `Enviada \xB7 ${stRes.totalScore}/${target} pts` };
           }
-          const { items: items2 } = await getPool(extras);
-          const applied3 = await applyStreamlinedSolution(current, stRes, items2);
-          if (!applied3.ok) {
-            done.push(`\u2717 ronda ${round}: no se pudo aplicar \u2014 ${applied3.reason ?? "?"}`);
-            break;
-          }
-          const ids = stRes.items.map((p) => p.id);
-          const sent2 = await submitChallenge(current, ids);
-          if (sent2.softBanned) {
-            done.push(`\u26D4 ronda ${round}: soft-ban de EA (426/429) \u2014 parado.`);
-            break;
-          }
-          if (!sent2.ok) {
-            const why = sent2.violations?.length ? sent2.violations.join(", ") : sent2.reason ?? "?";
-            done.push(`\u2717 ronda ${round}: EA rechaz\xF3 \u2014 ${why}`);
-            break;
-          }
-          done.push(`\u2713 ronda ${round}: enviado (${stRes.totalScore}/${target} pts)`);
-          handle()?.showProgress(done, false);
-          await dismissPostSubmit();
-          current = round < budget ? await reenterChallenge(challenge.setId, challenge.id) : null;
-          continue;
+          const result = solve(pool, ch.constraints, {
+            strategy,
+            timeBudgetMs: SOLVE_BUDGET_MS,
+            ...costsFor(pool)
+          });
+          scope.checkpoint();
+          if (!result.solution || !result.ok) return {
+            ok: false,
+            reason: `Sin soluci\xF3n${result.unmet.length ? `: ${result.unmet.join(", ")}` : ""}`
+          };
+          const { items } = await scope.wait(() => getPool(extras));
+          scope.stage("Seleccionando\u2026");
+          const solution = result.solution;
+          const applied2 = await scope.wait(() => applySolution(ch, solution, items));
+          if (!applied2.ok) return { ok: false, reason: `No se pudo aplicar: ${applied2.reason ?? "?"}` };
+          const short = ratingShortfall(ch, applied2);
+          if (short) return { ok: false, reason: `No se envi\xF3: ${short}` };
+          scope.stage("Enviando\u2026");
+          const sent = await scope.submit(() => submitChallenge(ch, void 0, { signal: controller.signal }));
+          if (sent.stopped) scope.checkpoint();
+          if (!sent.ok) return { ok: false, reason: sent.softBanned ? "Bloqueo de EA (426/429). Ciclo detenido." : `EA no confirm\xF3 el env\xEDo: ${sent.violations?.join(", ") || sent.reason || "?"}` };
+          return { ok: true, detail: `Enviada \xB7 media ${applied2.teamRating ?? "?"}` };
+        },
+        afterSubmit: dismissPostSubmit,
+        async reenter() {
+          current = await reenterChallenge(challenge.setId, challenge.id);
+          return current !== null;
         }
-        const result = solve(pool, current.constraints, {
-          strategy,
-          timeBudgetMs: SOLVE_BUDGET_MS,
-          ...costsFor(pool)
-        });
-        if (!result.solution || !result.ok) {
-          done.push(
-            `\u2717 ronda ${round}: sin soluci\xF3n${result.unmet.length ? ` \u2014 ${result.unmet.join(", ")}` : ""}`
-          );
-          break;
-        }
-        const { items } = await getPool(extras);
-        const applied2 = await applySolution(current, result.solution, items);
-        if (!applied2.ok) {
-          done.push(`\u2717 ronda ${round}: no se pudo aplicar \u2014 ${applied2.reason ?? "?"}`);
-          break;
-        }
-        const short = ratingShortfall(current, applied2);
-        if (short) {
-          done.push(`\u2717 ronda ${round}: no env\xEDo \u2014 ${short}`);
-          break;
-        }
-        const sent = await submitChallenge(current);
-        if (sent.softBanned) {
-          done.push(`\u26D4 ronda ${round}: soft-ban de EA (426/429) \u2014 parado.`);
-          break;
-        }
-        if (!sent.ok) {
-          const why = sent.violations?.length ? sent.violations.join(", ") : sent.reason ?? "?";
-          done.push(`\u2717 ronda ${round}: EA rechaz\xF3 \u2014 ${why}`);
-          break;
-        }
-        done.push(`\u2713 ronda ${round}: enviado (media ${applied2.teamRating ?? "?"})`);
-        handle()?.showProgress(done, false);
-        await dismissPostSubmit();
-        current = round < budget ? await reenterChallenge(challenge.setId, challenge.id) : null;
-      }
+      });
       resetPoolCache();
-      try {
-        await reenterChallenge(challenge.setId, challenge.id);
-      } catch {
-      }
       repaintPitch(challenge.id);
-      console.info(LOG, "repeat loop finished", done);
-      handle()?.showProgress(done, true, leaveChallengeView);
+      handle()?.showProgress(final, leaveChallengeView);
+      console.info(LOG, "repeat loop finished", final.state, final.completed, final.total);
     }
   }
   function setNameOf(setId) {
@@ -62181,7 +62358,9 @@ Total SBC enviados: ${submitted}`);
       return { id: setId, name, remaining, demandsOvr, readable, children };
     };
     const check = async () => {
+      if (handle?.isProgressOpen()) return;
       const challenge = await getOpenChallenge().catch(() => null);
+      if (handle?.isProgressOpen()) return;
       window.__futChallenge = challenge;
       const pitch = document.querySelector(
         ".ut-squad-pitch-view.sbc, .ut-squad-pitch-view, .ut-one-click-sbc-work-area-view, .ut-sbc-squad-overview"
