@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         FUT SBC Solver v2
 // @namespace    https://github.com/mljpa/fut-sbc-solver-v2
-// @version      0.2.50
+// @version      0.2.53
 // @description  Userscript to solve EA SPORTS FC 26 SBCs with your own club
 // @match        https://www.ea.com/*/ea-sports-fc/ultimate-team/web-app*
 // @match        https://www.ea.com/ea-sports-fc/ultimate-team/web-app*
@@ -152,6 +152,11 @@
     const reqs = Array.isArray(ch.eligibilityRequirements) ? ch.eligibilityRequirements : [];
     for (const req of reqs) {
       const text = safeBuildString(req);
+      const maxOvr = text.match(/^OVR\s+Max:\s*(\d+)$/i);
+      if (maxOvr && Number(req.count ?? -1) <= 0) {
+        c.maxOvrPerPlayer = Number(maxOvr[1]);
+        continue;
+      }
       const kv = readKv(req);
       if (!kv) {
         c.unparsed.push(text || "unreadable requirement (no kvPairs)");
@@ -499,6 +504,7 @@
       id: instanceId || -definitionId,
       definitionId,
       rating,
+      sbsScore: Number.isSafeInteger(raw.sbsScore) && raw.sbsScore >= 0 ? raw.sbsScore : void 0,
       name: readName(raw),
       leagueId: Number(raw.leagueId ?? 0),
       nationId: Number(raw.nationId ?? raw.nation ?? 0),
@@ -581,6 +587,7 @@
       const res = await toPromise(
         Squad.requestSquadById(id)
       );
+      if (!res.success) return null;
       const data = res.data;
       if (!data) return null;
       return data.squad ?? data ?? null;
@@ -590,11 +597,14 @@
   }
   function collectInto(squad, into) {
     if (!squad) return;
+    if (!squad.getSlots && !squad.getPlayers && !squad.getFieldPlayers) {
+      throw new Error("EA entreg\xF3 una plantilla sin slots legibles.");
+    }
     let slots = [];
     try {
-      slots = squad.getFieldPlayers?.() ?? squad.getPlayers?.() ?? [];
+      slots = squad.getSlots?.() ?? squad.getPlayers?.() ?? [...squad.getFieldPlayers?.() ?? [], ...squad.getSubPlayers?.() ?? []];
     } catch {
-      slots = [];
+      throw new Error("No se pudieron leer las cartas de la plantilla para excluirlas.");
     }
     for (const slot of slots) {
       let it;
@@ -612,14 +622,17 @@
   async function getActiveSquadCards() {
     const out = { instanceIds: /* @__PURE__ */ new Set(), defIds: /* @__PURE__ */ new Set() };
     const Squad = squadService();
-    if (!Squad) return out;
+    if (!Squad?.getActiveSquadId) throw new Error("No se pudo leer la plantilla activa para excluir sus cartas.");
     let id = 0;
     try {
-      id = Number(Squad.getActiveSquadId?.() ?? 0);
+      id = Number(Squad.getActiveSquadId());
     } catch {
-      id = 0;
+      throw new Error("No se pudo identificar la plantilla activa para excluirla.");
     }
-    collectInto(await squadById(id), out);
+    if (!Number.isSafeInteger(id) || id < 0) throw new Error("ID de plantilla activa inv\xE1lido.");
+    const squad = await squadById(id);
+    if (!squad) throw new Error("EA no entreg\xF3 la plantilla activa; no se pudo proteger sus cartas.");
+    collectInto(squad, out);
     return out;
   }
   async function getAllSquadCards() {
@@ -630,13 +643,17 @@
         const res = await toPromise(
           Squad.requestSquadList()
         );
-        const squads = res.data?.squads ?? [];
+        const squads = res.data?.squads;
+        if (!res.success || !Array.isArray(squads)) throw new Error("Lista de plantillas no disponible.");
         for (const s of squads) {
-          collectInto(await squadById(Number(s.id ?? 0)), out);
+          const squad = await squadById(Number(s.id ?? 0));
+          if (!squad) throw new Error("EA no entreg\xF3 una plantilla guardada.");
+          collectInto(squad, out);
         }
       } catch {
+        throw new Error("No se pudieron proteger todas las plantillas guardadas. Vuelve a resolver.");
       }
-    }
+    } else throw new Error("No se pudo consultar la lista de plantillas guardadas.");
     const active = await getActiveSquadCards();
     for (const x of active.instanceIds) out.instanceIds.add(x);
     for (const x of active.defIds) out.defIds.add(x);
@@ -1287,6 +1304,109 @@
     }
   }
 
+  // src/solver/streamlined.ts
+  var STREAMLINED_MAX_CARDS = 30;
+  function getItemScore(player) {
+    return Number.isSafeInteger(player.sbsScore) && player.sbsScore >= 0 ? player.sbsScore : void 0;
+  }
+  function estimatedCost(player) {
+    const r = player.rating;
+    if (r < 65) return 200;
+    if (r < 75) return 300;
+    if (r <= 80) return 500;
+    if (r === 81) return 650;
+    if (r === 82) return 800;
+    if (r === 83) return 950;
+    if (r === 84) return 2e3;
+    if (r === 85) return 4e3;
+    if (r === 86) return 7e3;
+    return 1e4 + (r - 86) * 5e3;
+  }
+  function matchesStreamlinedFilters(p, opts) {
+    const tiers2 = { bronze: 1, silver: 2, gold: 3 };
+    const tier2 = opts.qualityFilter && opts.qualityFilter !== "any" ? tiers2[opts.qualityFilter] : void 0;
+    const qualityMatches = tier2 == null || (opts.qualityScope === "max" ? tiers2[p.quality] <= tier2 : opts.qualityScope === "min" ? tiers2[p.quality] >= tier2 : tiers2[p.quality] === tier2);
+    return qualityMatches && (opts.maxOvr == null || p.rating <= opts.maxOvr) && (opts.minOvr == null || p.rating >= opts.minOvr) && (opts.exactOvr == null || p.rating === opts.exactOvr);
+  }
+  function solveStreamlined(players, targetScore, options, legacyCardCost) {
+    const opts = typeof options === "string" ? { qualityFilter: options, cardCost: legacyCardCost } : options ?? {};
+    if (!Number.isSafeInteger(targetScore) || targetScore <= 0) {
+      return { items: [], totalScore: 0, targetScore, ok: false, reason: "Puntaje objetivo inv\xE1lido." };
+    }
+    const maxCards = Math.min(STREAMLINED_MAX_CARDS, Math.max(
+      0,
+      Number.isFinite(opts.maxCards) ? Math.floor(opts.maxCards) : STREAMLINED_MAX_CARDS
+    ));
+    const seen = /* @__PURE__ */ new Set();
+    const buckets = /* @__PURE__ */ new Map();
+    let missingScores = 0;
+    for (const player of players) {
+      if (player.concept || !matchesStreamlinedFilters(player, opts) || seen.has(player.id)) continue;
+      seen.add(player.id);
+      const score = getItemScore(player);
+      if (score == null) {
+        missingScores++;
+        continue;
+      }
+      if (score === 0) continue;
+      const price = opts.cardCost?.(player);
+      const estimated = typeof price !== "number" || !Number.isFinite(price) || price < 0 || price >= Number.MAX_SAFE_INTEGER;
+      const candidate = { player, score, cost: estimated ? estimatedCost(player) : price, estimated };
+      const bucket = buckets.get(score) ?? [];
+      bucket.push(candidate);
+      buckets.set(score, bucket);
+    }
+    const candidates = [...buckets.values()].flatMap((bucket) => bucket.sort((a, b) => a.cost - b.cost || Number(b.player.isDuplicate) - Number(a.player.isDuplicate) || Number(b.player.inStorage) - Number(a.player.inStorage) || Number(b.player.untradeable) - Number(a.player.untradeable) || a.player.rating - b.player.rating || a.player.id - b.player.id).slice(0, maxCards));
+    const strongest = candidates.slice().sort((a, b) => b.score - a.score || a.cost - b.cost).slice(0, maxCards);
+    const reachable = strongest.reduce((sum, c) => sum + c.score, 0);
+    if (reachable < targetScore) {
+      return {
+        items: strongest.map((c) => c.player),
+        totalScore: reachable,
+        targetScore,
+        ok: false,
+        missingScores,
+        reason: `Con hasta ${maxCards} cartas se alcanzan ${reachable} de ${targetScore} pts.` + (missingScores ? ` ${missingScores} cartas sin puntaje de EA.` : "")
+      };
+    }
+    const dp = Array.from({ length: maxCards + 1 }, () => /* @__PURE__ */ new Map());
+    dp[0].set(0, { cost: 0, score: 0 });
+    let processed = 0;
+    for (const candidate of candidates) {
+      processed++;
+      for (let count = Math.min(processed, maxCards); count > 0; count--) {
+        const next = dp[count];
+        for (const [score, state2] of dp[count - 1]) {
+          if (score === targetScore) continue;
+          const total = state2.score + candidate.score;
+          const key = Math.min(targetScore, total);
+          const cost = state2.cost + candidate.cost;
+          const old = next.get(key);
+          if (!old || total < old.score || total === old.score && cost < old.cost) {
+            next.set(key, { cost, score: total, last: candidate, previous: state2 });
+          }
+        }
+      }
+    }
+    let best;
+    for (let count = 1; count <= maxCards; count++) {
+      const state2 = dp[count].get(targetScore);
+      if (state2 && (!best || state2.score < best.score || state2.score === best.score && state2.cost < best.cost)) best = state2;
+    }
+    const selected = [];
+    for (let state2 = best; state2?.last; state2 = state2.previous) selected.push(state2.last);
+    selected.sort((a, b) => a.player.rating - b.player.rating || a.player.id - b.player.id);
+    return {
+      items: selected.map((c) => c.player),
+      totalScore: best.score,
+      targetScore,
+      ok: true,
+      costCoins: best.cost,
+      costEstimated: selected.some((c) => c.estimated),
+      missingScores
+    };
+  }
+
   // src/ea/submit.ts
   var SOFT_BAN2 = /* @__PURE__ */ new Set([426, 429]);
   var SUBMIT_DELAY_MS = 1800;
@@ -1326,6 +1446,15 @@
     const blocked = rateLimitReason();
     if (blocked) return { ok: false, reason: blocked };
     const sbc = sbcService();
+    if (challenge.isStreamlined) {
+      if (typeof sbc?.submitOneClickChallenge !== "function") {
+        return { ok: false, reason: "services.SBC.submitOneClickChallenge no disponible." };
+      }
+      const ids = selectedItemIds ?? [];
+      if (!ids.length || ids.length > STREAMLINED_MAX_CARDS || new Set(ids).size !== ids.length || ids.some((id) => !Number.isSafeInteger(id) || id <= 0)) {
+        return { ok: false, reason: "Selecci\xF3n OneClick inv\xE1lida (1 a 30 instancias \xFAnicas)." };
+      }
+    }
     if (typeof sbc?.submitChallenge !== "function" && typeof sbc?.submitOneClickChallenge !== "function") {
       return { ok: false, reason: "services.SBC.submitChallenge no disponible." };
     }
@@ -1368,7 +1497,7 @@
         reason: `EA respondi\xF3 ${res.status} \u2014 soft-ban. No reintentar.`
       };
     }
-    if (isChemistryMismatch(res.error)) {
+    if (!challenge.isStreamlined && isChemistryMismatch(res.error)) {
       const stillBlocked = rateLimitReason();
       if (stillBlocked) {
         return { ok: false, reason: `${stillBlocked} (tras CHEMISTRY_VERSION_MISMATCH)` };
@@ -1399,6 +1528,9 @@
         violations,
         reason: `EA rechaz\xF3 la squad: ${violations.join(" \xB7 ")}`
       };
+    }
+    if (challenge.isStreamlined && (res.status !== 200 || !res.success)) {
+      return { ok: false, reason: "EA no confirm\xF3 el env\xEDo del SBC por puntos." };
     }
     if (res.status != null && res.status !== 200) {
       return {
@@ -2128,6 +2260,28 @@
     const inDom = hits.find((h) => isInDom(h));
     return inDom ?? hits[hits.length - 1] ?? null;
   }
+  function reviewStreamlinedSelection(challenge) {
+    const vc = findLiveOneClickVC();
+    const vm = vc?.["viewModel"] ?? vc?.["getViewModel"]?.();
+    if (!vm || Number(vm._challenge?.id) !== challenge.id) {
+      return { ok: false, reason: "No se encontr\xF3 Review Selection del SBC abierto." };
+    }
+    const currentScore = vm.getSelectedScore?.() ?? 0;
+    const target = challenge.targetScore ?? 0;
+    if (!vm.getSelectedCount?.() || currentScore < target || target <= 0) {
+      return { ok: false, reason: "La selecci\xF3n de EA est\xE1 incompleta; no se abri\xF3 la revisi\xF3n." };
+    }
+    try {
+      const review = Array.from(document.querySelectorAll(
+        ".ut-sbc-requirements-view button, .ut-one-click-sbc-work-area-view button"
+      )).find((button2) => button2.textContent?.trim() === "Review Selection" && !button2.disabled && button2.getClientRects().length > 0);
+      if (!review) return { ok: false, reason: "Review Selection de EA no est\xE1 disponible." };
+      review.click();
+      return { ok: true, currentScore, targetScore: target };
+    } catch (err) {
+      return { ok: false, reason: `No se pudo abrir Review Selection: ${String(err)}` };
+    }
+  }
   async function applyStreamlinedSolution(challenge, solution, clubItems) {
     if (!challenge.isStreamlined) {
       return {
@@ -2141,19 +2295,39 @@
         reason: `Soluci\xF3n incompleta: ${solution.totalScore} / ${solution.targetScore} pts.`
       };
     }
+    const target = challenge.targetScore ?? solution.targetScore;
+    const scores = solution.items.map(getItemScore);
+    const actualScore = scores.reduce((sum, score) => sum + (score ?? 0), 0);
+    if (solution.items.length > STREAMLINED_MAX_CARDS || new Set(solution.items.map((p) => p.id)).size !== solution.items.length || scores.some((score) => score == null) || actualScore < target || target <= 0) {
+      return { ok: false, reason: "Soluci\xF3n inv\xE1lida: revisa el puntaje de EA y el l\xEDmite de 30 cartas." };
+    }
     const oneClickVC = findLiveOneClickVC();
     const vm = oneClickVC?.["viewModel"] ?? oneClickVC?.["getViewModel"]?.();
     const view = oneClickVC?.["getView"]?.();
     if (vm && typeof vm.selectItem === "function") {
+      const limit = vm.getSelectionLimit?.() ?? STREAMLINED_MAX_CARDS;
+      if (solution.items.length > limit) {
+        return { ok: false, reason: `EA permite hasta ${limit} cartas.` };
+      }
+      const selectedItems = solution.items.map((p) => clubItems.get(p.id) ?? vm._itemEntityMap?.get(p.id));
+      if (selectedItems.some((item) => !item)) {
+        return { ok: false, reason: "Faltan cartas del club. Vuelve a resolver." };
+      }
+      if (selectedItems.some((item) => {
+        const score = item.sbsScore;
+        return !Number.isSafeInteger(score) || score < 0;
+      })) {
+        return { ok: false, reason: "EA no entreg\xF3 puntaje para una carta seleccionada." };
+      }
       try {
         vm.clearSelection?.();
         view?.["clearSelection"]?.();
         for (const player of solution.items) {
-          const item = vm._itemEntityMap?.get(player.id) ?? clubItems.get(player.id);
+          const item = clubItems.get(player.id) ?? vm._itemEntityMap?.get(player.id);
           if (item) {
-            if (vm._itemEntityMap && !vm._itemEntityMap.has(player.id)) {
-              vm._itemEntityMap.set(player.id, item);
-            }
+            vm._itemEntityMap?.set(player.id, item);
+            const score = item.sbsScore;
+            vm._itemScoreMap?.set(player.id, score);
             vm.selectItem(item);
             view?.["setItemSelected"]?.(item, true);
           }
@@ -2162,6 +2336,14 @@
         const delegate = oneClickVC?.["workAreaDelegate"];
         delegate?.selectionChanged?.(oneClickVC, true);
         const currentScore2 = typeof vm.getSelectedScore === "function" ? vm.getSelectedScore() : solution.totalScore;
+        if (currentScore2 < target || vm.getSelectedCount && vm.getSelectedCount() !== solution.items.length) {
+          return {
+            ok: false,
+            currentScore: currentScore2,
+            targetScore: target,
+            reason: `EA seleccion\xF3 ${currentScore2} de ${target} pts. Vuelve a resolver.`
+          };
+        }
         return {
           ok: true,
           currentScore: currentScore2,
@@ -4122,7 +4304,7 @@
       emit();
     });
     stratRow.append(stratLabel, stratSelect);
-    const exclActive = checkboxField("Excluir once activo", state2.excludeActiveSquad, (v) => {
+    const exclActive = checkboxField("Excluir plantilla activa", state2.excludeActiveSquad, (v) => {
       state2 = { ...state2, excludeActiveSquad: v };
       emit();
     });
@@ -4598,7 +4780,7 @@ ${OPTIONS_CSS}
     excludeInput.type = "checkbox";
     excludeInput.checked = settings.excludeActiveSquad;
     const excludeText = document.createElement("span");
-    excludeText.textContent = "Excluir once";
+    excludeText.textContent = "Excluir plantilla activa";
     excludeToggle.append(excludeInput, excludeText);
     const strategySelect = document.createElement("select");
     for (const s of STRATEGY_ORDER) {
@@ -58834,7 +59016,7 @@ button:disabled { opacity:.5; cursor:default; }
     panel.setAttribute("aria-label", "Colecciones");
     const head = el("div", void 0, "head");
     const title = el("h2", "Colecciones");
-    const version = el("a", `v${"0.2.50"}`, "version");
+    const version = el("a", `v${"0.2.53"}`, "version");
     version.href = "https://raw.githubusercontent.com/mljpa/fut-sbc-dist/main/fut-sbc.user.js";
     version.target = "_blank";
     version.rel = "noopener noreferrer";
@@ -60845,167 +61027,6 @@ button:disabled { opacity:.5; cursor:default; }
     return out;
   }
 
-  // src/solver/streamlined.ts
-  function getItemScore(rating) {
-    if (rating < 65) return 10;
-    if (rating < 75) return 20;
-    if (rating < 80) return 75;
-    if (rating <= 83) return 75 + 10 * (rating - 79);
-    if (rating === 84) return 200;
-    if (rating === 85) return 400;
-    if (rating === 86) return 600;
-    if (rating === 87) return 800;
-    if (rating === 88) return 1e3;
-    if (rating === 89) return 1400;
-    if (rating === 90) return 1900;
-    if (rating === 91) return 2600;
-    if (rating === 92) return 3700;
-    if (rating === 93) return 5e3;
-    if (rating === 94) return 7e3;
-    return 9e3;
-  }
-  function matchesFilters(player, opts) {
-    if (opts?.qualityFilter && opts.qualityFilter !== "any" && player.quality !== opts.qualityFilter) {
-      return false;
-    }
-    if (opts?.maxOvr != null && player.rating > opts.maxOvr) {
-      return false;
-    }
-    if (opts?.minOvr != null && player.rating < opts.minOvr) {
-      return false;
-    }
-    if (opts?.exactOvr != null && player.rating !== opts.exactOvr) {
-      return false;
-    }
-    return true;
-  }
-  function solveStreamlined(players, targetScore, options, legacyCardCost) {
-    const opts = typeof options === "string" ? { qualityFilter: options, cardCost: legacyCardCost } : options ?? {};
-    const cardCost2 = opts.cardCost;
-    const eligible = players.filter((p) => matchesFilters(p, opts));
-    if (eligible.length === 0) {
-      return {
-        items: [],
-        totalScore: 0,
-        targetScore,
-        ok: false
-      };
-    }
-    const MAX_CARDS = 11;
-    const estimatedCost = (p) => {
-      if (cardCost2) return cardCost2(p);
-      const r = p.rating;
-      if (r < 65) return 200;
-      if (r < 75) return 300;
-      if (r <= 80) return 500;
-      if (r === 81) return 650;
-      if (r === 82) return 800;
-      if (r === 83) return 950;
-      if (r === 84) return 2e3;
-      if (r === 85) return 4e3;
-      if (r === 86) return 7e3;
-      return 1e4 + (r - 86) * 5e3;
-    };
-    const scored = eligible.map((p) => ({
-      player: p,
-      score: getItemScore(p.rating),
-      cost: estimatedCost(p)
-    }));
-    scored.sort((a, b) => {
-      const costPerPointA = a.cost / Math.max(1, a.score);
-      const costPerPointB = b.cost / Math.max(1, b.score);
-      if (Math.abs(costPerPointA - costPerPointB) > 0.05) {
-        return costPerPointA - costPerPointB;
-      }
-      return a.cost - b.cost;
-    });
-    let bestSelection = null;
-    let bestCost = Infinity;
-    const current = [];
-    let currentScore = 0;
-    let currentCost = 0;
-    for (const candidate of scored) {
-      if (current.length >= MAX_CARDS && currentScore < targetScore) {
-        break;
-      }
-      current.push(candidate);
-      currentScore += candidate.score;
-      currentCost += candidate.cost;
-      if (currentScore >= targetScore) {
-        break;
-      }
-    }
-    if (currentScore >= targetScore) {
-      for (let i = current.length - 1; i >= 0; i--) {
-        const c = current[i];
-        if (currentScore - c.score >= targetScore) {
-          current.splice(i, 1);
-          currentScore -= c.score;
-          currentCost -= c.cost;
-        }
-      }
-      bestSelection = current.slice();
-      bestCost = currentCost;
-    }
-    if (!bestSelection || bestSelection.length > MAX_CARDS) {
-      const byScoreDesc = scored.slice().sort((a, b) => b.score - a.score || a.cost - b.cost);
-      const alt = [];
-      let altScore = 0;
-      let altCost = 0;
-      for (const candidate of byScoreDesc) {
-        if (alt.length >= MAX_CARDS) break;
-        alt.push(candidate);
-        altScore += candidate.score;
-        altCost += candidate.cost;
-        if (altScore >= targetScore) break;
-      }
-      if (altScore >= targetScore) {
-        for (let i = alt.length - 1; i >= 0; i--) {
-          const c = alt[i];
-          if (altScore - c.score >= targetScore) {
-            alt.splice(i, 1);
-            altScore -= c.score;
-            altCost -= c.cost;
-          }
-        }
-        if (!bestSelection || altCost < bestCost) {
-          bestSelection = alt;
-          bestCost = altCost;
-        }
-      }
-    }
-    if (!bestSelection) {
-      const fallback = [];
-      let fbScore = 0;
-      for (const c of scored) {
-        fallback.push(c);
-        fbScore += c.score;
-        if (fbScore >= targetScore) break;
-      }
-      if (fbScore >= targetScore) {
-        bestSelection = fallback;
-      }
-    }
-    if (!bestSelection) {
-      return {
-        items: [],
-        totalScore: 0,
-        targetScore,
-        ok: false
-      };
-    }
-    const items = bestSelection.map((s) => s.player);
-    const totalScore = bestSelection.reduce((sum, s) => sum + s.score, 0);
-    const costCoins = cardCost2 ? items.reduce((sum, p) => sum + (cardCost2(p) ?? 0), 0) : void 0;
-    return {
-      items,
-      totalScore,
-      targetScore,
-      ok: true,
-      costCoins
-    };
-  }
-
   // src/solver/index.ts
   var DEFAULT_TIME_BUDGET_MS = 4e3;
   function solve(pool, constraints, opts) {
@@ -61601,6 +61622,34 @@ button:disabled { opacity:.5; cursor:default; }
       note: `Precios de fut.gg (${snap.platform === "pc" ? "PC" : "consola"}, ${mins} min).`
     };
   }
+  async function solvePoints(challenge, pool) {
+    if (challenge.constraints.unparsed.length) {
+      throw new Error(`Requisitos de EA no interpretados: ${challenge.constraints.unparsed.join(" \xB7 ")}`);
+    }
+    const qualReq = challenge.constraints.counted.find((r) => r.kind === "quality");
+    const options = {
+      qualityFilter: qualReq?.value ?? "any",
+      qualityScope: qualReq?.scope,
+      maxOvr: challenge.constraints.maxOvrPerPlayer,
+      minOvr: challenge.constraints.minOvrPerPlayer,
+      exactOvr: challenge.constraints.exactOvr
+    };
+    const eligible = pool.filter((p) => !p.concept && getItemScore(p) != null && matchesStreamlinedFilters(p, options));
+    let prices = /* @__PURE__ */ new Map();
+    try {
+      prices = await fetchEnhancerPrices(eligible.map((p) => p.definitionId));
+    } catch (err) {
+      console.warn(LOG, "Precios OneClick no disponibles; se usan estimaciones", err);
+    }
+    const result = solveStreamlined(pool, challenge.targetScore ?? 0, {
+      ...options,
+      cardCost: (p) => prices.get(p.definitionId)?.price
+    });
+    return {
+      result,
+      note: result.costEstimated ? "Costo estimado: faltan precios de mercado." : "Valor de las cartas seg\xFAn precios de Enhancer."
+    };
+  }
   function bootActions(challenge, handle) {
     let lastExtras;
     const run = async (fn) => {
@@ -61624,38 +61673,30 @@ button:disabled { opacity:.5; cursor:default; }
           const pool = await buildPool(challenge, strategy, extras);
           if (challenge.isStreamlined) {
             const target = challenge.targetScore ?? 0;
-            const qualReq = challenge.constraints.counted.find((r) => r.kind === "quality");
-            const qualFilter = qualReq?.value ?? "any";
-            const { cardCost: cardCost2 } = costsFor(pool);
-            const stRes = solveStreamlined(pool, target, {
-              qualityFilter: qualFilter,
-              maxOvr: challenge.constraints.maxOvrPerPlayer,
-              minOvr: challenge.constraints.minOvrPerPlayer,
-              exactOvr: challenge.constraints.exactOvr,
-              cardCost: cardCost2
-            });
+            const { result: stRes, note: priceNote2 } = await solvePoints(challenge, pool);
             if (!stRes.ok) {
               handle()?.showError(
-                `Puntaje insuficiente: solo se alcanzan ${stRes.totalScore} de ${target} pts con tus cartas disponibles.`
+                stRes.reason ?? `Puntaje insuficiente: ${stRes.totalScore} de ${target} pts.`
               );
               return;
             }
             const notes2 = [
               `\u2B50 Puntaje alcanzado: ${stRes.totalScore} / ${target} pts (${stRes.items.length} cartas)`
             ];
-            const priceNote2 = costsFor(pool).note;
             if (priceNote2) notes2.push(priceNote2);
+            if (stRes.totalScore > target) notes2.push("No existe suma exacta en el pool; se usa el menor excedente.");
+            if (stRes.missingScores) notes2.push(`${stRes.missingScores} cartas omitidas sin puntaje de EA.`);
             const ids = stRes.items.map((p) => p.id).sort((a, b) => a - b);
             const stSolution = {
               players: stRes.items,
               teamRating: 0,
               chemistry: 0,
-              costCoins: stRes.costCoins ?? squadBill(stRes.items),
+              costCoins: stRes.costCoins,
               toBuy: [],
               key: ids.join(",")
             };
-            handle()?.showSolution(stSolution, [], notes2);
-            if (extras && extras.dryRun === false) await doApply(stSolution);
+            if (extras?.dryRun === false) await doApply(stSolution, priceNote2);
+            else handle()?.showSolution(stSolution, [], notes2);
             return;
           }
           const result = solve(pool, challenge.constraints, {
@@ -61760,11 +61801,11 @@ ${text}`);
       if (r.softBanned) lines.push("\u26D4 soft-ban de EA (426/429) \u2014 parado.");
       return lines.join("\n");
     }
-    async function doApply(solution) {
+    async function doApply(solution, priceNote) {
       const { players, items } = await getPool(lastExtras);
       if (challenge.isStreamlined) {
         const target = challenge.targetScore ?? 0;
-        const totalScore = solution.players.reduce((sum, p) => sum + getItemScore(p.rating), 0);
+        const totalScore = solution.players.reduce((sum, p) => sum + (getItemScore(p) ?? 0), 0);
         const res2 = await applyStreamlinedSolution(
           challenge,
           {
@@ -61781,8 +61822,11 @@ ${text}`);
         }
         console.info(LOG, "applied streamlined", res2);
         handle()?.showNotice(
-          `Aplicado \u2713  (puntaje ${res2.currentScore ?? totalScore} / ${target} pts)`
+          `Seleccionado \u2713  ${res2.currentScore ?? totalScore}/${target} pts \xB7 ${solution.players.length} cartas` + (solution.costCoins != null ? ` \xB7 ${solution.costCoins.toLocaleString("es-CL")} monedas` : "") + (priceNote ? `
+${priceNote}` : "") + (totalScore > target ? "\nNo existe suma exacta en el pool; se usa el menor excedente." : "")
         );
+        const reviewed = reviewStreamlinedSelection(challenge);
+        if (!reviewed.ok) handle()?.showError(reviewed.reason ?? "No se pudo abrir Review Selection.");
         return;
       }
       const ownedByDef = new Map(players.map((p) => [p.definitionId, p]));
@@ -61825,18 +61869,9 @@ ${text}`);
         const pool = await buildPool(current, strategy, extras);
         if (current.isStreamlined) {
           const target = current.targetScore ?? 0;
-          const qualReq = current.constraints.counted.find((r) => r.kind === "quality");
-          const qualFilter = qualReq?.value ?? "any";
-          const { cardCost: cardCost2 } = costsFor(pool);
-          const stRes = solveStreamlined(pool, target, {
-            qualityFilter: qualFilter,
-            maxOvr: current.constraints.maxOvrPerPlayer,
-            minOvr: current.constraints.minOvrPerPlayer,
-            exactOvr: current.constraints.exactOvr,
-            cardCost: cardCost2
-          });
+          const { result: stRes } = await solvePoints(current, pool);
           if (!stRes.ok) {
-            done.push(`\u2717 ronda ${round}: puntaje insuficiente (${stRes.totalScore}/${target} pts)`);
+            done.push(`\u2717 ronda ${round}: ${stRes.reason ?? `puntaje insuficiente (${stRes.totalScore}/${target} pts)`}`);
             break;
           }
           const { items: items2 } = await getPool(extras);
@@ -62104,6 +62139,7 @@ Total SBC enviados: ${submitted}`);
       buildPool,
       solve,
       solveMultiple,
+      solveStreamlined,
       ratingCombos,
       applySolution,
       findLiveOverviewVC,
