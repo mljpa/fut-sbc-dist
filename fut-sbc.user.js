@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         FUT SBC Solver v2
 // @namespace    https://github.com/mljpa/fut-sbc-solver-v2
-// @version      0.2.48
+// @version      0.2.49
 // @description  Userscript to solve EA SPORTS FC 26 SBCs with your own club
 // @match        https://www.ea.com/*/ea-sports-fc/ultimate-team/web-app*
 // @match        https://www.ea.com/ea-sports-fc/ultimate-team/web-app*
@@ -1322,11 +1322,11 @@
   function noteSubmit() {
     submitTimes.push(Date.now());
   }
-  async function submitChallenge(challenge) {
+  async function submitChallenge(challenge, selectedItemIds) {
     const blocked = rateLimitReason();
     if (blocked) return { ok: false, reason: blocked };
     const sbc = sbcService();
-    if (typeof sbc?.submitChallenge !== "function") {
+    if (typeof sbc?.submitChallenge !== "function" && typeof sbc?.submitOneClickChallenge !== "function") {
       return { ok: false, reason: "services.SBC.submitChallenge no disponible." };
     }
     const eaChallenge = liveChallengeObject(challenge);
@@ -1346,7 +1346,18 @@
     const chemEnabled = chemistryEnabled();
     let res;
     try {
-      res = await runSubmit(sbc, eaChallenge, set, chemEnabled);
+      if (challenge.isStreamlined && typeof sbc.submitOneClickChallenge === "function") {
+        const ids = selectedItemIds ?? [];
+        const obs = sbc.submitOneClickChallenge(eaChallenge, set, ids);
+        noteSubmit();
+        try {
+          res = await toPromise(obs);
+        } finally {
+          await delay(SUBMIT_DELAY_MS);
+        }
+      } else {
+        res = await runSubmit(sbc, eaChallenge, set, chemEnabled);
+      }
     } catch (err) {
       return { ok: false, reason: `submitChallenge() fall\xF3: ${errMsg2(err)}` };
     }
@@ -58823,7 +58834,7 @@ button:disabled { opacity:.5; cursor:default; }
     panel.setAttribute("aria-label", "Colecciones");
     const head = el("div", void 0, "head");
     const title = el("h2", "Colecciones");
-    const version = el("a", `v${"0.2.48"}`, "version");
+    const version = el("a", `v${"0.2.49"}`, "version");
     version.href = "https://raw.githubusercontent.com/mljpa/fut-sbc-dist/main/fut-sbc.user.js";
     version.target = "_blank";
     version.rel = "noopener noreferrer";
@@ -61753,6 +61764,45 @@ ${text}`);
         }
         resetPoolCache();
         const pool = await buildPool(current, strategy, extras);
+        if (current.isStreamlined) {
+          const target = current.targetScore ?? 0;
+          const qualReq = current.constraints.counted.find((r) => r.kind === "quality");
+          const qualFilter = qualReq?.value ?? "any";
+          const { cardCost: cardCost2 } = costsFor(pool);
+          const stRes = solveStreamlined(pool, target, {
+            qualityFilter: qualFilter,
+            maxOvr: current.constraints.maxOvrPerPlayer,
+            minOvr: current.constraints.minOvrPerPlayer,
+            exactOvr: current.constraints.exactOvr,
+            cardCost: cardCost2
+          });
+          if (!stRes.ok) {
+            done.push(`\u2717 ronda ${round}: puntaje insuficiente (${stRes.totalScore}/${target} pts)`);
+            break;
+          }
+          const { items: items2 } = await getPool(extras);
+          const applied3 = await applyStreamlinedSolution(current, stRes, items2);
+          if (!applied3.ok) {
+            done.push(`\u2717 ronda ${round}: no se pudo aplicar \u2014 ${applied3.reason ?? "?"}`);
+            break;
+          }
+          const ids = stRes.items.map((p) => p.id);
+          const sent2 = await submitChallenge(current, ids);
+          if (sent2.softBanned) {
+            done.push(`\u26D4 ronda ${round}: soft-ban de EA (426/429) \u2014 parado.`);
+            break;
+          }
+          if (!sent2.ok) {
+            const why = sent2.violations?.length ? sent2.violations.join(", ") : sent2.reason ?? "?";
+            done.push(`\u2717 ronda ${round}: EA rechaz\xF3 \u2014 ${why}`);
+            break;
+          }
+          done.push(`\u2713 ronda ${round}: enviado (${stRes.totalScore}/${target} pts)`);
+          handle()?.showProgress(done, false);
+          await dismissPostSubmit();
+          current = round < budget ? await reenterChallenge(challenge.setId, challenge.id) : null;
+          continue;
+        }
         const result = solve(pool, current.constraints, {
           strategy,
           timeBudgetMs: SOLVE_BUDGET_MS,
