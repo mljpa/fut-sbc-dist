@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         FUT SBC Solver v2
 // @namespace    https://github.com/mljpa/fut-sbc-solver-v2
-// @version      0.2.47
+// @version      0.2.48
 // @description  Userscript to solve EA SPORTS FC 26 SBCs with your own club
 // @match        https://www.ea.com/*/ea-sports-fc/ultimate-team/web-app*
 // @match        https://www.ea.com/ea-sports-fc/ultimate-team/web-app*
@@ -2132,15 +2132,24 @@
     }
     const oneClickVC = findLiveOneClickVC();
     const vm = oneClickVC?.["viewModel"] ?? oneClickVC?.["getViewModel"]?.();
+    const view = oneClickVC?.["getView"]?.();
     if (vm && typeof vm.selectItem === "function") {
       try {
         vm.clearSelection?.();
+        view?.["clearSelection"]?.();
         for (const player of solution.items) {
           const item = vm._itemEntityMap?.get(player.id) ?? clubItems.get(player.id);
           if (item) {
+            if (vm._itemEntityMap && !vm._itemEntityMap.has(player.id)) {
+              vm._itemEntityMap.set(player.id, item);
+            }
             vm.selectItem(item);
+            view?.["setItemSelected"]?.(item, true);
           }
         }
+        oneClickVC?.["_refreshSelectionControls"]?.();
+        const delegate = oneClickVC?.["workAreaDelegate"];
+        delegate?.selectionChanged?.(oneClickVC, true);
         const currentScore2 = typeof vm.getSelectedScore === "function" ? vm.getSelectedScore() : solution.totalScore;
         return {
           ok: true,
@@ -2321,7 +2330,8 @@
       const li = document.createElement("li");
       const name = document.createElement("span");
       name.className = "p-name";
-      name.textContent = p.name || `#${p.definitionId}`;
+      const cleanName = p.name && p.name !== "---" && p.name.trim() !== "" ? p.name : null;
+      name.textContent = cleanName || `Carta ${p.rating} OVR (#${p.definitionId})`;
       if (p.concept) {
         const tag = document.createElement("span");
         tag.className = "p-tag";
@@ -58813,7 +58823,7 @@ button:disabled { opacity:.5; cursor:default; }
     panel.setAttribute("aria-label", "Colecciones");
     const head = el("div", void 0, "head");
     const title = el("h2", "Colecciones");
-    const version = el("a", `v${"0.2.47"}`, "version");
+    const version = el("a", `v${"0.2.48"}`, "version");
     version.href = "https://raw.githubusercontent.com/mljpa/fut-sbc-dist/main/fut-sbc.user.js";
     version.target = "_blank";
     version.rel = "noopener noreferrer";
@@ -60877,13 +60887,11 @@ button:disabled { opacity:.5; cursor:default; }
     }));
     if (cardCost2) {
       scored.sort((a, b) => {
-        const ra = a.score / (a.cost || 1);
-        const rb = b.score / (b.cost || 1);
-        if (rb !== ra) return rb - ra;
-        return a.cost - b.cost;
+        if (a.cost !== b.cost) return a.cost - b.cost;
+        return a.player.rating - b.player.rating;
       });
     } else {
-      scored.sort((a, b) => b.score - a.score);
+      scored.sort((a, b) => a.player.rating - b.player.rating);
     }
     const selected = [];
     let accumulated = 0;
@@ -60891,6 +60899,23 @@ button:disabled { opacity:.5; cursor:default; }
       if (accumulated >= targetScore) break;
       selected.push(candidate);
       accumulated += candidate.score;
+    }
+    if (accumulated < targetScore) {
+      const fallbackScored = scored.slice().sort((a, b) => b.score - a.score);
+      selected.length = 0;
+      accumulated = 0;
+      for (const candidate of fallbackScored) {
+        if (accumulated >= targetScore) break;
+        selected.push(candidate);
+        accumulated += candidate.score;
+      }
+    }
+    for (let i = selected.length - 1; i >= 0; i--) {
+      const candidate = selected[i];
+      if (accumulated - candidate.score >= targetScore) {
+        selected.splice(i, 1);
+        accumulated -= candidate.score;
+      }
     }
     if (accumulated < targetScore) {
       return {
