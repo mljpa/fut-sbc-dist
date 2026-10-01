@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         FUT SBC Solver v2
 // @namespace    https://github.com/mljpa/fut-sbc-solver-v2
-// @version      0.2.54
+// @version      0.2.55
 // @description  Userscript to solve EA SPORTS FC 26 SBCs with your own club
 // @match        https://www.ea.com/*/ea-sports-fc/ultimate-team/web-app*
 // @match        https://www.ea.com/ea-sports-fc/ultimate-team/web-app*
@@ -152,9 +152,10 @@
     const reqs = Array.isArray(ch.eligibilityRequirements) ? ch.eligibilityRequirements : [];
     for (const req of reqs) {
       const text = safeBuildString(req);
-      const maxOvr = text.match(/^OVR\s+Max:\s*(\d+)$/i);
-      if (maxOvr && Number(req.count ?? -1) <= 0) {
-        c.maxOvrPerPlayer = Number(maxOvr[1]);
+      const ovrBound = text.match(/^OVR\s+(Min|Max):\s*(\d+)$/i);
+      if (ovrBound && Number(req.count ?? -1) <= 0) {
+        if (ovrBound[1].toLowerCase() === "min") c.minOvrPerPlayer = Number(ovrBound[2]);
+        else c.maxOvrPerPlayer = Number(ovrBound[2]);
         continue;
       }
       const kv = readKv(req);
@@ -447,6 +448,28 @@
     return [];
   }
 
+  // src/ea/player-names.ts
+  var byId = null;
+  function eaPlayerName(definitionId, databaseId) {
+    if (!Number.isSafeInteger(definitionId) || definitionId <= 0) return null;
+    if (!byId) {
+      const repo = getGlobal("repositories")?.Item;
+      let rows;
+      try {
+        rows = repo?.getStaticData?.();
+      } catch {
+        return null;
+      }
+      if (!Array.isArray(rows) || rows.length === 0) return null;
+      byId = new Map(rows.filter((row) => Number.isSafeInteger(row?.id)).map((row) => [row.id, row]));
+    }
+    const valid = (row) => typeof row?.name === "string" && !!row.name.trim() && row.name.trim() !== "---";
+    const exact = byId.get(definitionId);
+    if (valid(exact)) return exact;
+    const base = databaseId != null && Number.isSafeInteger(databaseId) && databaseId > 0 ? byId.get(databaseId) : void 0;
+    return valid(base) ? base : null;
+  }
+
   // src/ea/club.ts
   var PAGE_SIZE = 91;
   var MAX_PAGES = 60;
@@ -543,13 +566,16 @@
   function readName(raw) {
     try {
       const s = raw.getStaticData?.();
-      if (s?.name) return String(s.name);
+      if (typeof s?.name === "string" && s.name.trim() && s.name.trim() !== "---") return s.name.trim();
     } catch {
     }
     try {
-      if (raw.getName) return String(raw.getName());
+      const name = raw.getName?.();
+      if (typeof name === "string" && name.trim() && name.trim() !== "---") return name.trim();
     } catch {
     }
+    const catalogueName = eaPlayerName(Number(raw.definitionId), Number(raw.databaseId));
+    if (catalogueName) return catalogueName.name;
     return `#${raw.definitionId ?? "?"}`;
   }
   function isSpecial(raw) {
@@ -727,8 +753,8 @@
     );
     if (hits.length === 0) return null;
     if (challengeId != null) {
-      const byId = hits.find((h) => Number(h._challenge?.id) === challengeId);
-      if (byId) return byId;
+      const byId2 = hits.find((h) => Number(h._challenge?.id) === challengeId);
+      if (byId2) return byId2;
     }
     const inDom = hits.find((h) => isInDom(h));
     return inDom ?? hits[hits.length - 1] ?? null;
@@ -1093,9 +1119,10 @@
     let name = `#${definitionId}`;
     try {
       const s = raw.getStaticData?.();
-      if (s?.name) name = String(s.name);
+      if (typeof s?.name === "string" && s.name.trim() && s.name.trim() !== "---") name = s.name.trim();
     } catch {
     }
+    if (name.startsWith("#")) name = eaPlayerName(definitionId, raw.databaseId)?.name ?? name;
     return {
       id: -definitionId,
       // synthetic — concept cards have no instance
@@ -1834,8 +1861,8 @@
     const repo = sbc.repository;
     if (!repo) return null;
     try {
-      const byId = repo.getSetById?.(setId);
-      if (byId) return byId;
+      const byId2 = repo.getSetById?.(setId);
+      if (byId2) return byId2;
     } catch {
     }
     for (const s of collectionValues2(repo.sets)) {
@@ -2213,8 +2240,8 @@
     const repo = sbc.repository;
     if (!repo) return null;
     try {
-      const byId = repo.getSetById?.(setId);
-      if (byId) return byId;
+      const byId2 = repo.getSetById?.(setId);
+      if (byId2) return byId2;
     } catch {
     }
     try {
@@ -2894,11 +2921,11 @@
     }
   }
   function revertOne(tweak) {
-    const undo10 = applied.get(tweak.id);
-    if (!undo10) return;
+    const undo11 = applied.get(tweak.id);
+    if (!undo11) return;
     applied.delete(tweak.id);
     try {
-      undo10();
+      undo11();
       log(`OFF ${tweak.id}`);
     } catch (e) {
       log(`FALL\xD3 al desactivar ${tweak.id}: ${String(e)}`);
@@ -2992,8 +3019,55 @@
     };
   }
 
-  // src/tweaks/pack-animation.ts
+  // src/tweaks/player-names.ts
   var undo = null;
+  registerTweak({
+    id: "interfaz.playerNames",
+    label: "Recuperar nombres de cartas",
+    hint: "Usa el cat\xE1logo de EA cuando una carta aparece como ---.",
+    category: "interfaz",
+    defaultOn: true,
+    enable(ctx) {
+      if (undo) return;
+      const ctor = getGlobal("UTItemEntity");
+      if (typeof ctor?.prototype?.getStaticData !== "function") {
+        ctx.log("interfaz.playerNames: falta UTItemEntity.getStaticData");
+        return;
+      }
+      const changed = /* @__PURE__ */ new Map();
+      const restoreMethod = patchMethod(ctor.prototype, "getStaticData", (original) => function() {
+        const data = original.call(this);
+        if (this.type !== "player" || !data || data.name !== "---") return data;
+        const row = eaPlayerName(Number(this.definitionId), this.databaseId);
+        if (!row) return data;
+        if (!changed.has(data)) changed.set(data, {
+          name: data.name,
+          firstName: data.firstName,
+          lastName: data.lastName,
+          knownAs: data.knownAs
+        });
+        data.name = row.name;
+        if (row.firstName) data.firstName = row.firstName;
+        if (row.lastName) data.lastName = row.lastName;
+        if (row.commonName) data.knownAs = row.commonName;
+        return data;
+      });
+      undo = () => {
+        restoreMethod();
+        for (const [data, prior] of changed) Object.assign(data, prior);
+        changed.clear();
+      };
+      ctx.log("interfaz.playerNames: reparaci\xF3n activa");
+    },
+    disable(ctx) {
+      undo?.();
+      undo = null;
+      ctx.log("interfaz.playerNames: datos originales restaurados");
+    }
+  });
+
+  // src/tweaks/pack-animation.ts
+  var undo2 = null;
   registerTweak({
     id: "packs.skipAnimation",
     label: "Saltar animaci\xF3n de packs",
@@ -3001,7 +3075,7 @@
     category: "packs",
     defaultOn: true,
     enable(ctx) {
-      if (undo) return;
+      if (undo2) return;
       const animCtor = getGlobal("UTPackAnimationViewController");
       const presCtor = getGlobal("UTPresentationController");
       if (!animCtor?.prototype) {
@@ -3034,11 +3108,11 @@
           ]);
         }
       ) : () => void 0;
-      undo = combine(restoreRun, restorePresent);
+      undo2 = combine(restoreRun, restorePresent);
     },
     disable() {
-      undo?.();
-      undo = null;
+      undo2?.();
+      undo2 = null;
     }
   });
 
@@ -3066,7 +3140,7 @@
     }
     return out;
   }
-  var undo2 = null;
+  var undo3 = null;
   registerTweak({
     id: "popups.autoConfirmSafe",
     label: "Auto-confirmar pop-ups inofensivos",
@@ -3074,7 +3148,7 @@
     category: "popups",
     defaultOn: true,
     enable(ctx) {
-      if (undo2) return;
+      if (undo3) return;
       const utils = getGlobal("utils");
       const pm = utils?.PopupManager;
       if (!pm?.showConfirmation) {
@@ -3083,7 +3157,7 @@
       }
       const allowed = safeTitles(pm);
       ctx.log(`popups.autoConfirmSafe: ${allowed.size}/${SAFE_CONFIRMATIONS.length} t\xEDtulos resueltos`);
-      undo2 = patchMethod(
+      undo3 = patchMethod(
         pm,
         "showConfirmation",
         (original) => function(...args) {
@@ -3099,15 +3173,15 @@
       );
     },
     disable() {
-      undo2?.();
-      undo2 = null;
+      undo3?.();
+      undo3 = null;
     }
   });
 
   // src/tweaks/reward-popup.ts
   var SETTLE_MS = 150;
   var BETWEEN_MS = 300;
-  var undo3 = null;
+  var undo4 = null;
   registerTweak({
     id: "popups.autoDismissRewards",
     label: "Cerrar solo el aviso de recompensa",
@@ -3115,7 +3189,7 @@
     category: "popups",
     defaultOn: true,
     enable(ctx) {
-      if (undo3) return;
+      if (undo4) return;
       const ctor = getGlobal("UTGameRewardsView");
       if (!ctor?.prototype) {
         ctx.log("popups.autoDismissRewards: falta UTGameRewardsView");
@@ -3158,7 +3232,7 @@
           return result;
         }
       );
-      undo3 = () => {
+      undo4 = () => {
         restore();
         if (timer !== null) clearTimeout(timer);
         timer = null;
@@ -3166,8 +3240,8 @@
       };
     },
     disable() {
-      undo3?.();
-      undo3 = null;
+      undo4?.();
+      undo4 = null;
     }
   });
 
@@ -3206,7 +3280,7 @@
     walk(root, 0);
     return found;
   }
-  var undo4 = null;
+  var undo5 = null;
   registerTweak({
     id: "packs.backToPacksAfterOpen",
     label: "Volver a Packs al abrir uno",
@@ -3214,7 +3288,7 @@
     category: "packs",
     defaultOn: true,
     enable(ctx) {
-      if (undo4) return;
+      if (undo5) return;
       const entityCtor = getGlobal("UTStorePurchasableArticleEntity");
       const hubCtor = getGlobal("UTStoreHubViewController");
       const packVcCtor = getGlobal("UTStorePackViewController");
@@ -3258,11 +3332,11 @@
           return result;
         }
       );
-      undo4 = combine(restoreOpen, restoreHub);
+      undo5 = combine(restoreOpen, restoreHub);
     },
     disable() {
-      undo4?.();
-      undo4 = null;
+      undo5?.();
+      undo5 = null;
     }
   });
 
@@ -3285,7 +3359,7 @@
     const c = candidate;
     return typeof c?.markSelectedByItem === "function" ? c : null;
   }
-  var undo5 = null;
+  var undo6 = null;
   registerTweak({
     id: "redeem.autoSelectPlayerPick",
     label: "Elegir solo en los Player Pick",
@@ -3317,13 +3391,13 @@
       }
     ],
     enable(ctx) {
-      if (undo5) return;
+      if (undo6) return;
       const ctor = getGlobal("UTPlayerPicksView");
       if (!ctor?.prototype) {
         ctx.log("redeem.autoSelectPlayerPick: falta UTPlayerPicksView");
         return;
       }
-      undo5 = patchMethod(
+      undo6 = patchMethod(
         ctor.prototype,
         "setCarouselItems",
         (original) => function(items, ...rest) {
@@ -3369,13 +3443,13 @@
       );
     },
     disable() {
-      undo5?.();
-      undo5 = null;
+      undo6?.();
+      undo6 = null;
     }
   });
 
   // src/tweaks/unassigned-back.ts
-  var undo6 = null;
+  var undo7 = null;
   registerTweak({
     id: "nav.unassignedAutoBack",
     label: "Salir solo de \xABsin asignar\xBB vac\xEDo",
@@ -3383,13 +3457,13 @@
     category: "navegacion",
     defaultOn: true,
     enable(ctx) {
-      if (undo6) return;
+      if (undo7) return;
       const ctor = getGlobal("UTUnassignedItemsViewController");
       if (!ctor?.prototype) {
         ctx.log("nav.unassignedAutoBack: falta UTUnassignedItemsViewController");
         return;
       }
-      undo6 = patchMethod(
+      undo7 = patchMethod(
         ctor.prototype,
         "renderView",
         (original) => function(...args) {
@@ -3409,8 +3483,8 @@
       );
     },
     disable() {
-      undo6?.();
-      undo6 = null;
+      undo7?.();
+      undo7 = null;
     }
   });
 
@@ -3611,7 +3685,7 @@
 
   // src/tweaks/unassigned-actions.ts
   var ROW_CLASS = "fut-bulk-actions";
-  var undo7 = null;
+  var undo8 = null;
   registerTweak({
     id: "unassigned.bulkActions",
     label: "Acciones masivas en \xABsin asignar\xBB",
@@ -3620,13 +3694,13 @@
     defaultOn: false,
     unverified: true,
     enable(ctx) {
-      if (undo7) return;
+      if (undo8) return;
       const ctor = getGlobal("UTUnassignedItemsView");
       if (!ctor?.prototype) {
         ctx.log("unassigned.bulkActions: falta UTUnassignedItemsView");
         return;
       }
-      undo7 = patchMethod(
+      undo8 = patchMethod(
         ctor.prototype,
         "renderSection",
         (original) => function(...args) {
@@ -3641,8 +3715,8 @@
       );
     },
     disable() {
-      undo7?.();
-      undo7 = null;
+      undo8?.();
+      undo8 = null;
       unmountOwned("bulkActions");
     }
   });
@@ -3822,7 +3896,7 @@
     { label: "Intransferibles \u2192 almac\xE9n", method: "confirmStoreUntradeablesTapped" },
     { label: "Intercambiar repetidos", method: "confirmSwapUntradeablesTapped" }
   ];
-  var undo8 = null;
+  var undo9 = null;
   registerTweak({
     id: "unassigned.eaActions",
     label: "Acciones de EA como botones",
@@ -3830,13 +3904,13 @@
     category: "navegacion",
     defaultOn: false,
     enable(ctx) {
-      if (undo8) return;
+      if (undo9) return;
       const ctor = getGlobal("UTUnassignedItemsView");
       if (!ctor?.prototype) {
         ctx.log("unassigned.eaActions: falta UTUnassignedItemsView");
         return;
       }
-      undo8 = patchMethod(
+      undo9 = patchMethod(
         ctor.prototype,
         "renderSection",
         (original) => function(...args) {
@@ -3851,8 +3925,8 @@
       );
     },
     disable() {
-      undo8?.();
-      undo8 = null;
+      undo9?.();
+      undo9 = null;
       unmountOwned(OWNER);
     }
   });
@@ -3911,7 +3985,7 @@
   var ARM_MS = 5e3;
   var IDLE_LABEL = "Venta r\xE1pida";
   var ARMED_LABEL = "\xBFSeguro? Toc\xE1 otra vez";
-  var undo9 = null;
+  var undo10 = null;
   var armed = false;
   var armTimer;
   var setLabel = null;
@@ -3930,13 +4004,13 @@
     irreversible: true,
     unverified: true,
     enable(ctx) {
-      if (undo9) return;
+      if (undo10) return;
       const ctor = getGlobal("UTUnassignedItemsView");
       if (!ctor?.prototype) {
         ctx.log("unassigned.quickSell: falta UTUnassignedItemsView");
         return;
       }
-      undo9 = patchMethod(
+      undo10 = patchMethod(
         ctor.prototype,
         "renderSection",
         (original) => function(...args) {
@@ -3951,8 +4025,8 @@
       );
     },
     disable() {
-      undo9?.();
-      undo9 = null;
+      undo10?.();
+      undo10 = null;
       disarm();
       setLabel = null;
       unmountOwned(OWNER2);
@@ -59208,7 +59282,7 @@ button:disabled { opacity:.5; cursor:default; }
     panel.setAttribute("aria-label", "Colecciones");
     const head = el("div", void 0, "head");
     const title = el("h2", "Colecciones");
-    const version = el("a", `v${"0.2.54"}`, "version");
+    const version = el("a", `v${"0.2.55"}`, "version");
     version.href = "https://raw.githubusercontent.com/mljpa/fut-sbc-dist/main/fut-sbc.user.js";
     version.target = "_blank";
     version.rel = "noopener noreferrer";
@@ -59920,10 +59994,10 @@ button:disabled { opacity:.5; cursor:default; }
     }
     function referenceCards(set) {
       if (plannedGrade === null) return cardsToComplete(set, owned);
-      const byId = new Map(set.cards.map((card) => [card.definitionId, card]));
+      const byId2 = new Map(set.cards.map((card) => [card.definitionId, card]));
       const items = referenceItems(set);
       if (items.length) return items.flatMap((item) => {
-        const card = byId.get(item.definitionId);
+        const card = byId2.get(item.definitionId);
         return card ? [card] : [];
       });
       return [];
