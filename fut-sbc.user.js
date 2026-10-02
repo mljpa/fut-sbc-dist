@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         FUT SBC Solver v2
 // @namespace    https://github.com/mljpa/fut-sbc-solver-v2
-// @version      0.2.55
+// @version      0.2.56
 // @description  Userscript to solve EA SPORTS FC 26 SBCs with your own club
 // @match        https://www.ea.com/*/ea-sports-fc/ultimate-team/web-app*
 // @match        https://www.ea.com/ea-sports-fc/ultimate-team/web-app*
@@ -18,16 +18,24 @@
   function getGlobal(name) {
     return globalThis[name];
   }
-  function waitForServices(timeoutMs = 6e4) {
+  function itemMetadataReady() {
+    const repositories = getGlobal("repositories");
+    try {
+      return repositories?.Item?.hasStaticData?.() === true && repositories.Squad?.getPositionByUniqueName?.("GK")?.id === 0 && repositories.Squad?.getPositionByUniqueName?.("CM")?.id === 14 && repositories.Squad?.getPositionByUniqueName?.("CAM")?.id === 18;
+    } catch {
+      return false;
+    }
+  }
+  function waitForServices(timeoutMs = 0) {
     const start = Date.now();
     return new Promise((resolve, reject) => {
       const tick = () => {
         const s = getGlobal("services");
-        if (s && s.Localization && s.SBC && s.Squad && s.Item && s.Club) {
+        if (s && s.Localization && s.SBC && s.Squad && s.Item && s.Club && itemMetadataReady()) {
           resolve(s);
           return;
         }
-        if (Date.now() - start > timeoutMs) {
+        if (timeoutMs > 0 && Date.now() - start >= timeoutMs) {
           reject(new Error("waitForServices: timed out"));
           return;
         }
@@ -476,6 +484,7 @@
   async function fetchClubPlayers() {
     const players = [];
     const items = /* @__PURE__ */ new Map();
+    await waitForServices();
     const services = getGlobal("services");
     const club = services?.["Club"];
     const VM = getGlobal("UTBucketedItemSearchViewModel");
@@ -2921,11 +2930,11 @@
     }
   }
   function revertOne(tweak) {
-    const undo11 = applied.get(tweak.id);
-    if (!undo11) return;
+    const undo10 = applied.get(tweak.id);
+    if (!undo10) return;
     applied.delete(tweak.id);
     try {
-      undo11();
+      undo10();
       log(`OFF ${tweak.id}`);
     } catch (e) {
       log(`FALL\xD3 al desactivar ${tweak.id}: ${String(e)}`);
@@ -3019,55 +3028,8 @@
     };
   }
 
-  // src/tweaks/player-names.ts
-  var undo = null;
-  registerTweak({
-    id: "interfaz.playerNames",
-    label: "Recuperar nombres de cartas",
-    hint: "Usa el cat\xE1logo de EA cuando una carta aparece como ---.",
-    category: "interfaz",
-    defaultOn: true,
-    enable(ctx) {
-      if (undo) return;
-      const ctor = getGlobal("UTItemEntity");
-      if (typeof ctor?.prototype?.getStaticData !== "function") {
-        ctx.log("interfaz.playerNames: falta UTItemEntity.getStaticData");
-        return;
-      }
-      const changed = /* @__PURE__ */ new Map();
-      const restoreMethod = patchMethod(ctor.prototype, "getStaticData", (original) => function() {
-        const data = original.call(this);
-        if (this.type !== "player" || !data || data.name !== "---") return data;
-        const row = eaPlayerName(Number(this.definitionId), this.databaseId);
-        if (!row) return data;
-        if (!changed.has(data)) changed.set(data, {
-          name: data.name,
-          firstName: data.firstName,
-          lastName: data.lastName,
-          knownAs: data.knownAs
-        });
-        data.name = row.name;
-        if (row.firstName) data.firstName = row.firstName;
-        if (row.lastName) data.lastName = row.lastName;
-        if (row.commonName) data.knownAs = row.commonName;
-        return data;
-      });
-      undo = () => {
-        restoreMethod();
-        for (const [data, prior] of changed) Object.assign(data, prior);
-        changed.clear();
-      };
-      ctx.log("interfaz.playerNames: reparaci\xF3n activa");
-    },
-    disable(ctx) {
-      undo?.();
-      undo = null;
-      ctx.log("interfaz.playerNames: datos originales restaurados");
-    }
-  });
-
   // src/tweaks/pack-animation.ts
-  var undo2 = null;
+  var undo = null;
   registerTweak({
     id: "packs.skipAnimation",
     label: "Saltar animaci\xF3n de packs",
@@ -3075,7 +3037,7 @@
     category: "packs",
     defaultOn: true,
     enable(ctx) {
-      if (undo2) return;
+      if (undo) return;
       const animCtor = getGlobal("UTPackAnimationViewController");
       const presCtor = getGlobal("UTPresentationController");
       if (!animCtor?.prototype) {
@@ -3108,11 +3070,11 @@
           ]);
         }
       ) : () => void 0;
-      undo2 = combine(restoreRun, restorePresent);
+      undo = combine(restoreRun, restorePresent);
     },
     disable() {
-      undo2?.();
-      undo2 = null;
+      undo?.();
+      undo = null;
     }
   });
 
@@ -3140,7 +3102,7 @@
     }
     return out;
   }
-  var undo3 = null;
+  var undo2 = null;
   registerTweak({
     id: "popups.autoConfirmSafe",
     label: "Auto-confirmar pop-ups inofensivos",
@@ -3148,7 +3110,7 @@
     category: "popups",
     defaultOn: true,
     enable(ctx) {
-      if (undo3) return;
+      if (undo2) return;
       const utils = getGlobal("utils");
       const pm = utils?.PopupManager;
       if (!pm?.showConfirmation) {
@@ -3157,7 +3119,7 @@
       }
       const allowed = safeTitles(pm);
       ctx.log(`popups.autoConfirmSafe: ${allowed.size}/${SAFE_CONFIRMATIONS.length} t\xEDtulos resueltos`);
-      undo3 = patchMethod(
+      undo2 = patchMethod(
         pm,
         "showConfirmation",
         (original) => function(...args) {
@@ -3173,15 +3135,15 @@
       );
     },
     disable() {
-      undo3?.();
-      undo3 = null;
+      undo2?.();
+      undo2 = null;
     }
   });
 
   // src/tweaks/reward-popup.ts
   var SETTLE_MS = 150;
   var BETWEEN_MS = 300;
-  var undo4 = null;
+  var undo3 = null;
   registerTweak({
     id: "popups.autoDismissRewards",
     label: "Cerrar solo el aviso de recompensa",
@@ -3189,7 +3151,7 @@
     category: "popups",
     defaultOn: true,
     enable(ctx) {
-      if (undo4) return;
+      if (undo3) return;
       const ctor = getGlobal("UTGameRewardsView");
       if (!ctor?.prototype) {
         ctx.log("popups.autoDismissRewards: falta UTGameRewardsView");
@@ -3232,7 +3194,7 @@
           return result;
         }
       );
-      undo4 = () => {
+      undo3 = () => {
         restore();
         if (timer !== null) clearTimeout(timer);
         timer = null;
@@ -3240,8 +3202,8 @@
       };
     },
     disable() {
-      undo4?.();
-      undo4 = null;
+      undo3?.();
+      undo3 = null;
     }
   });
 
@@ -3280,7 +3242,7 @@
     walk(root, 0);
     return found;
   }
-  var undo5 = null;
+  var undo4 = null;
   registerTweak({
     id: "packs.backToPacksAfterOpen",
     label: "Volver a Packs al abrir uno",
@@ -3288,7 +3250,7 @@
     category: "packs",
     defaultOn: true,
     enable(ctx) {
-      if (undo5) return;
+      if (undo4) return;
       const entityCtor = getGlobal("UTStorePurchasableArticleEntity");
       const hubCtor = getGlobal("UTStoreHubViewController");
       const packVcCtor = getGlobal("UTStorePackViewController");
@@ -3332,11 +3294,11 @@
           return result;
         }
       );
-      undo5 = combine(restoreOpen, restoreHub);
+      undo4 = combine(restoreOpen, restoreHub);
     },
     disable() {
-      undo5?.();
-      undo5 = null;
+      undo4?.();
+      undo4 = null;
     }
   });
 
@@ -3359,7 +3321,7 @@
     const c = candidate;
     return typeof c?.markSelectedByItem === "function" ? c : null;
   }
-  var undo6 = null;
+  var undo5 = null;
   registerTweak({
     id: "redeem.autoSelectPlayerPick",
     label: "Elegir solo en los Player Pick",
@@ -3391,13 +3353,13 @@
       }
     ],
     enable(ctx) {
-      if (undo6) return;
+      if (undo5) return;
       const ctor = getGlobal("UTPlayerPicksView");
       if (!ctor?.prototype) {
         ctx.log("redeem.autoSelectPlayerPick: falta UTPlayerPicksView");
         return;
       }
-      undo6 = patchMethod(
+      undo5 = patchMethod(
         ctor.prototype,
         "setCarouselItems",
         (original) => function(items, ...rest) {
@@ -3443,13 +3405,13 @@
       );
     },
     disable() {
-      undo6?.();
-      undo6 = null;
+      undo5?.();
+      undo5 = null;
     }
   });
 
   // src/tweaks/unassigned-back.ts
-  var undo7 = null;
+  var undo6 = null;
   registerTweak({
     id: "nav.unassignedAutoBack",
     label: "Salir solo de \xABsin asignar\xBB vac\xEDo",
@@ -3457,13 +3419,13 @@
     category: "navegacion",
     defaultOn: true,
     enable(ctx) {
-      if (undo7) return;
+      if (undo6) return;
       const ctor = getGlobal("UTUnassignedItemsViewController");
       if (!ctor?.prototype) {
         ctx.log("nav.unassignedAutoBack: falta UTUnassignedItemsViewController");
         return;
       }
-      undo7 = patchMethod(
+      undo6 = patchMethod(
         ctor.prototype,
         "renderView",
         (original) => function(...args) {
@@ -3483,8 +3445,8 @@
       );
     },
     disable() {
-      undo7?.();
-      undo7 = null;
+      undo6?.();
+      undo6 = null;
     }
   });
 
@@ -3685,7 +3647,7 @@
 
   // src/tweaks/unassigned-actions.ts
   var ROW_CLASS = "fut-bulk-actions";
-  var undo8 = null;
+  var undo7 = null;
   registerTweak({
     id: "unassigned.bulkActions",
     label: "Acciones masivas en \xABsin asignar\xBB",
@@ -3694,13 +3656,13 @@
     defaultOn: false,
     unverified: true,
     enable(ctx) {
-      if (undo8) return;
+      if (undo7) return;
       const ctor = getGlobal("UTUnassignedItemsView");
       if (!ctor?.prototype) {
         ctx.log("unassigned.bulkActions: falta UTUnassignedItemsView");
         return;
       }
-      undo8 = patchMethod(
+      undo7 = patchMethod(
         ctor.prototype,
         "renderSection",
         (original) => function(...args) {
@@ -3715,8 +3677,8 @@
       );
     },
     disable() {
-      undo8?.();
-      undo8 = null;
+      undo7?.();
+      undo7 = null;
       unmountOwned("bulkActions");
     }
   });
@@ -3896,7 +3858,7 @@
     { label: "Intransferibles \u2192 almac\xE9n", method: "confirmStoreUntradeablesTapped" },
     { label: "Intercambiar repetidos", method: "confirmSwapUntradeablesTapped" }
   ];
-  var undo9 = null;
+  var undo8 = null;
   registerTweak({
     id: "unassigned.eaActions",
     label: "Acciones de EA como botones",
@@ -3904,13 +3866,13 @@
     category: "navegacion",
     defaultOn: false,
     enable(ctx) {
-      if (undo9) return;
+      if (undo8) return;
       const ctor = getGlobal("UTUnassignedItemsView");
       if (!ctor?.prototype) {
         ctx.log("unassigned.eaActions: falta UTUnassignedItemsView");
         return;
       }
-      undo9 = patchMethod(
+      undo8 = patchMethod(
         ctor.prototype,
         "renderSection",
         (original) => function(...args) {
@@ -3925,8 +3887,8 @@
       );
     },
     disable() {
-      undo9?.();
-      undo9 = null;
+      undo8?.();
+      undo8 = null;
       unmountOwned(OWNER);
     }
   });
@@ -3985,7 +3947,7 @@
   var ARM_MS = 5e3;
   var IDLE_LABEL = "Venta r\xE1pida";
   var ARMED_LABEL = "\xBFSeguro? Toc\xE1 otra vez";
-  var undo10 = null;
+  var undo9 = null;
   var armed = false;
   var armTimer;
   var setLabel = null;
@@ -4004,13 +3966,13 @@
     irreversible: true,
     unverified: true,
     enable(ctx) {
-      if (undo10) return;
+      if (undo9) return;
       const ctor = getGlobal("UTUnassignedItemsView");
       if (!ctor?.prototype) {
         ctx.log("unassigned.quickSell: falta UTUnassignedItemsView");
         return;
       }
-      undo10 = patchMethod(
+      undo9 = patchMethod(
         ctor.prototype,
         "renderSection",
         (original) => function(...args) {
@@ -4025,8 +3987,8 @@
       );
     },
     disable() {
-      undo10?.();
-      undo10 = null;
+      undo9?.();
+      undo9 = null;
       disarm();
       setLabel = null;
       unmountOwned(OWNER2);
@@ -59282,7 +59244,7 @@ button:disabled { opacity:.5; cursor:default; }
     panel.setAttribute("aria-label", "Colecciones");
     const head = el("div", void 0, "head");
     const title = el("h2", "Colecciones");
-    const version = el("a", `v${"0.2.55"}`, "version");
+    const version = el("a", `v${"0.2.56"}`, "version");
     version.href = "https://raw.githubusercontent.com/mljpa/fut-sbc-dist/main/fut-sbc.user.js";
     version.target = "_blank";
     version.rel = "noopener noreferrer";
