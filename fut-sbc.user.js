@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         FUT SBC Solver v2
 // @namespace    https://github.com/mljpa/fut-sbc-solver-v2
-// @version      0.2.58
+// @version      0.2.59
 // @description  Userscript to solve EA SPORTS FC 26 SBCs with your own club
 // @match        https://www.ea.com/*/ea-sports-fc/ultimate-team/web-app*
 // @match        https://www.ea.com/ea-sports-fc/ultimate-team/web-app*
@@ -61979,7 +61979,7 @@ button:disabled { opacity:.5; cursor:default; }
     panel.setAttribute("aria-label", "Colecciones");
     const head = el("div", void 0, "head");
     const title = el("h2", "Colecciones");
-    const version = el("a", `v${"0.2.58"}`, "version");
+    const version = el("a", `v${"0.2.59"}`, "version");
     version.href = "https://raw.githubusercontent.com/mljpa/fut-sbc-dist/main/fut-sbc.user.js";
     version.target = "_blank";
     version.rel = "noopener noreferrer";
@@ -63519,8 +63519,9 @@ button:disabled { opacity:.5; cursor:default; }
       body.append(gradeTabs);
       const targetOption = options.find((option) => option.grade === plannedGrade);
       if (targetOption) {
+        const newTokens = collectionTokenOptions(owned, confirmedClaims, calculatedGrades).find((option) => option.setId === selected.catalogId && option.grade === targetOption.grade)?.tokens ?? 0;
         const target = el("div", void 0, "grade-target");
-        target.append(el("strong", `Grado ${targetOption.grade} \xB7 +${fmt(targetOption.tokens)} fichas nuevas \xB7 ${fmt(targetOption.accumulatedTokens)} acumuladas`));
+        target.append(el("strong", `Grado ${targetOption.grade} \xB7 +${fmt(newTokens)} fichas nuevas \xB7 ${fmt(targetOption.accumulatedTokens)} acumuladas`));
         if (targetOption.available) target.append(el("small", `${targetOption.requiredCards - targetOption.missingItems.length}/${targetOption.requiredCards} cartas de la alineaci\xF3n obtenidas \xB7 ${fmt(targetOption.purchaseCoins)} precio total FUT.GG${targetOption.unpricedCards ? ` \xB7 ${targetOption.unpricedCards} sin precio` : ""}`));
         else target.append(el("small", "Sin alineaci\xF3n publicada para este grado"));
         const marks = el("div", void 0, "trade-actions");
