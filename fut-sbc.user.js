@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         FUT SBC Solver v2
 // @namespace    https://github.com/mljpa/fut-sbc-solver-v2
-// @version      0.2.57
+// @version      0.2.58
 // @description  Userscript to solve EA SPORTS FC 26 SBCs with your own club
 // @match        https://www.ea.com/*/ea-sports-fc/ultimate-team/web-app*
 // @match        https://www.ea.com/ea-sports-fc/ultimate-team/web-app*
@@ -61523,7 +61523,7 @@ Consume las cartas que use. Esto NO se puede deshacer.
     return new TextDecoder("utf-8", { fatal: true }).decode(bytes);
   }
   var GalleryCatalogUpdater = class {
-    constructor(current, storage3, request = fetch, now = Date.now) {
+    constructor(current, storage3, request = globalThis.fetch.bind(globalThis), now = Date.now) {
       this.current = current;
       this.storage = storage3;
       this.request = request;
@@ -61979,7 +61979,7 @@ button:disabled { opacity:.5; cursor:default; }
     panel.setAttribute("aria-label", "Colecciones");
     const head = el("div", void 0, "head");
     const title = el("h2", "Colecciones");
-    const version = el("a", `v${"0.2.57"}`, "version");
+    const version = el("a", `v${"0.2.58"}`, "version");
     version.href = "https://raw.githubusercontent.com/mljpa/fut-sbc-dist/main/fut-sbc.user.js";
     version.target = "_blank";
     version.rel = "noopener noreferrer";
