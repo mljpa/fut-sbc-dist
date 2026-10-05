@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         FUT SBC Solver v2
 // @namespace    https://github.com/mljpa/fut-sbc-solver-v2
-// @version      0.2.60
+// @version      0.2.61
 // @description  Userscript to solve EA SPORTS FC 26 SBCs with your own club
 // @match        https://www.ea.com/*/ea-sports-fc/ultimate-team/web-app*
 // @match        https://www.ea.com/ea-sports-fc/ultimate-team/web-app*
@@ -61782,6 +61782,26 @@ button:disabled { opacity:.5; cursor:default; }
 .token-suggestions button:focus-visible,.token-goal-form input:focus-visible,.token-goal-form select:focus-visible { outline:2px solid var(--accent); outline-offset:2px; }
 @media(max-width:600px) { .token-plan-step { flex-wrap:wrap; } .token-goal-form label { flex:1; } }
 .set-card.queued { border-color:var(--accent); }
+.set-card.attained .attained-grade { color:var(--accent); }
+.grade-target.complete { border-color:var(--accent); }
+.grade-target.complete strong { color:var(--accent); }
+.token-goal-form input,.token-goal-form select { max-width:100%; }
+.player-row .who strong { overflow-wrap:anywhere; }
+@media(max-width:600px) {
+  .backdrop { padding:8px; }
+  .panel { width:100%; height:96vh; }
+  .head,.body,.catalog-state,.panel-footer { padding-left:12px; padding-right:12px; }
+  .token-goal-form label { min-width:0; flex-basis:100%; }
+  .token-goal-form input,.token-goal-form select { width:100%; }
+  .set-controls label { min-width:0; flex:1 1 140px; }
+  .set-controls select { width:100%; min-width:0; }
+  .player-row { flex-wrap:wrap; gap:6px; }
+  .player-row .who { flex:1 1 calc(100% - 44px); }
+  .player-row .market-price { flex:1; min-width:0; text-align:left; padding-left:38px; }
+  .player-row button { margin-left:auto; }
+  .panel-footer { gap:8px; flex-wrap:wrap; }
+  .panel-footer button { flex:1; }
+}
 .queue-picker { display:flex; gap:6px; margin-top:7px; }
 .queue-picker select,.queue-row select,.queue-picker button,.queue-row button { border:1px solid var(--line); border-radius:5px; padding:7px 9px; background:var(--bg); color:var(--fg); min-width:0; }
 .queue-picker button { flex:1; }
@@ -61985,7 +62005,7 @@ button:disabled { opacity:.5; cursor:default; }
     panel.setAttribute("aria-label", "Colecciones");
     const head = el("div", void 0, "head");
     const title = el("h2", "Colecciones");
-    const version = el("a", `v${"0.2.60"}`, "version");
+    const version = el("a", `v${"0.2.61"}`, "version");
     version.href = "https://raw.githubusercontent.com/mljpa/fut-sbc-dist/main/fut-sbc.user.js";
     version.target = "_blank";
     version.rel = "noopener noreferrer";
@@ -62101,6 +62121,7 @@ button:disabled { opacity:.5; cursor:default; }
     let plannedGrade = null;
     let purchaseQueue = savedPreferences.collectionBuyQueue;
     let queueOpen = false;
+    let planDetailsOpen = false;
     let tradeIsQueue = false;
     let activeQueueRows = [];
     let stopRequested = false;
@@ -62415,15 +62436,22 @@ button:disabled { opacity:.5; cursor:default; }
       persistPreferences();
       render();
     }
-    function queuePicker(set) {
+    function queuePicker(set, options) {
       const picker = el("div", void 0, "queue-picker");
-      const options = galleryGradeOptions(set.catalogId, owned, confirmedClaims);
+      const eligible = options.filter((option) => !option.completed && option.available);
       const queued = purchaseQueue.find((entry) => entry.setId === set.catalogId);
-      let grade = queued?.grade ?? options.find((option) => option.grade === "B" && option.available)?.grade ?? options.find((option) => option.available)?.grade ?? "D";
+      if (!eligible.length && !queued) return picker;
+      let grade = queued?.grade ?? eligible.find((option) => option.grade === "B")?.grade ?? eligible[0]?.grade ?? "D";
       const select = el("select");
       select.setAttribute("aria-label", `Grado para comprar ${set.name}`);
-      select.disabled = busy;
-      for (const option of options) {
+      select.disabled = busy || !eligible.length;
+      if (queued && !eligible.some((option) => option.grade === queued.grade)) {
+        const current2 = el("option", `Grado ${queued.grade} \xB7 revisar`);
+        current2.value = queued.grade;
+        current2.disabled = true;
+        select.append(current2);
+      }
+      for (const option of eligible) {
         const item = el("option", `Grado ${option.grade}`);
         item.value = option.grade;
         select.append(item);
@@ -62434,8 +62462,8 @@ button:disabled { opacity:.5; cursor:default; }
       });
       const update = () => {
         const option = options.find((entry) => entry.grade === grade);
-        add.disabled = busy || !option?.available;
-        add.title = option?.available ? "Seleccionar este grado para la compra conjunta" : "Sin alineaci\xF3n publicada para este grado";
+        add.disabled = busy || !queued && (!option?.available || option.completed);
+        add.title = queued ? "Quitar esta colecci\xF3n de la cola" : "Seleccionar este grado para la compra conjunta";
       };
       select.addEventListener("change", () => {
         grade = select.value;
@@ -62674,13 +62702,23 @@ button:disabled { opacity:.5; cursor:default; }
       const plan = tokenPlanCache.plan;
       const summary = el("div", void 0, "token-plan-summary");
       summary.append(
-        el("strong", plan.remaining === 0 ? `\u2713 Objetivo de ${fmt(collectionTokenGoal)} fichas registrado` : `${fmt(plan.registered)} / ${fmt(collectionTokenGoal)} registradas \xB7 sugerencias para +${fmt(plan.gainedTokens)} fichas`),
-        el("small", `${plan.sets.length} colecciones \xB7 ${fmt(plan.uniqueCards)} cartas por obtener \xB7 ${fmt(plan.coinsNeeded)} monedas para compra/reventa \xB7 ${fmt(plan.purchaseCoins)} precio total FUT.GG`)
+        el("strong", plan.remaining === 0 ? "\u2713 Objetivo registrado" : `Sugerencias para +${fmt(plan.gainedTokens)} fichas`),
+        el("small", `${plan.sets.length} colecciones \xB7 ${fmt(plan.uniqueCards)} cartas \xB7 ${fmt(collectionPlanPriority === "coins" ? plan.coinsNeeded : plan.purchaseCoins)} monedas ${collectionPlanPriority === "coins" ? "para compra/reventa" : "estimadas"}`)
       );
+      if (plan.registered > 0) summary.append(el("small", `${fmt(plan.registered)} / ${fmt(collectionTokenGoal)} fichas registradas`));
       block.append(summary);
-      if (collectionMaxCoins !== null) block.append(el("p", `Hasta ${fmt(collectionMaxCoins)} monedas por colecci\xF3n \xB7 Coste de cartas faltantes`, "set-count"));
       if (!plan.reachesGoal) block.append(el("p", `Las opciones disponibles cubren +${fmt(plan.gainedTokens)}; faltan ${fmt(Math.max(0, plan.remaining - plan.gainedTokens))} fichas.`, "note"));
-      block.append(el("p", "Solo grados pendientes \xB7 Las mejoras suman \xFAnicamente fichas adicionales \xB7 Precios estimados.", "note"));
+      const planDetails = el("details", void 0, "collection-details plan-details");
+      planDetails.open = planDetailsOpen;
+      planDetails.addEventListener("toggle", () => {
+        if (planDetails.isConnected) planDetailsOpen = planDetails.open;
+      });
+      planDetails.append(
+        el("summary", "Detalles del c\xE1lculo"),
+        el("p", `${fmt(plan.purchaseCoins)} monedas de coste total \xB7 ${fmt(plan.coinsNeeded)} para compra/reventa`, "note"),
+        el("p", "Precios de referencia FUT.GG. Las mejoras cuentan solo fichas adicionales; un grado alcanzado no registra un canje.", "note")
+      );
+      block.append(planDetails);
       const controls = el("div", void 0, "set-controls");
       const selectControl = (label, values, value, change) => {
         const field2 = el("label", label), select = el("select");
@@ -62727,8 +62765,9 @@ button:disabled { opacity:.5; cursor:default; }
       maxInput.min = "0";
       maxInput.max = "15000000";
       maxInput.step = "1";
-      maxInput.placeholder = "Sin l\xEDmite \xB7 Ej. 170000";
+      maxInput.placeholder = "Sin l\xEDmite";
       maxInput.value = collectionMaxCoins === null ? "" : String(collectionMaxCoins);
+      maxField.title = "Coste total de cartas faltantes de cada grado";
       const applyLimit = () => {
         if (!isActive() || !maxInput.checkValidity()) return;
         const value = maxInput.value === "" ? null : Number(maxInput.value);
@@ -62757,7 +62796,7 @@ button:disabled { opacity:.5; cursor:default; }
       block.append(controls);
       const candidates = suggestionScope === "route" ? plan.sets : collectionTokenOptions(owned, confirmedClaims, calculatedGrades, collectionMaxCoins).filter((step) => step.available && !step.completed && step.tokens > 0);
       const steps = visibleSuggestions(candidates, suggestionSort, collectionPlanPriority, suggestionMinTokens, collectionMaxCoins);
-      block.append(el("p", suggestionScope === "route" ? `${steps.length} de ${plan.sets.length} sugerencias` : `${steps.length} ${steps.length === 1 ? "alternativa" : "alternativas"} \xB7 Cada grado es una opci\xF3n; no se suman al objetivo.`, "set-count"));
+      block.append(el("p", suggestionScope === "route" ? `${steps.length} sugerencias` : `${steps.length} ${steps.length === 1 ? "alternativa" : "alternativas"}`, "set-count"));
       if (!steps.length) block.append(el("p", "No hay resultados con estos filtros. Sube el l\xEDmite de monedas o baja las fichas m\xEDnimas.", "note"));
       for (const [index, step] of steps.slice(0, planVisibleCount).entries()) {
         const card = el("div", void 0, "token-plan-step");
@@ -62765,8 +62804,8 @@ button:disabled { opacity:.5; cursor:default; }
         if (ready) card.classList.add("ready");
         const text = el("div");
         text.append(
-          el("strong", `${ready ? "\u2713 " : ""}${index + 1}. ${step.name} \xB7 grado ${step.grade} \xB7 +${fmt(step.tokens)} fichas`),
-          el("small", step.missingItems.length ? `${step.missingItems.length} cartas por obtener \xB7 ${step.unpricedCards ? "Precio incompleto" : `${fmt(step.purchaseCoins)} monedas \xB7 ${fmt(Math.ceil(step.purchaseCoins / step.tokens))} por ficha`}` : "Completado")
+          el("strong", `${ready ? "\u2713 " : ""}${index + 1}. ${step.name} \xB7 ${step.grade} \xB7 +${fmt(step.tokens)} fichas`),
+          el("small", step.missingItems.length ? `${step.missingItems.length} cartas faltantes \xB7 ${step.unpricedCards ? "Precio incompleto" : `${fmt(step.purchaseCoins)} monedas estimadas`}` : "Completado")
         );
         card.append(
           text,
@@ -63242,7 +63281,7 @@ button:disabled { opacity:.5; cursor:default; }
       const list = el("div", void 0, "list");
       if (cards.length === 0) list.append(el("div", "No hay cartas en esta vista.", "empty"));
       for (const card of cards) {
-        const row = el("div", void 0, "row");
+        const row = el("div", void 0, "row player-row");
         row.append(el("span", String(card.rating), "ovr"));
         const who = el("div", void 0, "who");
         const score = scores?.get(card.definitionId);
@@ -63261,11 +63300,13 @@ button:disabled { opacity:.5; cursor:default; }
         }
         if (!owned.has(card.definitionId)) {
           if (chosen.has(card.definitionId)) row.classList.add("chosen");
-          row.append(button(chosen.has(card.definitionId) ? "\u2713 A\xF1adido" : "+ A\xF1adir", () => {
+          const add = button(chosen.has(card.definitionId) ? "\u2713 A\xF1adido" : "+ A\xF1adir", () => {
             if (chosen.has(card.definitionId)) chosen.delete(card.definitionId);
             else chosen.add(card.definitionId);
             render();
-          }));
+          });
+          add.setAttribute("aria-label", `${chosen.has(card.definitionId) ? "Quitar" : "A\xF1adir"} ${card.name}`);
+          row.append(add);
         }
         list.append(row);
       }
@@ -63275,7 +63316,7 @@ button:disabled { opacity:.5; cursor:default; }
       if (disposed) return;
       adoptCatalogUpdate();
       renderCatalogState();
-      const collectionDetailsOpen = body.querySelector(".collection-details")?.open ?? false;
+      const collectionDetailsOpen = body.querySelector(".collection-details:not(.plan-details)")?.open ?? false;
       body.replaceChildren();
       footer.replaceChildren();
       panel.classList.toggle("trade-panel", tradeView);
@@ -63294,6 +63335,12 @@ button:disabled { opacity:.5; cursor:default; }
         return;
       }
       const calculatedGrades = completedGalleryGrades(owned, [...knownCards.values()]);
+      const optionsBySet = /* @__PURE__ */ new Map();
+      for (const option of collectionTokenOptions(owned, confirmedClaims, calculatedGrades)) {
+        const group = optionsBySet.get(option.setId) ?? [];
+        group.push(option);
+        optionsBySet.set(option.setId, group);
+      }
       const tools = el("div", void 0, "tools");
       if (selected) tools.append(button(returnToHome ? "\u2190 Sugerencias" : "\u2190 Colecciones", () => {
         priceRequestId++;
@@ -63444,7 +63491,8 @@ button:disabled { opacity:.5; cursor:default; }
         body.append(el("p", `${shown.length} de ${sets.length} colecciones \xB7 progreso estimado`, "set-count"));
         const grid = el("div", void 0, "grid");
         for (const set of shown) {
-          const track2 = collectionGradeTrack(set, owned, calculatedGrades[String(set.catalogId)] ?? null);
+          const gradeOptions = optionsBySet.get(set.catalogId) ?? [];
+          const track2 = collectionGradeTrack(set, owned, gradeOptions[0]?.fromGrade ?? null);
           const got2 = track2.obtained;
           const pct = set.requiredCards ? Math.round(got2 / set.requiredCards * 100) : 0;
           const card = el("div", void 0, "set-card");
@@ -63452,9 +63500,10 @@ button:disabled { opacity:.5; cursor:default; }
           card.append(button(set.name, () => {
             void openSet(set);
           }, "set-title"));
-          card.append(el("small", track2.grade ? `Tus cartas: grado ${track2.grade} estimado` : `${got2 >= set.requiredCards ? "Grado por determinar" : "En progreso"} \xB7 ${got2}/${set.requiredCards} cartas`));
+          if (track2.grade) card.classList.add("attained");
+          card.append(el("small", track2.grade ? `Grado ${track2.grade} estimado` : `${got2 >= set.requiredCards ? "Grado por determinar" : "En progreso"} \xB7 ${got2}/${set.requiredCards} cartas`, track2.grade ? "attained-grade" : void 0));
           const grades = el("div", void 0, "tabs grade-tabs");
-          for (const option of galleryGradeOptions(set.catalogId, owned, confirmedClaims)) {
+          for (const option of gradeOptions) {
             const grade = button(`${option.grade}${option.completed ? " \u2713" : ""}`, () => {
               void openSet(set, option.grade);
             });
@@ -63466,7 +63515,9 @@ button:disabled { opacity:.5; cursor:default; }
             }
             grades.append(grade);
           }
-          card.append(grades, queuePicker(set));
+          card.append(grades);
+          const picker = queuePicker(set, gradeOptions);
+          if (picker.childElementCount) card.append(picker);
           const leagueId = set.cards[0]?.leagueId;
           if (leagues.length > 1 && leagueId && LEAGUE_NAMES[leagueId]) card.append(el("small", LEAGUE_NAMES[leagueId]));
           if (track2.grade) card.append(el("small", `${got2}/${set.requiredCards} cartas`));
@@ -63491,7 +63542,8 @@ button:disabled { opacity:.5; cursor:default; }
         } else body.append(grid);
         return;
       }
-      const track = collectionGradeTrack(selected, owned, calculatedGrades[String(selected.catalogId)] ?? null);
+      const options = optionsBySet.get(selected.catalogId) ?? [];
+      const track = collectionGradeTrack(selected, owned, options[0]?.fromGrade ?? null);
       const got = track.obtained;
       const collectionDetails = el("details", void 0, "collection-details");
       collectionDetails.open = collectionDetailsOpen;
@@ -63515,7 +63567,6 @@ button:disabled { opacity:.5; cursor:default; }
         for (const leagueSet of leagueSets) collectionDetails.append(el("p", `${leagueSet.name}: ${setProgress(leagueSet, owned)}/${leagueSet.requiredCards} cartas registradas.`, "note"));
       }
       const lineup = selected.costTiers.find((tier2) => tier2.grade === plannedGrade);
-      const options = galleryGradeOptions(selected.catalogId, owned, confirmedClaims);
       const gradeTabs = el("div", void 0, "tabs grade-tabs");
       for (const option of options) {
         const grade = button(`${option.grade}${option.completed ? " \u2713" : ""}`, () => {
@@ -63534,32 +63585,35 @@ button:disabled { opacity:.5; cursor:default; }
       body.append(gradeTabs);
       const targetOption = options.find((option) => option.grade === plannedGrade);
       if (targetOption) {
-        const newTokens = collectionTokenOptions(owned, confirmedClaims, calculatedGrades).find((option) => option.setId === selected.catalogId && option.grade === targetOption.grade)?.tokens ?? 0;
+        const newTokens = targetOption.tokens;
         const target = el("div", void 0, "grade-target");
-        target.append(el("strong", `Grado ${targetOption.grade} \xB7 +${fmt(newTokens)} fichas`));
-        if (targetOption.available) {
+        target.classList.toggle("complete", targetOption.completed);
+        target.append(el("strong", targetOption.completed ? `Grado ${targetOption.grade} \xB7 Completado` : `Grado ${targetOption.grade} \xB7 +${fmt(newTokens)} fichas`));
+        if (targetOption.available && !targetOption.completed) {
           const missing = referenceCards(selected).filter((card) => !owned.has(card.definitionId));
           const quote = referenceTotal(missing, prices);
           target.append(el("small", `${targetOption.missingItems.length} cartas faltantes`));
           target.append(el("small", priceLoading ? "Consultando precios\u2026" : targetOption.missingItems.length === 0 ? "Completado" : quote.priced === 0 ? "Precio pendiente" : `${fmt(quote.amount)} monedas de referencia${quote.priced < targetOption.missingItems.length ? ` \xB7 ${quote.priced}/${targetOption.missingItems.length} con precio` : ""}`));
-        } else target.append(el("small", "Sin alineaci\xF3n publicada para este grado"));
+        } else if (!targetOption.completed) target.append(el("small", "Sin alineaci\xF3n publicada para este grado"));
         collectionDetails.append(el("p", `${fmt(targetOption.accumulatedTokens)} fichas acumuladas \xB7 ${fmt(targetOption.purchaseCoins)} monedas de referencia FUT.GG${targetOption.unpricedCards ? ` \xB7 ${targetOption.unpricedCards} sin precio` : ""}`, "note"));
         const marks = el("div", void 0, "trade-actions");
-        if (!targetOption.completed) marks.append(button(`Marcar ${targetOption.grade} completado`, () => {
+        const confirmed = galleryGradeOptions(selected.catalogId, owned, confirmedClaims).find((option) => option.grade === targetOption.grade);
+        if (!confirmed?.completed) marks.append(button(`Registrar canje ${targetOption.grade}`, () => {
           markGrade(selected.catalogId, targetOption.grade);
         }));
-        else marks.append(el("span", `\u2713 Completado hasta ${targetOption.fromGrade}`));
-        if (targetOption.fromGrade) marks.append(button("Quitar marca", () => {
+        else marks.append(el("span", `Canje registrado hasta ${confirmed.fromGrade}`));
+        if (confirmed?.fromGrade) marks.append(button("Quitar registro", () => {
           markGrade(selected.catalogId, null);
         }));
         const addQueue = button(purchaseQueue.find((entry) => entry.setId === selected.catalogId)?.grade === targetOption.grade ? "\u2713 En cola \xB7 quitar" : `A\xF1adir grado ${targetOption.grade} a cola`, () => {
           toggleQueuedCollection(selected.catalogId, targetOption.grade);
         });
-        addQueue.disabled = busy || !targetOption.available;
-        target.append(addQueue);
+        const queued = purchaseQueue.find((entry) => entry.setId === selected.catalogId)?.grade === targetOption.grade;
+        addQueue.disabled = busy || !queued && (!targetOption.available || targetOption.completed);
+        if (!targetOption.completed || queued) target.append(addQueue);
         collectionDetails.append(marks);
         body.append(target);
-        collectionDetails.append(el("p", "Grado estimado por tus cartas \xB7 \u2713 es tu marca de completado, no una lectura del canje.", "note"));
+        collectionDetails.append(el("p", "El grado se estima con tus cartas. Registra un canje solo si ya cobraste sus fichas.", "note"));
         const unresolved = targetOption.missingItems.filter((item) => !selected.cards.some((card) => card.definitionId === item.definitionId));
         if (unresolved.length) {
           if (!priceLoading) body.append(el("p", `${unresolved.length} cartas pendientes de cargar. Actualiza el progreso.`, "status error"));
@@ -63568,7 +63622,7 @@ button:disabled { opacity:.5; cursor:default; }
       }
       body.append(collectionDetails);
       if (tab === "missing") {
-        const missing = referenceCards(selected).filter((card) => !owned.has(card.definitionId));
+        const missing = targetOption?.completed ? [] : referenceCards(selected).filter((card) => !owned.has(card.definitionId));
         const groups = lineup ? groupTargetCards(missing, new Map(lineup.items.map((item) => [item.definitionId, item.score]))) : null;
         const selectedCards = missing.filter((card) => chosen.has(card.definitionId));
         const actions = el("div", void 0, "trade-actions");
@@ -63598,7 +63652,7 @@ button:disabled { opacity:.5; cursor:default; }
           if (groups?.key.length) cost.append(el("small", `Carta clave: ${groups.key.map((card) => `${card.name} (${prices.has(card.definitionId) ? fmt(prices.get(card.definitionId).price) : "precio pendiente"})`).join(" \xB7 ")}.`));
           costs2.append(cost);
           if (!targetOption) body.append(costs2);
-        } else body.append(el("p", plannedGrade ? !targetOption?.available ? "No hay cartas sugeridas para este grado." : targetOption.missingItems.length ? "Quedan cartas por cargar desde EA." : "\u2713 Cartas de esta alineaci\xF3n obtenidas." : got >= selected.requiredCards ? "Ya tienes suficientes cartas para llenar los cupos. Elige un grado para ver su alineaci\xF3n." : "No hay cartas candidatas para llenar los cupos pendientes. Actualiza el cat\xE1logo.", "note"));
+        } else body.append(el("p", targetOption?.completed ? "Grado alcanzado." : plannedGrade ? !targetOption?.available ? "No hay cartas sugeridas para este grado." : targetOption.missingItems.length ? "Quedan cartas por cargar desde EA." : "\u2713 Cartas de esta alineaci\xF3n obtenidas." : got >= selected.requiredCards ? "Ya tienes suficientes cartas para llenar los cupos. Elige un grado para ver su alineaci\xF3n." : "No hay cartas candidatas para llenar los cupos pendientes. Actualiza el cat\xE1logo.", "note"));
         const selectedTotal = referenceTotal(selectedCards, prices);
         const footerCopy = el("div", void 0, "footer-copy");
         footerCopy.append(el("strong", `${playerCount(selectedCards.length)} \xB7 ${selectedTotal.priced === 0 && selectedCards.length > 0 ? "sin precios de referencia" : `${fmt(selectedTotal.amount)} monedas de referencia`}`));
@@ -63620,7 +63674,7 @@ button:disabled { opacity:.5; cursor:default; }
         tabs.append(b);
       }
       body.append(tabs);
-      const cards = (tab === "collected" ? selected.cards : referenceCards(selected)).filter((card) => owned.has(card.definitionId) === (tab === "collected"));
+      const cards = (tab === "collected" ? selected.cards : targetOption?.completed ? [] : referenceCards(selected)).filter((card) => owned.has(card.definitionId) === (tab === "collected"));
       const scores = lineup ? new Map(lineup.items.map((item) => [item.definitionId, item.score])) : void 0;
       if (tab === "missing" && cards.length > 1) {
         const sortLabel = el("label", "Ordenar por", "card-sort");
