@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         FUT SBC Solver v2
 // @namespace    https://github.com/mljpa/fut-sbc-solver-v2
-// @version      0.2.63
+// @version      0.2.64
 // @description  Userscript to solve EA SPORTS FC 26 SBCs with your own club
 // @match        https://www.ea.com/*/ea-sports-fc/ultimate-team/web-app*
 // @match        https://www.ea.com/ea-sports-fc/ultimate-team/web-app*
@@ -62002,7 +62002,7 @@ button:disabled { opacity:.5; cursor:default; }
     panel.setAttribute("aria-label", "Colecciones");
     const head = el("div", void 0, "head");
     const title = el("h2", "Colecciones");
-    const version = el("a", `v${"0.2.63"}`, "version");
+    const version = el("a", `v${"0.2.64"}`, "version");
     version.href = "https://raw.githubusercontent.com/mljpa/fut-sbc-dist/main/fut-sbc.user.js";
     version.target = "_blank";
     version.rel = "noopener noreferrer";
@@ -63343,7 +63343,7 @@ button:disabled { opacity:.5; cursor:default; }
         render();
       }, "back"));
       tools.append(el("span", void 0, "spacer"));
-      const sync = button(busy || priceLoading || updater.checking ? "Actualizando\u2026" : "Actualizar", () => {
+      const sync = button(busy || priceLoading || updater.checking ? "Actualizando\u2026" : "Actualizar colecciones", () => {
         void refreshGallery();
       });
       sync.disabled = busy || priceLoading || updater.checking;
