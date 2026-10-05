@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         FUT SBC Solver v2
 // @namespace    https://github.com/mljpa/fut-sbc-solver-v2
-// @version      0.2.61
+// @version      0.2.62
 // @description  Userscript to solve EA SPORTS FC 26 SBCs with your own club
 // @match        https://www.ea.com/*/ea-sports-fc/ultimate-team/web-app*
 // @match        https://www.ea.com/ea-sports-fc/ultimate-team/web-app*
@@ -61720,10 +61720,6 @@ button:disabled { opacity:.5; cursor:default; }
 .catalog-state button { border:0; border-radius:4px; padding:5px 7px; background:var(--soft); color:var(--fg); font-size:12px; }
 .catalog-state button:focus-visible,.catalog-state summary:focus-visible { outline:2px solid var(--accent); outline-offset:2px; }
 .catalog-state.warning { color:var(--warning); }
-.catalog-state details { margin-top:5px; }
-.catalog-state summary { cursor:pointer; width:fit-content; }
-.catalog-state ul { margin:6px 0; padding-left:18px; max-height:110px; overflow:auto; }
-.catalog-state .catalog-source { display:block; margin-top:5px; }
 .more-tools { position:relative; font-size:12px; }
 .more-tools summary { cursor:pointer; padding:7px 9px; }
 .more-tools[open] { border:1px solid var(--line); border-radius:5px; padding:3px; }
@@ -62005,7 +62001,7 @@ button:disabled { opacity:.5; cursor:default; }
     panel.setAttribute("aria-label", "Colecciones");
     const head = el("div", void 0, "head");
     const title = el("h2", "Colecciones");
-    const version = el("a", `v${"0.2.61"}`, "version");
+    const version = el("a", `v${"0.2.62"}`, "version");
     version.href = "https://raw.githubusercontent.com/mljpa/fut-sbc-dist/main/fut-sbc.user.js";
     version.target = "_blank";
     version.rel = "noopener noreferrer";
@@ -62218,7 +62214,6 @@ button:disabled { opacity:.5; cursor:default; }
       return true;
     }
     function renderCatalogState() {
-      const detailsOpen = catalogState.querySelector("details")?.open ?? false;
       catalogState.replaceChildren();
       const sourceAt = updater.manifest?.checkedAt;
       const outdated = sourceAt && Date.now() - Date.parse(sourceAt) > 48 * 60 * 60 * 1e3;
@@ -62236,20 +62231,9 @@ button:disabled { opacity:.5; cursor:default; }
       refresh.disabled = updater.checking;
       line.append(label, refresh);
       catalogState.append(line);
-      const details = el("details");
-      details.open = detailsOpen;
-      details.append(el("summary", "Detalles"));
-      if (sourceAt) details.append(el("span", `Fuente revisada ${formatDate(sourceAt)}`, "catalog-source"));
-      if (updater.changes.length) details.append(el("span", `${updater.changes.length} colecciones actualizadas`, "catalog-source"));
-      details.append(el("span", `FUT.GG \xB7 Datos publicados ${formatDate(galleryCatalog.updatedAt)} \xB7 ${galleryCatalog.sets.length} colecciones`, "catalog-source"));
-      if (updater.lastCheckedAt) details.append(el("span", `\xDAltima comprobaci\xF3n ${formatDate(new Date(updater.lastCheckedAt).toISOString())}`, "catalog-source"));
-      if (updater.error) details.append(el("span", updater.error, "catalog-source"));
-      if (updater.changes.length) {
-        const list = el("ul");
-        for (const change of updater.changes) list.append(el("li", change));
-        details.append(list);
-      }
-      catalogState.append(details);
+      label.title = `FUT.GG \xB7 ${formatDate(galleryCatalog.updatedAt)} \xB7 ${galleryCatalog.sets.length} colecciones`;
+      if (updater.error) label.title += `
+${updater.error}`;
     }
     async function updateCatalog(force = false) {
       await updater.restore();
