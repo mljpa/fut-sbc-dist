@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         FUT SBC Solver v2
 // @namespace    https://github.com/mljpa/fut-sbc-solver-v2
-// @version      0.2.62
+// @version      0.2.63
 // @description  Userscript to solve EA SPORTS FC 26 SBCs with your own club
 // @match        https://www.ea.com/*/ea-sports-fc/ultimate-team/web-app*
 // @match        https://www.ea.com/ea-sports-fc/ultimate-team/web-app*
@@ -61715,6 +61715,7 @@ button { cursor:pointer; }
 .head button,.tools button,.back,.tabs button,.row button,.card button { border:1px solid var(--line); border-radius:5px; padding:6px 9px; background:var(--soft); color:var(--fg); }
 button:disabled { opacity:.5; cursor:default; }
 .head button:hover,.tools button:hover,.back:hover,.tabs button:hover,.row button:hover,.card button:hover { border-color:var(--accent); }
+.catalog-state[hidden] { display:none; }
 .catalog-state { padding:9px 18px; border-bottom:1px solid var(--line); font-size:12px; color:var(--muted); }
 .catalog-state-line { display:flex; align-items:center; justify-content:space-between; gap:12px; }
 .catalog-state button { border:0; border-radius:4px; padding:5px 7px; background:var(--soft); color:var(--fg); font-size:12px; }
@@ -62001,7 +62002,7 @@ button:disabled { opacity:.5; cursor:default; }
     panel.setAttribute("aria-label", "Colecciones");
     const head = el("div", void 0, "head");
     const title = el("h2", "Colecciones");
-    const version = el("a", `v${"0.2.62"}`, "version");
+    const version = el("a", `v${"0.2.63"}`, "version");
     version.href = "https://raw.githubusercontent.com/mljpa/fut-sbc-dist/main/fut-sbc.user.js";
     version.target = "_blank";
     version.rel = "noopener noreferrer";
@@ -62215,25 +62216,21 @@ button:disabled { opacity:.5; cursor:default; }
     }
     function renderCatalogState() {
       catalogState.replaceChildren();
-      const sourceAt = updater.manifest?.checkedAt;
-      const outdated = sourceAt && Date.now() - Date.parse(sourceAt) > 48 * 60 * 60 * 1e3;
-      const held = !!updater.pending;
-      catalogState.classList.toggle("warning", !!updater.error || !!outdated);
-      const line = el("div", void 0, "catalog-state-line");
-      const formatDate = (date2) => new Intl.DateTimeFormat("es-CL", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" }).format(new Date(date2));
-      const message = updater.checking ? "Buscando cambios\u2026" : updater.error ? "No se pudo actualizar. Usando la \xFAltima copia." : held ? "Hay una actualizaci\xF3n. Se aplicar\xE1 al terminar." : outdated ? "Fuente pendiente de actualizaci\xF3n" : sourceAt ? "Cat\xE1logo al d\xEDa" : "Cat\xE1logo incluido";
-      const label = el("span", message);
-      label.setAttribute("role", "status");
-      label.setAttribute("aria-live", "polite");
-      const refresh = button(updater.error ? "Reintentar" : "Actualizar", () => {
-        void updateCatalog(true);
-      });
-      refresh.disabled = updater.checking;
-      line.append(label, refresh);
-      catalogState.append(line);
-      label.title = `FUT.GG \xB7 ${formatDate(galleryCatalog.updatedAt)} \xB7 ${galleryCatalog.sets.length} colecciones`;
-      if (updater.error) label.title += `
-${updater.error}`;
+      catalogState.hidden = !updater.error;
+      if (updater.error) {
+        const message = el("span", "No se pudo actualizar el cat\xE1logo. Se conserva la \xFAltima copia.");
+        message.setAttribute("role", "alert");
+        catalogState.append(message);
+      }
+    }
+    async function refreshGallery() {
+      if (busy || priceLoading || updater.checking) return;
+      await updateCatalog(true);
+      if (!isActive()) return;
+      await syncClub();
+      if (!isActive() || error) return;
+      if (selected) await openSet(selected, plannedGrade);
+      else if (category) await loadCategory(category, true);
     }
     async function updateCatalog(force = false) {
       await updater.restore();
@@ -63346,10 +63343,10 @@ ${updater.error}`;
         render();
       }, "back"));
       tools.append(el("span", void 0, "spacer"));
-      const sync = button(busy ? "Cargando\u2026" : "Actualizar nuevas", () => {
-        void syncClub();
+      const sync = button(busy || priceLoading || updater.checking ? "Actualizando\u2026" : "Actualizar", () => {
+        void refreshGallery();
       });
-      sync.disabled = busy;
+      sync.disabled = busy || priceLoading || updater.checking;
       tools.append(sync);
       const fullSync = button("Revisar historial completo", () => {
         void syncClub(true);
@@ -63372,13 +63369,6 @@ ${updater.error}`;
       });
       queueButton.disabled = busy;
       tools.append(queueButton);
-      if (category && !selected) {
-        const refresh = button("Actualizar cartas", () => {
-          void loadCategory(category, true);
-        });
-        refresh.disabled = busy;
-        tools.append(refresh);
-      }
       body.append(tools);
       if (busy || error) body.append(el("p", status, `status${error ? " error" : ""}`));
       if (!category) {
@@ -63537,11 +63527,6 @@ ${updater.error}`;
       progress.append(el("strong", track.grade ? `Grado ${track.grade} estimado \xB7 ${got}/${selected.requiredCards} cartas` : `${got >= selected.requiredCards ? "Grado por determinar" : "En progreso"} \xB7 ${got}/${selected.requiredCards} cartas`));
       if (track.nextGrade) collectionDetails.append(el("p", track.nextMissing === null ? `Siguiente: ${track.nextGrade} \xB7 sin alineaci\xF3n publicada` : `${track.nextGrade}: ${track.nextMissing} cartas de la alineaci\xF3n FUT.GG por obtener${track.nextTokens ? ` \xB7 +${fmt(track.nextTokens)} fichas` : ""}`, "note"));
       else collectionDetails.append(el("p", "Grado m\xE1ximo estimado", "note"));
-      const refreshProgress = button(priceLoading ? "Actualizando\u2026" : "Actualizar progreso", () => {
-        void openSet(selected, plannedGrade);
-      });
-      refreshProgress.disabled = busy || priceLoading;
-      progress.append(refreshProgress);
       body.append(progress);
       collectionDetails.append(el("p", `${got}/${selected.requiredCards} cartas registradas \xB7 ${Math.max(0, selected.requiredCards - got)} cupos pendientes${selected.verified ? "" : " (elegibilidad aproximada)"}`, "metric"));
       if (!category?.leagueSets && !category?.rarities) {
