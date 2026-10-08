@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         FUT SBC Solver v2
 // @namespace    https://github.com/mljpa/fut-sbc-solver-v2
-// @version      0.2.64
+// @version      0.2.65
 // @description  Userscript to solve EA SPORTS FC 26 SBCs with your own club
 // @match        https://www.ea.com/*/ea-sports-fc/ultimate-team/web-app*
 // @match        https://www.ea.com/ea-sports-fc/ultimate-team/web-app*
@@ -762,8 +762,8 @@
     );
     if (hits.length === 0) return null;
     if (challengeId != null) {
-      const byId2 = hits.find((h) => Number(h._challenge?.id) === challengeId);
-      if (byId2) return byId2;
+      const matches = hits.filter((h) => Number(h._challenge?.id) === challengeId);
+      return matches.find((h) => isInDom(h)) ?? matches[matches.length - 1] ?? null;
     }
     const inDom = hits.find((h) => isInDom(h));
     return inDom ?? hits[hits.length - 1] ?? null;
@@ -797,6 +797,12 @@
         ok: false,
         reason: "La squad no expone slots utilizables (getNonBrickSlots vac\xEDo)."
       };
+    }
+    if (slotIndices.some((index) => !Number.isSafeInteger(index) || index < 0) || new Set(slotIndices).size !== slotIndices.length || solution.players.length !== slotIndices.length || new Set(solution.players.map((p) => p.id)).size !== solution.players.length || new Set(solution.players.map((p) => p.definitionId)).size !== solution.players.length) {
+      return { ok: false, reason: "La soluci\xF3n no coincide con los slots del SBC. Vuelve a resolver." };
+    }
+    if (typeof squad.removeAllItems !== "function" || typeof squad.setPlayers !== "function") {
+      return { ok: false, reason: "EA no expone los m\xE9todos para rellenar esta plantilla." };
     }
     let arrLen;
     try {
@@ -1387,12 +1393,13 @@
       if (score === 0) continue;
       const price = opts.cardCost?.(player);
       const estimated = typeof price !== "number" || !Number.isFinite(price) || price < 0 || price >= Number.MAX_SAFE_INTEGER;
-      const candidate = { player, score, cost: estimated ? estimatedCost(player) : price, estimated };
+      const priority = opts.strategy === "duplicates-first" ? Number(!player.isDuplicate && !player.inStorage) : opts.strategy === "lowest-rated" ? 2 ** (player.rating / 4) : opts.strategy === "fewest-players" ? 1 : 0;
+      const candidate = { player, score, cost: estimated ? estimatedCost(player) : price, estimated, priority };
       const bucket = buckets.get(score) ?? [];
       bucket.push(candidate);
       buckets.set(score, bucket);
     }
-    const candidates = [...buckets.values()].flatMap((bucket) => bucket.sort((a, b) => a.cost - b.cost || Number(b.player.isDuplicate) - Number(a.player.isDuplicate) || Number(b.player.inStorage) - Number(a.player.inStorage) || Number(b.player.untradeable) - Number(a.player.untradeable) || a.player.rating - b.player.rating || a.player.id - b.player.id).slice(0, maxCards));
+    const candidates = [...buckets.values()].flatMap((bucket) => bucket.sort((a, b) => a.priority - b.priority || a.cost - b.cost || Number(b.player.isDuplicate) - Number(a.player.isDuplicate) || Number(b.player.inStorage) - Number(a.player.inStorage) || Number(b.player.untradeable) - Number(a.player.untradeable) || a.player.rating - b.player.rating || a.player.id - b.player.id).slice(0, maxCards));
     const strongest = candidates.slice().sort((a, b) => b.score - a.score || a.cost - b.cost).slice(0, maxCards);
     const reachable = strongest.reduce((sum, c) => sum + c.score, 0);
     if (reachable < targetScore) {
@@ -1406,7 +1413,7 @@
       };
     }
     const dp = Array.from({ length: maxCards + 1 }, () => /* @__PURE__ */ new Map());
-    dp[0].set(0, { cost: 0, score: 0 });
+    dp[0].set(0, { cost: 0, score: 0, priority: 0 });
     let processed = 0;
     for (const candidate of candidates) {
       processed++;
@@ -1417,9 +1424,10 @@
           const total = state2.score + candidate.score;
           const key = Math.min(targetScore, total);
           const cost = state2.cost + candidate.cost;
+          const priority = state2.priority + candidate.priority;
           const old = next.get(key);
-          if (!old || total < old.score || total === old.score && cost < old.cost) {
-            next.set(key, { cost, score: total, last: candidate, previous: state2 });
+          if (!old || total < old.score || total === old.score && (priority < old.priority || priority === old.priority && cost < old.cost)) {
+            next.set(key, { cost, priority, score: total, last: candidate, previous: state2 });
           }
         }
       }
@@ -1427,7 +1435,7 @@
     let best;
     for (let count = 1; count <= maxCards; count++) {
       const state2 = dp[count].get(targetScore);
-      if (state2 && (!best || state2.score < best.score || state2.score === best.score && state2.cost < best.cost)) best = state2;
+      if (state2 && (!best || state2.score < best.score || state2.score === best.score && (state2.priority < best.priority || state2.priority === best.priority && state2.cost < best.cost))) best = state2;
     }
     const selected = [];
     for (let state2 = best; state2?.last; state2 = state2.previous) selected.push(state2.last);
@@ -2347,6 +2355,9 @@
     const vm = oneClickVC?.["viewModel"] ?? oneClickVC?.["getViewModel"]?.();
     const view = oneClickVC?.["getView"]?.();
     if (vm && typeof vm.selectItem === "function") {
+      if (Number(vm._challenge?.id) !== challenge.id) {
+        return { ok: false, reason: "Cambi\xF3 el SBC abierto. Vuelve a resolver." };
+      }
       const limit = vm.getSelectionLimit?.() ?? STREAMLINED_MAX_CARDS;
       if (solution.items.length > limit) {
         return { ok: false, reason: `EA permite hasta ${limit} cartas.` };
@@ -2360,6 +2371,9 @@
         return !Number.isSafeInteger(score) || score < 0;
       })) {
         return { ok: false, reason: "EA no entreg\xF3 puntaje para una carta seleccionada." };
+      }
+      if (selectedItems.some((item, index) => Number(item.id) !== solution.items[index].id || item.sbsScore !== scores[index])) {
+        return { ok: false, reason: "Cambi\xF3 una carta o su puntaje de EA. Vuelve a resolver." };
       }
       try {
         vm.clearSelection?.();
@@ -2535,20 +2549,23 @@
     }
     const stats = document.createElement("div");
     stats.className = "stats";
-    stats.append(
-      stat("Media", String(solution.teamRating)),
-      stat("Qu\xEDmica", solution.chemistry < 0 ? "\u2014" : String(solution.chemistry)),
-      stat("Jugadores", String(solution.players.length))
-    );
+    if (solution.points) {
+      stats.append(stat("Puntos", `${solution.points.score} / ${solution.points.target}`));
+    } else {
+      stats.append(
+        stat("Media", String(solution.teamRating)),
+        stat("Qu\xEDmica estimada", solution.chemistry < 0 ? "\u2014" : String(solution.chemistry))
+      );
+    }
+    stats.append(stat("Cartas", String(solution.players.length)));
     if (typeof solution.costCoins === "number") {
-      stats.append(stat("Costo", formatCoins(solution.costCoins)));
+      stats.append(stat(solution.costEstimated ? "Costo estimado" : "Valor", formatCoins(solution.costCoins)));
     }
     if (notes.length > 0) {
-      const info = document.createElement("div");
+      const info = document.createElement("details");
       info.className = "buy";
-      const head = document.createElement("div");
-      head.className = "buy-head";
-      head.textContent = "Nota";
+      const head = document.createElement("summary");
+      head.textContent = "Detalles";
       const list2 = document.createElement("ul");
       for (const n of notes) {
         const li = document.createElement("li");
@@ -2558,7 +2575,14 @@
       info.append(head, list2);
       body.append(info);
     }
-    body.append(stats);
+    body.prepend(stats);
+    const summary = document.createElement("div");
+    summary.className = "solution-summary";
+    const ratings = /* @__PURE__ */ new Map();
+    for (const p of solution.players) ratings.set(p.rating, (ratings.get(p.rating) ?? 0) + 1);
+    summary.textContent = [...ratings].sort((a, b) => b[0] - a[0]).map(([rating, count]) => `${count} \xD7 ${rating}`).join(" \xB7 ");
+    summary.setAttribute("aria-label", "Combinaci\xF3n de medias");
+    stats.after(summary);
     const list = document.createElement("ul");
     list.className = "player-list";
     for (const p of solution.players) {
@@ -2576,10 +2600,25 @@
       const rating = document.createElement("span");
       rating.className = "p-rating";
       rating.textContent = String(p.rating);
-      li.append(name, rating);
+      const meta = document.createElement("span");
+      meta.className = "p-meta";
+      meta.textContent = [
+        p.inStorage ? "Storage" : p.isDuplicate ? "Duplicado" : "",
+        p.isSpecial ? "Especial" : "",
+        p.untradeable ? "" : "Transferible",
+        solution.points && p.sbsScore != null ? `${p.sbsScore} pts` : ""
+      ].filter(Boolean).join(" \xB7 ");
+      const identity = document.createElement("div");
+      identity.className = "p-identity";
+      identity.append(name, meta);
+      li.append(rating, identity);
       list.append(li);
     }
-    body.append(list);
+    const playersDetails = document.createElement("details");
+    const playersTitle = document.createElement("summary");
+    playersTitle.textContent = `Ver cartas (${solution.players.length})`;
+    playersDetails.append(playersTitle, list);
+    body.append(playersDetails);
     if (solution.toBuy.length > 0) {
       const buyWrap = document.createElement("div");
       buyWrap.className = "buy";
@@ -2631,6 +2670,7 @@
     applyBtn.className = "btn primary";
     applyBtn.type = "button";
     applyBtn.textContent = "Aplicar";
+    applyBtn.disabled = unmet.length > 0;
     applyBtn.addEventListener("click", () => opts.onApply(solution));
     const closeBtn = document.createElement("button");
     closeBtn.className = "btn";
@@ -2679,7 +2719,11 @@
     const hint = document.createElement("p");
     hint.className = "err-hint";
     hint.textContent = "Detalle en la consola y en window.__futErr";
-    body.append(hint);
+    const technical = document.createElement("details");
+    const technicalTitle = document.createElement("summary");
+    technicalTitle.textContent = "Detalles t\xE9cnicos";
+    technical.append(technicalTitle, hint);
+    body.append(technical);
     const actions = document.createElement("div");
     actions.className = "card-actions";
     const closeBtn = document.createElement("button");
@@ -2707,112 +2751,6 @@
     l.textContent = label;
     wrap.append(v, l);
     return wrap;
-  }
-
-  // src/ui/draggable.ts
-  var DRAG_THRESHOLD_PX = 4;
-  function readPos(key) {
-    try {
-      const raw = localStorage.getItem(key);
-      if (!raw) return null;
-      const p = JSON.parse(raw);
-      if (typeof p.x !== "number" || typeof p.y !== "number") return null;
-      if (!Number.isFinite(p.x) || !Number.isFinite(p.y)) return null;
-      return { x: p.x, y: p.y };
-    } catch {
-      return null;
-    }
-  }
-  function writePos(key, p) {
-    try {
-      localStorage.setItem(key, JSON.stringify(p));
-    } catch {
-    }
-  }
-  function clampToViewport(el2, p) {
-    const r = el2.getBoundingClientRect();
-    const maxX = Math.max(0, window.innerWidth - Math.max(40, r.width));
-    const maxY = Math.max(0, window.innerHeight - Math.max(24, r.height));
-    return {
-      x: Math.min(Math.max(0, p.x), maxX),
-      y: Math.min(Math.max(0, p.y), maxY)
-    };
-  }
-  function makeDraggable(el2, handle, key) {
-    let dragged = false;
-    let active = false;
-    let start = { x: 0, y: 0 };
-    let origin = { x: 0, y: 0 };
-    const applyPos = (p) => {
-      const safe = clampToViewport(el2, p);
-      el2.style.position = "fixed";
-      el2.style.left = `${safe.x}px`;
-      el2.style.top = `${safe.y}px`;
-      el2.style.right = "auto";
-      el2.style.bottom = "auto";
-      el2.style.transform = "none";
-    };
-    const saved = readPos(key);
-    if (saved) applyPos(saved);
-    handle.style.touchAction = "none";
-    handle.style.cursor = "grab";
-    const onDown = (e) => {
-      if (e.button !== 0) return;
-      active = true;
-      dragged = false;
-      start = { x: e.clientX, y: e.clientY };
-      const r = el2.getBoundingClientRect();
-      origin = { x: r.left, y: r.top };
-      handle.style.cursor = "grabbing";
-      try {
-        handle.setPointerCapture(e.pointerId);
-      } catch {
-      }
-    };
-    const onMove = (e) => {
-      if (!active) return;
-      const dx = e.clientX - start.x;
-      const dy = e.clientY - start.y;
-      if (!dragged && Math.hypot(dx, dy) < DRAG_THRESHOLD_PX) return;
-      dragged = true;
-      e.preventDefault();
-      e.stopPropagation();
-      applyPos({ x: origin.x + dx, y: origin.y + dy });
-    };
-    const onUp = (e) => {
-      if (!active) return;
-      active = false;
-      handle.style.cursor = "grab";
-      try {
-        handle.releasePointerCapture(e.pointerId);
-      } catch {
-      }
-      if (dragged) {
-        const r = el2.getBoundingClientRect();
-        writePos(key, { x: r.left, y: r.top });
-        e.preventDefault();
-        e.stopPropagation();
-      }
-    };
-    handle.addEventListener("pointerdown", onDown);
-    handle.addEventListener("pointermove", onMove);
-    handle.addEventListener("pointerup", onUp);
-    handle.addEventListener("pointercancel", onUp);
-    const onResize = () => {
-      const p = readPos(key);
-      if (p) applyPos(p);
-    };
-    window.addEventListener("resize", onResize);
-    return {
-      wasDragged: () => dragged,
-      destroy() {
-        handle.removeEventListener("pointerdown", onDown);
-        handle.removeEventListener("pointermove", onMove);
-        handle.removeEventListener("pointerup", onUp);
-        handle.removeEventListener("pointercancel", onUp);
-        window.removeEventListener("resize", onResize);
-      }
-    };
   }
 
   // src/tweaks/registry.ts
@@ -4262,8 +4200,19 @@
     "optimizar-rating-bajo": "Rating m\xE1s bajo",
     "optimizar-quimica": "M\xE1xima qu\xEDmica"
   };
+  var POINTS_STRATEGY_LABELS = {
+    "min-cost": "Menor costo",
+    "duplicates-first": "Duplicados primero",
+    "lowest-rated": "Media m\xE1s baja",
+    "fewest-players": "Menos cartas"
+  };
+  function clampMaxRating(value) {
+    return typeof value === "number" && Number.isFinite(value) ? Math.min(99, Math.max(45, Math.round(value))) : 99;
+  }
   var DEFAULT_SETTINGS = {
     strategy: "optimizar-rating-bajo",
+    pointsStrategy: "min-cost",
+    maxRating: 99,
     excludeActiveSquad: true,
     excludeAllSquads: false,
     multiCount: 3,
@@ -4287,6 +4236,8 @@
       const strategy = typeof parsed.strategy === "string" && STRATEGIES.includes(parsed.strategy) ? parsed.strategy : DEFAULT_SETTINGS.strategy;
       return {
         strategy,
+        pointsStrategy: typeof parsed.pointsStrategy === "string" && parsed.pointsStrategy in POINTS_STRATEGY_LABELS ? parsed.pointsStrategy : DEFAULT_SETTINGS.pointsStrategy,
+        maxRating: clampMaxRating(parsed.maxRating),
         excludeActiveSquad: typeof parsed.excludeActiveSquad === "boolean" ? parsed.excludeActiveSquad : DEFAULT_SETTINGS.excludeActiveSquad,
         excludeAllSquads: typeof parsed.excludeAllSquads === "boolean" ? parsed.excludeAllSquads : DEFAULT_SETTINGS.excludeAllSquads,
         multiCount: clampCount(parsed.multiCount),
@@ -4469,6 +4420,7 @@
   }
 }
 * { box-sizing: border-box; }
+[hidden] { display: none !important; }
 
 /* Collapsed: just a chip. Expanded: the chip plus the controls, stacked so the
    panel stays narrow and hugs the top-left corner instead of running across
@@ -4516,7 +4468,7 @@
   align-items: center;
   gap: 6px;
   flex-wrap: wrap;
-  width: 300px;
+  width: min(300px, calc(100vw - 80px));
   padding: 6px 8px;
   background: var(--bg);
   border: 1px solid var(--border);
@@ -4656,7 +4608,7 @@ input[type="number"] { width: 56px; }
 .blocker-actions { display: flex; justify-content: flex-end; margin-top: 12px; }
 
 .card {
-  width: 320px;
+  width: min(380px, calc(100vw - 32px));
   max-height: 74vh;
   overflow: auto;
   background: var(--bg);
@@ -4676,9 +4628,15 @@ input[type="number"] { width: 56px; }
 }
 .card-body { padding: 10px; display: flex; flex-direction: column; gap: 10px; }
 
-.stats { display: flex; gap: 8px; }
+.stats { display: flex; gap: 8px; flex-wrap: wrap; }
+.solution-summary { color: var(--muted); font-variant-numeric: tabular-nums; }
+.p-identity { min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.p-meta { font-size: 11px; color: var(--muted); }
+summary { cursor: pointer; }
+button:focus-visible, select:focus-visible, input:focus-visible, summary:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 .stat {
   flex: 1;
+  min-width: 0;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -4687,20 +4645,20 @@ input[type="number"] { width: 56px; }
   border: 1px solid var(--border);
   border-radius: 6px;
 }
-.stat-v { font-size: 16px; font-weight: 700; }
+.stat-v { font-size: 16px; font-weight: 700; overflow-wrap: anywhere; text-align: center; }
 .stat-l { font-size: 11px; color: var(--muted); }
 
 .player-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; }
 .player-list li {
-  display: flex;
-  justify-content: space-between;
+  display: grid;
+  grid-template-columns: 34px minmax(0, 1fr);
   align-items: center;
   gap: 8px;
   padding: 4px 2px;
   border-bottom: 1px solid var(--border);
 }
 .player-list li:last-child { border-bottom: none; }
-.p-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.p-name { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .p-rating {
   flex: none;
   min-width: 26px;
@@ -4736,7 +4694,36 @@ input[type="number"] { width: 56px; }
 .field.check { justify-content: flex-start; }
 .field.check span { flex: 1; }
 .popover .card-body { gap: 8px; }
+@media (max-width: 480px) {
+  :host { left: 8px; max-width: calc(100% - 16px); }
+  .bar { max-width: 100%; }
+  .overlay { top: 8px; right: 8px; }
+  .card { width: calc(100vw - 16px); }
+  .stat-v { font-size: 14px; }
+}
+@media (prefers-reduced-motion: reduce) { .spinner { animation: none; } }
 ${OPTIONS_CSS}
+:host(.fut-sbc-toolbar-host) {
+  box-sizing: border-box;
+  position: relative; inset: auto; z-index: auto; display: block;
+  width: 100%; max-width: 100%; flex: 0 0 auto;
+  padding: 6px 12px; background: var(--bg); border-block: 1px solid var(--border);
+  --shadow: none;
+}
+:host(.fut-sbc-toolbar-host) .wrap { gap: 0; }
+:host(.fut-sbc-toolbar-host) .quick { width: 100%; gap: 8px; }
+:host(.fut-sbc-toolbar-host) .chip { border: 0; border-radius: 3px; padding: 6px; background: transparent; }
+:host(.fut-sbc-toolbar-host) .chip-dot { display: none; }
+:host(.fut-sbc-toolbar-host) .quick .primary { margin-left: auto; }
+:host(.fut-sbc-toolbar-host) .bar { width: 100%; border: 0; border-radius: 0; padding: 10px 0 4px; gap: 10px; }
+:host(.fut-sbc-toolbar-host) .bar-sub { display: none; }
+:host(.fut-sbc-toolbar-host) .overlay { position: static; align-items: stretch; padding-top: 8px; width: 100%; }
+:host(.fut-sbc-toolbar-host) .overlay .card { width: 100%; max-height: 42vh; border-radius: 3px; }
+:host(.fut-sbc-toolbar-host) .stats { gap: 16px; }
+:host(.fut-sbc-toolbar-host) .stat { background: transparent; border: 0; align-items: flex-start; padding: 0; }
+:host(.fut-sbc-toolbar-host) .player-list { display: grid; grid-template-columns: repeat(auto-fit,minmax(180px,1fr)); gap: 4px 16px; }
+:host(.fut-sbc-toolbar-host) .card-actions { justify-content: flex-end; }
+:host(.fut-sbc-toolbar-host) .card-actions .btn { flex: 0 1 auto; }
 `;
   function makeButton(label, variant) {
     const b = document.createElement("button");
@@ -4770,7 +4757,7 @@ ${OPTIONS_CSS}
     const chipDot = document.createElement("span");
     chipDot.className = "chip-dot";
     const chipLabel = document.createElement("span");
-    chipLabel.textContent = "SBC Solver";
+    chipLabel.textContent = "Solver \xB7 Opciones";
     const chipCaret = document.createElement("span");
     chipCaret.className = "chip-caret";
     chipCaret.textContent = "\u25BE";
@@ -4818,7 +4805,7 @@ ${OPTIONS_CSS}
     blockerClose.addEventListener("click", () => {
       blocker.classList.remove("on");
       mountHost.style.zIndex = "";
-      if (host.isConnected) host.append(mountHost);
+      if (host.isConnected) host.prepend(mountHost);
       const fn = onBlockerClose;
       onBlockerClose = null;
       fn?.();
@@ -4863,38 +4850,74 @@ ${OPTIONS_CSS}
       strategySelect.append(o);
     }
     strategySelect.value = settings.strategy;
+    const pointsSelect = document.createElement("select");
+    pointsSelect.setAttribute("aria-label", "Estrategia de puntos");
+    for (const [value, label] of Object.entries(POINTS_STRATEGY_LABELS)) {
+      const option = document.createElement("option");
+      option.value = value;
+      option.textContent = label;
+      pointsSelect.append(option);
+    }
+    pointsSelect.value = settings.pointsStrategy;
+    const pointsMode = actions.getConstraints()?.slots === 0;
+    pointsSelect.hidden = !pointsMode;
+    strategySelect.hidden = pointsMode;
+    strategySelect.setAttribute("aria-label", "Estrategia de plantilla");
+    const maxRatingLabel = document.createElement("label");
+    maxRatingLabel.className = "toggle";
+    maxRatingLabel.textContent = "Media m\xE1xima";
+    const maxRatingInput = document.createElement("input");
+    maxRatingInput.type = "number";
+    maxRatingInput.min = "45";
+    maxRatingInput.max = "99";
+    maxRatingInput.value = String(settings.maxRating);
+    maxRatingInput.setAttribute("aria-label", "Media m\xE1xima");
+    maxRatingLabel.append(maxRatingInput);
+    maxRatingInput.addEventListener("change", () => {
+      settings = { ...settings, maxRating: clampMaxRating(maxRatingInput.valueAsNumber) };
+      maxRatingInput.value = String(settings.maxRating);
+      saveSettings(settings);
+    });
+    pointsSelect.addEventListener("change", () => {
+      settings = { ...settings, pointsStrategy: pointsSelect.value };
+      saveSettings(settings);
+    });
     const combosBtn = makeButton("Combos");
+    combosBtn.hidden = pointsMode;
     const gearBtn = document.createElement("button");
     gearBtn.type = "button";
     gearBtn.className = "icon-btn";
     gearBtn.setAttribute("aria-label", "Ajustes del solver");
-    gearBtn.textContent = "\u2699";
+    gearBtn.textContent = "Filtros";
     const optionsBtn = document.createElement("button");
     optionsBtn.type = "button";
     optionsBtn.className = "icon-btn";
     optionsBtn.setAttribute("aria-label", "Opciones");
-    optionsBtn.textContent = "\u2630";
+    optionsBtn.textContent = "Personalizar";
     const spinner = document.createElement("span");
     spinner.className = "spinner hidden";
     const sub = document.createElement("span");
     sub.className = "bar-sub";
     sub.textContent = challengeName ?? "";
-    quick.append(solveBtn);
+    quick.append(spinner, solveBtn);
     bar.append(
       sub,
       repeatControls,
       excludeToggle,
       strategySelect,
+      pointsSelect,
+      maxRatingLabel,
       combosBtn,
       gearBtn,
-      optionsBtn,
-      spinner
+      optionsBtn
     );
     const controls = [
       solveBtn,
       solveNBtn,
       repeatInput,
       strategySelect,
+      pointsSelect,
+      maxRatingInput,
       combosBtn,
       gearBtn,
       optionsBtn,
@@ -4995,6 +5018,13 @@ ${OPTIONS_CSS}
       }
     }
     function currentExtras() {
+      settings = {
+        ...settings,
+        maxRating: clampMaxRating(maxRatingInput.valueAsNumber),
+        pointsStrategy: pointsSelect.value
+      };
+      maxRatingInput.value = String(settings.maxRating);
+      saveSettings(settings);
       return {
         excludeActiveSquad: settings.excludeActiveSquad,
         excludeAllSquads: settings.excludeAllSquads,
@@ -5003,7 +5033,9 @@ ${OPTIONS_CSS}
         useStorage: settings.useStorage,
         allowTradeable: settings.allowTradeable,
         allowSpecials: settings.allowSpecials,
-        autoSubmit: settings.autoSubmit
+        autoSubmit: settings.autoSubmit,
+        maxRating: settings.maxRating,
+        pointsStrategy: settings.pointsStrategy
       };
     }
     function syncBarFromSettings() {
@@ -5011,6 +5043,8 @@ ${OPTIONS_CSS}
       repeatInput.value = String(settings.multiCount);
       excludeInput.checked = settings.excludeActiveSquad;
       strategySelect.value = settings.strategy;
+      pointsSelect.value = settings.pointsStrategy;
+      maxRatingInput.value = String(settings.maxRating);
     }
     function setOpen(next) {
       bar.classList.toggle("open", next);
@@ -5021,12 +5055,12 @@ ${OPTIONS_CSS}
     }
     setOpen(settings.panelOpen);
     chip.addEventListener("click", () => {
-      if (drag.wasDragged()) return;
       const next = !bar.classList.contains("open");
       if (!next) clearOverlay();
       setOpen(next);
     });
     solveBtn.addEventListener("click", () => {
+      setOpen(false);
       void run(() => actions.solve(settings.strategy, currentExtras()));
     });
     solveNBtn.addEventListener("click", () => {
@@ -5092,12 +5126,10 @@ Cada vuelta arma la plantilla, la env\xEDa y vuelve a entrar. Consume las cartas
       });
       overlay.append(popover.el);
     });
-    host.append(mountHost);
-    const drag = makeDraggable(mountHost, chip, "fut-sbc-solver:pos:pitch");
+    host.prepend(mountHost);
     return {
       destroy() {
         clearOverlay();
-        drag.destroy();
         mountHost.remove();
       },
       setBusy,
@@ -5106,6 +5138,112 @@ Cada vuelta arma la plantilla, la env\xEDa y vuelve a entrar. Consume las cartas
       showSolution,
       showProgress,
       isProgressOpen: () => blocker.classList.contains("on")
+    };
+  }
+
+  // src/ui/draggable.ts
+  var DRAG_THRESHOLD_PX = 4;
+  function readPos(key) {
+    try {
+      const raw = localStorage.getItem(key);
+      if (!raw) return null;
+      const p = JSON.parse(raw);
+      if (typeof p.x !== "number" || typeof p.y !== "number") return null;
+      if (!Number.isFinite(p.x) || !Number.isFinite(p.y)) return null;
+      return { x: p.x, y: p.y };
+    } catch {
+      return null;
+    }
+  }
+  function writePos(key, p) {
+    try {
+      localStorage.setItem(key, JSON.stringify(p));
+    } catch {
+    }
+  }
+  function clampToViewport(el2, p) {
+    const r = el2.getBoundingClientRect();
+    const maxX = Math.max(0, window.innerWidth - Math.max(40, r.width));
+    const maxY = Math.max(0, window.innerHeight - Math.max(24, r.height));
+    return {
+      x: Math.min(Math.max(0, p.x), maxX),
+      y: Math.min(Math.max(0, p.y), maxY)
+    };
+  }
+  function makeDraggable(el2, handle, key) {
+    let dragged = false;
+    let active = false;
+    let start = { x: 0, y: 0 };
+    let origin = { x: 0, y: 0 };
+    const applyPos = (p) => {
+      const safe = clampToViewport(el2, p);
+      el2.style.position = "fixed";
+      el2.style.left = `${safe.x}px`;
+      el2.style.top = `${safe.y}px`;
+      el2.style.right = "auto";
+      el2.style.bottom = "auto";
+      el2.style.transform = "none";
+    };
+    const saved = readPos(key);
+    if (saved) applyPos(saved);
+    handle.style.touchAction = "none";
+    handle.style.cursor = "grab";
+    const onDown = (e) => {
+      if (e.button !== 0) return;
+      active = true;
+      dragged = false;
+      start = { x: e.clientX, y: e.clientY };
+      const r = el2.getBoundingClientRect();
+      origin = { x: r.left, y: r.top };
+      handle.style.cursor = "grabbing";
+      try {
+        handle.setPointerCapture(e.pointerId);
+      } catch {
+      }
+    };
+    const onMove = (e) => {
+      if (!active) return;
+      const dx = e.clientX - start.x;
+      const dy = e.clientY - start.y;
+      if (!dragged && Math.hypot(dx, dy) < DRAG_THRESHOLD_PX) return;
+      dragged = true;
+      e.preventDefault();
+      e.stopPropagation();
+      applyPos({ x: origin.x + dx, y: origin.y + dy });
+    };
+    const onUp = (e) => {
+      if (!active) return;
+      active = false;
+      handle.style.cursor = "grab";
+      try {
+        handle.releasePointerCapture(e.pointerId);
+      } catch {
+      }
+      if (dragged) {
+        const r = el2.getBoundingClientRect();
+        writePos(key, { x: r.left, y: r.top });
+        e.preventDefault();
+        e.stopPropagation();
+      }
+    };
+    handle.addEventListener("pointerdown", onDown);
+    handle.addEventListener("pointermove", onMove);
+    handle.addEventListener("pointerup", onUp);
+    handle.addEventListener("pointercancel", onUp);
+    const onResize = () => {
+      const p = readPos(key);
+      if (p) applyPos(p);
+    };
+    window.addEventListener("resize", onResize);
+    return {
+      wasDragged: () => dragged,
+      destroy() {
+        handle.removeEventListener("pointerdown", onDown);
+        handle.removeEventListener("pointermove", onMove);
+        handle.removeEventListener("pointerup", onUp);
+        handle.removeEventListener("pointercancel", onUp);
+        window.removeEventListener("resize", onResize);
+      }
     };
   }
 
@@ -62002,7 +62140,7 @@ button:disabled { opacity:.5; cursor:default; }
     panel.setAttribute("aria-label", "Colecciones");
     const head = el("div", void 0, "head");
     const title = el("h2", "Colecciones");
-    const version = el("a", `v${"0.2.64"}`, "version");
+    const version = el("a", `v${"0.2.65"}`, "version");
     version.href = "https://raw.githubusercontent.com/mljpa/fut-sbc-dist/main/fut-sbc.user.js";
     version.target = "_blank";
     version.rel = "noopener noreferrer";
@@ -63840,7 +63978,8 @@ button:disabled { opacity:.5; cursor:default; }
   }
 
   // src/prices/cache.ts
-  var KEY3 = "fut-sbc-solver:prices";
+  var PRICE_SEASON = 27;
+  var KEY3 = `fut-sbc-solver:prices:fc${PRICE_SEASON}`;
   var MANIFEST_POLL_MS = 15 * 60 * 1e3;
   var STALE_AFTER_MS = 6 * 60 * 60 * 1e3;
   function storage2() {
@@ -64050,25 +64189,24 @@ button:disabled { opacity:.5; cursor:default; }
     const n = players.length;
     const pool = players.slice();
     const slots = new Array(n).fill(null);
-    const canFill = (pl, s) => inPosition(pl, slotPositions[s]);
-    const order = [...slotPositions.keys()].sort(
-      (a, b) => pool.filter((pl) => canFill(pl, a)).length - pool.filter((pl) => canFill(pl, b)).length
-    );
-    for (const s of order) {
-      let best = null;
-      let bestGain = -Infinity;
-      for (const pl of pool) {
-        if (slots.includes(pl)) continue;
-        const fits = canFill(pl, s);
-        const trial = slots.slice();
-        trial[s] = pl;
-        const gain = estimateChemistry(compact(trial), compactPos(trial, slotPositions)) + (fits ? 0 : -100);
-        if (gain > bestGain) {
-          bestGain = gain;
-          best = pl;
+    const matched = new Array(n).fill(-1);
+    const place = (player, seen) => {
+      for (let slot = 0; slot < n; slot++) {
+        if (seen.has(slot) || !inPosition(pool[player], slotPositions[slot])) continue;
+        seen.add(slot);
+        if (matched[slot] === -1 || place(matched[slot], seen)) {
+          matched[slot] = player;
+          return true;
         }
       }
-      slots[s] = best;
+      return false;
+    };
+    const order = [...pool.keys()].sort((a, b) => slotPositions.filter((pos) => inPosition(pool[a], pos)).length - slotPositions.filter((pos) => inPosition(pool[b], pos)).length);
+    for (const player of order) place(player, /* @__PURE__ */ new Set());
+    const used = new Set(matched.filter((index) => index >= 0));
+    const remaining = pool.filter((_, index) => !used.has(index));
+    for (let slot = 0; slot < n; slot++) {
+      slots[slot] = matched[slot] >= 0 ? pool[matched[slot]] : remaining.shift();
     }
     let current = slots.map((p) => p ?? pool.find((x) => !slots.includes(x)));
     let bestChem = estimateChemistry(current, slotPositions);
@@ -64089,12 +64227,6 @@ button:disabled { opacity:.5; cursor:default; }
       }
     }
     return current;
-  }
-  function compact(arr) {
-    return arr.filter((p) => p != null);
-  }
-  function compactPos(arr, pos) {
-    return pos.filter((_, i) => arr[i] != null);
   }
   function bump(m, k) {
     if (k > 0) m.set(k, (m.get(k) ?? 0) + 1);
@@ -64169,13 +64301,14 @@ button:disabled { opacity:.5; cursor:default; }
         unmet: [why]
       };
     }
-    const shaped = solveByShape(eligible, constraints, opts, deadline);
-    if (shaped) return finalize(shaped, constraints, deadline);
     let best = null;
     for (const allowSpecial of [false, true]) {
       const sub = allowSpecial ? eligible : eligible.filter((p) => !p.isSpecial);
       if (sub.length < constraints.slots) continue;
-      const attempt = search(sub, constraints, deadline, opts.ratingCost, opts.cardCost);
+      const passDeadline = allowSpecial ? deadline : Date.now() + Math.max(0, (deadline - Date.now()) / 2);
+      const shaped = solveByShape(sub, constraints, opts, passDeadline);
+      if (shaped) return finalize(shaped, constraints, deadline);
+      const attempt = search(sub, constraints, passDeadline, opts.ratingCost, opts.cardCost);
       if (attempt.ok) return finalize(attempt.players, constraints, deadline);
       if (!best || attempt.players.length > best.players.length) {
         best = { players: attempt.players, unmet: attempt.unmet };
@@ -64714,36 +64847,33 @@ button:disabled { opacity:.5; cursor:default; }
     );
     return short ? `EA calcul\xF3 media ${short.got}, el SBC pide ${short.need}` : null;
   }
-  function squadBill(players) {
+  async function costsFor(pool) {
     const snap = readSnapshot();
-    if (!snap || !freshness(snap, snap.platform).fresh) return void 0;
-    let total = 0;
-    let known = 0;
-    for (const p of players) {
-      const coins = snap.prices.get(p.definitionId);
-      if (coins != null) {
-        total += coins;
-        known++;
+    let prices;
+    let note;
+    if (snap && freshness(snap, currentMarketPlatform() === "pc" ? "pc" : "console").fresh) {
+      prices = snap.prices;
+      const mins = Math.round((Date.now() - snap.fetchedAt) / 6e4);
+      note = `Precios FC27 de FUT.GG (${snap.platform === "pc" ? "PC" : "consola"}, ${mins} min).`;
+    } else {
+      try {
+        const fetched = await fetchEnhancerPrices(pool.filter((p) => !p.concept).map((p) => p.definitionId));
+        prices = new Map([...fetched].map(([id, value]) => [id, value.price]));
+        note = "Valor de las cartas seg\xFAn precios de Enhancer.";
+      } catch {
+        return { note: "Precios no disponibles; selecci\xF3n estimada seg\xFAn las medias." };
       }
     }
-    return known === players.length ? total : void 0;
-  }
-  function costsFor(pool) {
-    const snap = readSnapshot();
-    if (!snap || !freshness(snap, snap.platform).fresh) return {};
-    const rp = priceByRating(pool, snap.prices);
-    const ratingCost = makeRatingCost(rp);
-    if (!ratingCost) return {};
-    const mins = Math.round((Date.now() - snap.fetchedAt) / 6e4);
+    const ratingCost = makeRatingCost(priceByRating(pool, prices));
+    if (!ratingCost) return { note: "Precios incompletos; selecci\xF3n estimada seg\xFAn las medias." };
     return {
       ratingCost,
-      // Decides which card of a chosen rating gets spent. Unpriced cards sort
-      // last rather than first: unknown is not the same as free.
-      cardCost: (p) => cardCost(p, snap.prices) ?? Number.MAX_SAFE_INTEGER,
-      note: `Precios de fut.gg (${snap.platform === "pc" ? "PC" : "consola"}, ${mins} min).`
+      cardCost: (p) => cardCost(p, prices) ?? Number.MAX_SAFE_INTEGER,
+      bill: (selected) => selected.every((p) => prices.has(p.definitionId)) ? selected.reduce((sum, p) => sum + prices.get(p.definitionId), 0) : void 0,
+      note
     };
   }
-  async function solvePoints(challenge, pool) {
+  async function solvePoints(challenge, pool, extras) {
     if (challenge.constraints.unparsed.length) {
       throw new Error(`Requisitos de EA no interpretados: ${challenge.constraints.unparsed.join(" \xB7 ")}`);
     }
@@ -64764,6 +64894,7 @@ button:disabled { opacity:.5; cursor:default; }
     }
     const result = solveStreamlined(pool, challenge.targetScore ?? 0, {
       ...options,
+      strategy: extras?.pointsStrategy,
       cardCost: (p) => prices.get(p.definitionId)?.price
     });
     return {
@@ -64795,7 +64926,7 @@ button:disabled { opacity:.5; cursor:default; }
           const pool = await buildPool(challenge, strategy, extras);
           if (challenge.isStreamlined) {
             const target = challenge.targetScore ?? 0;
-            const { result: stRes, note: priceNote2 } = await solvePoints(challenge, pool);
+            const { result: stRes, note: priceNote2 } = await solvePoints(challenge, pool, extras);
             if (!stRes.ok) {
               handle()?.showError(
                 stRes.reason ?? `Puntaje insuficiente: ${stRes.totalScore} de ${target} pts.`
@@ -64810,6 +64941,8 @@ button:disabled { opacity:.5; cursor:default; }
             if (stRes.missingScores) notes2.push(`${stRes.missingScores} cartas omitidas sin puntaje de EA.`);
             const ids = stRes.items.map((p) => p.id).sort((a, b) => a - b);
             const stSolution = {
+              points: { score: stRes.totalScore, target },
+              costEstimated: stRes.costEstimated,
               players: stRes.items,
               teamRating: 0,
               chemistry: 0,
@@ -64821,10 +64954,11 @@ button:disabled { opacity:.5; cursor:default; }
             else handle()?.showSolution(stSolution, [], notes2);
             return;
           }
+          const costs2 = await costsFor(pool);
           const result = solve(pool, challenge.constraints, {
             strategy,
             timeBudgetMs: SOLVE_BUDGET_MS,
-            ...costsFor(pool)
+            ...costs2
           });
           if (!result.solution) {
             handle()?.showError(
@@ -64832,15 +64966,16 @@ button:disabled { opacity:.5; cursor:default; }
             );
             return;
           }
-          const unmet = withChemNote(result.unmet);
+          const unmet = result.unmet;
           const notes = [];
+          if (challenge.constraints.chemistryMin != null) notes.push("La qu\xEDmica estimada se confirma al aplicar en EA.");
           const specials = explainSpecialUse(result.solution.players, challenge.constraints);
           if (specials) notes.push(specials);
-          const priceNote = costsFor(pool).note;
+          const priceNote = costs2.note;
           if (priceNote) notes.push(priceNote);
-          result.solution.costCoins = squadBill(result.solution.players);
+          result.solution.costCoins = costs2.bill?.(result.solution.players);
           handle()?.showSolution(result.solution, unmet, notes);
-          if (extras && extras.dryRun === false) await doApply(result.solution);
+          if (result.ok && extras && extras.dryRun === false) await doApply(result.solution);
         });
       },
       /**
@@ -64912,11 +65047,6 @@ ${text}`);
       },
       getConstraints: () => challenge.constraints
     };
-    function withChemNote(unmet) {
-      const min = challenge.constraints.chemistryMin;
-      if (min == null) return unmet;
-      return [...unmet, `Qu\xEDmica m\xEDn. ${min} \u2014 se confirma al aplicar`];
-    }
     function totalToBuy(solution) {
       return Math.max(
         1,
@@ -64998,7 +65128,7 @@ ${priceNote}` : "") + (totalScore > target ? "\nNo existe suma exacta en el pool
           const pool = await scope.wait(() => buildPool(ch, strategy, extras));
           if (ch.isStreamlined) {
             const target = ch.targetScore ?? 0;
-            const { result: stRes } = await scope.wait(() => solvePoints(ch, pool));
+            const { result: stRes } = await scope.wait(() => solvePoints(ch, pool, extras));
             if (!stRes.ok) return {
               ok: false,
               reason: stRes.reason ?? `Puntaje insuficiente (${stRes.totalScore}/${target} pts)`
@@ -65018,7 +65148,7 @@ ${priceNote}` : "") + (totalScore > target ? "\nNo existe suma exacta en el pool
           const result = solve(pool, ch.constraints, {
             strategy,
             timeBudgetMs: SOLVE_BUDGET_MS,
-            ...costsFor(pool)
+            ...await scope.wait(() => costsFor(pool))
           });
           scope.checkpoint();
           if (!result.solution || !result.ok) return {
@@ -65097,7 +65227,7 @@ ${priceNote}` : "") + (totalScore > target ? "\nNo existe suma exacta en el pool
       const result = solve(pool, challenge.constraints, {
         strategy,
         timeBudgetMs: SOLVE_BUDGET_MS,
-        ...costsFor(pool)
+        ...await costsFor(pool)
       });
       if (!result.solution || !result.ok) {
         push(
@@ -65164,7 +65294,7 @@ ${filled}/${pending.length} rellenadas. NO se envi\xF3 nada \u2014 revisalas y e
       const result = solve(pool, challenge.constraints, {
         strategy,
         timeBudgetMs: SOLVE_BUDGET_MS,
-        ...costsFor(pool)
+        ...await costsFor(pool)
       });
       if (!result.solution || !result.ok) {
         push(`  \u2717 ${tag}: sin soluci\xF3n${result.unmet.length ? ` \u2014 ${result.unmet.join(", ")}` : ""}`);
@@ -65294,18 +65424,21 @@ Total SBC enviados: ${submitted}`);
       const pitch = document.querySelector(
         ".ut-squad-pitch-view.sbc, .ut-squad-pitch-view, .ut-one-click-sbc-work-area-view, .ut-sbc-squad-overview"
       );
-      if (challenge && pitch && challenge.id !== mountedFor) {
+      const toolbarHost = challenge?.isStreamlined ? pitch : document.querySelector(".SBCSquadPanel .sbc-button-container");
+      if (challenge && toolbarHost && challenge.id !== mountedFor) {
         handle?.destroy();
         resetPoolCache();
         const displayName = challenge.isStreamlined && challenge.targetScore ? `${challenge.name} (${challenge.targetScore} pts)` : challenge.name;
         handle = mountToolbar(
-          pitch,
+          // Normal squads position the pitch absolutely. Their existing action
+          // column scrolls in flow; OneClick's work area is a flex column.
+          toolbarHost,
           bootActions(challenge, () => handle),
           displayName
         );
         mountedFor = challenge.id;
         console.info(LOG, "toolbar mounted for challenge", challenge.id, challenge.name);
-      } else if ((!challenge || !pitch) && handle) {
+      } else if ((!challenge || !toolbarHost) && handle) {
         handle.destroy();
         handle = null;
         mountedFor = -1;

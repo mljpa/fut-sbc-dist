@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         FUT SBC Solver — precios
 // @namespace    https://github.com/mljpa/fut-sbc-solver-v2
-// @version      0.2.64
+// @version      0.2.65
 // @description  Baja precios de mercado de fut.gg y los deja para el solver. Complemento de FUT SBC Solver v2.
 // @match        https://www.ea.com/*/ea-sports-fc/ultimate-team/web-app*
 // @match        https://www.ea.com/ea-sports-fc/ultimate-team/web-app*
@@ -61,9 +61,19 @@
     }
     return { prices, priced, total: values.length };
   }
+  function decodeDynamicPriceFile(index, dynamic) {
+    if (!index || typeof index !== "object" || !dynamic || typeof dynamic !== "object") {
+      throw new PriceDecodeError("faltan el \xEDndice o los precios din\xE1micos");
+    }
+    const ids = index;
+    const prices = dynamic;
+    if (ids.v !== 2 || prices.v !== 2) throw new PriceDecodeError("formato din\xE1mico no compatible");
+    return decodePriceFile({ v: prices.v, id0: ids.id0, d: ids.d, p: prices.p });
+  }
 
   // src/prices/cache.ts
-  var KEY = "fut-sbc-solver:prices";
+  var PRICE_SEASON = 27;
+  var KEY = `fut-sbc-solver:prices:fc${PRICE_SEASON}`;
   var MANIFEST_POLL_MS = 15 * 60 * 1e3;
   var STALE_AFTER_MS = 6 * 60 * 60 * 1e3;
   function storage() {
@@ -132,19 +142,21 @@
     };
   }
   function priceFileUrl(manifest, platform2) {
-    const key = platform2 === "pc" ? "player-prices-pc" : "player-prices-ps5";
+    const key = platform2 === "pc" ? "player-prices-pc-dyn" : "player-prices-ps5-dyn";
     const revision = manifest[key];
+    const indexRevision = manifest["player-prices-index"];
     const version = manifest["_version"];
-    if (typeof revision !== "string" || !revision) return null;
-    if (typeof version !== "number" && typeof version !== "string") return null;
+    const hash = (value) => typeof value === "string" && /^[a-zA-Z0-9]+$/.test(value);
+    if (!hash(revision) || !hash(indexRevision) || !/^\d+$/.test(String(version))) return null;
     return {
-      url: `https://r2.fut.gg/26/${key}.v${version}.${revision}.json`,
-      revision
+      url: `https://r2.fut.gg/${PRICE_SEASON}/${key}.v${version}.${revision}.json`,
+      indexUrl: `https://r2.fut.gg/${PRICE_SEASON}/player-prices-index.v${version}.${indexRevision}.json`,
+      revision: `${indexRevision}:${revision}`
     };
   }
 
   // src/companion/main.ts
-  var MANIFEST_URL = "https://r2.fut.gg/26/manifest.json";
+  var MANIFEST_URL = `https://r2.fut.gg/${PRICE_SEASON}/manifest.json`;
   var LOG = "[fut-precios]";
   var PLATFORM_KEY = "fut-sbc-solver:platform";
   function platform() {
@@ -195,8 +207,11 @@
       console.info(`${LOG} sin cambios (${target.revision})`);
       return;
     }
-    const raw = await getJson(target.url);
-    const { prices, priced, total } = decodePriceFile(raw);
+    const [index, dynamic] = await Promise.all([
+      getJson(target.indexUrl),
+      getJson(target.url)
+    ]);
+    const { prices, priced, total } = decodeDynamicPriceFile(index, dynamic);
     const ok = writeSnapshot({
       platform: want,
       fetchedAt: Date.now(),
