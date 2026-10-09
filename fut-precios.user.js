@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         FUT SBC Solver — precios
 // @namespace    https://github.com/mljpa/fut-sbc-solver-v2
-// @version      0.2.74
+// @version      0.2.75
 // @description  Complemento antiguo: los precios ahora están incluidos en el solver.
 // @match        https://www.ea.com/*/ea-sports-fc/ultimate-team/web-app*
 // @match        https://www.ea.com/ea-sports-fc/ultimate-team/web-app*
