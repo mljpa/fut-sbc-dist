@@ -1,7 +1,7 @@
 // ==UserScript==
-// @name         FUT SBC Solver — precios
+// @name         SbcAgent — precios
 // @namespace    https://github.com/mljpa/fut-sbc-solver-v2
-// @version      0.2.88
+// @version      0.2.89
 // @description  Complemento antiguo: los precios ahora están incluidos en el solver.
 // @match        https://www.ea.com/*/ea-sports-fc/ultimate-team/web-app*
 // @match        https://www.ea.com/ea-sports-fc/ultimate-team/web-app*
@@ -14,5 +14,5 @@
 "use strict";
 (() => {
   // src/bootstrap/legacy-prices.ts
-  console.info("[fut-precios] Los precios est\xE1n incluidos en FUT SBC Solver v2. Puedes desactivar este complemento antiguo.");
+  console.info("[fut-precios] Los precios est\xE1n incluidos en SbcAgent. Puedes desactivar este complemento antiguo.");
 })();

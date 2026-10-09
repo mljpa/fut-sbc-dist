@@ -1,4 +1,4 @@
-# fut-sbc-solver v2 — built userscript
+# SbcAgent — built userscript
 
 Install / update target for Tampermonkey. Source lives in a private repo.
 
@@ -6,4 +6,4 @@ Install / update target for Tampermonkey. Source lives in a private repo.
 
 **Update:** Tampermonkey dashboard → *Check for userscript updates*.
 
-Current version: `0.2.88`
+Current version: `0.2.89`
