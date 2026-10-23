@@ -143,6 +143,22 @@ function createCatalogArtifacts(catalog, previous = null, checkedAt = catalog.ch
 // scripts/gallery-catalog-fetch.mjs
 var base = "https://www.fut.gg/fut-gallery";
 var categories = ["premier-league", "laliga", "bundesliga", "ligue-1", "serie-a", "leagues", "rarities", "roshn-saudi-league", "mls", "national-women-s-soccer-league"];
+async function fetchGalleryPage(path, request = fetch, pause = (ms) => new Promise((done) => setTimeout(done, ms))) {
+  for (let attempt = 0; attempt < 3; attempt++) {
+    let response;
+    try {
+      response = await request(`${base}/${path}`, { signal: AbortSignal.timeout(2e4) });
+    } catch (error2) {
+      if (attempt === 2) throw error2;
+      await pause(1e3 * (attempt + 1));
+      continue;
+    }
+    if (response.ok) return response.text();
+    const error = new Error(`${path}: HTTP ${response.status}`);
+    if (![500, 502, 503, 504].includes(response.status) || attempt === 2) throw error;
+    await pause(1e3 * (attempt + 1));
+  }
+}
 async function fetchGalleryCatalog(previous, validateCatalog2) {
   const setPattern = /=\{id:(\d+),categoryId:(\d+),name:"([^"]+)",slug:"([^"]+)",description:"([^"]+)",requiredCards:(\d+),priority:(\d+),startTime:(\d+),grades:(.*?)\],clubEaId:(\d+|null),(?:clubImagePath:[^,}]*,)?totalTokens:(\d+)\}/gs;
   const gradePattern = /name:"([DCBAS])",threshold:(\d+)/g;
@@ -158,9 +174,7 @@ async function fetchGalleryCatalog(previous, validateCatalog2) {
     price: item[4] === "null" ? null : Number(item[4])
   }));
   async function page(path) {
-    const response = await fetch(`${base}/${path}`, { signal: AbortSignal.timeout(2e4) });
-    if (!response.ok) throw new Error(`${path}: HTTP ${response.status}`);
-    return response.text();
+    return fetchGalleryPage(path);
   }
   const index = await page("");
   const expectedSets = Number(index.match(/Browse\s+(\d+)\s+FC\s+27\s+Gallery/)?.[1]);
