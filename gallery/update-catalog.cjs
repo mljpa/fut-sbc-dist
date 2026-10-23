@@ -142,9 +142,9 @@ function createCatalogArtifacts(catalog, previous = null, checkedAt = catalog.ch
 
 // scripts/gallery-catalog-fetch.mjs
 var base = "https://www.fut.gg/fut-gallery";
-var categories = ["premier-league", "laliga", "bundesliga", "ligue-1", "serie-a", "leagues", "rarities"];
+var categories = ["premier-league", "laliga", "bundesliga", "ligue-1", "serie-a", "leagues", "rarities", "roshn-saudi-league", "mls", "national-women-s-soccer-league"];
 async function fetchGalleryCatalog(previous, validateCatalog2) {
-  const setPattern = /=\{id:(\d+),categoryId:(\d+),name:"([^"]+)",slug:"([^"]+)",description:"([^"]+)",requiredCards:(\d+),priority:(\d+),startTime:(\d+),grades:(.*?)\],clubEaId:(\d+|null),totalTokens:(\d+)\}/gs;
+  const setPattern = /=\{id:(\d+),categoryId:(\d+),name:"([^"]+)",slug:"([^"]+)",description:"([^"]+)",requiredCards:(\d+),priority:(\d+),startTime:(\d+),grades:(.*?)\],clubEaId:(\d+|null),(?:clubImagePath:[^,}]*,)?totalTokens:(\d+)\}/gs;
   const gradePattern = /name:"([DCBAS])",threshold:(\d+)/g;
   const detailedGradePattern = /name:"([DCBAS])",threshold:(\d+),level:\d+,rewards:\$R\[\d+\]=\[(.*?)\]\}/gs;
   const tokenPattern = /type:"event_token_1",value:(\d+)/g;
